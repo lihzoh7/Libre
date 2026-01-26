@@ -63,8 +63,29 @@
     <audio id="explosionSfx" src="https://actions.google.com/sounds/v1/impacts/explosion.ogg" preload="auto"></audio>
     <audio id="bgMusic" src="https://cdn.pixabay.com/download/audio/2023/02/28/audio_91b56b86db.mp3?filename=chill-ambient-14013.mp3" loop preload="auto"></audio>
   </div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  projectId: "tose-ccf8f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+// 🔐 AUTH GUARD
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.href = "index.html";
+  } else {
+    // Make auth globally available for your existing code
+    window.firebaseUser = user;
+  }
+});
+</script>
 (async function(){
   // ---------------------- CONFIG ----------------------
   const PLAYER_X = 120;
@@ -133,7 +154,7 @@
   async function loadLives(){
     try {
       // assume firebase auth initialized
-      const uid = firebase.auth().currentUser.uid;
+      const uid = window.firebaseUser.uid;
       const resp = await fetch(`https://payfast-backend-475447495901.europe-west1.run.app/game/start`, {
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({uid})
       });
@@ -305,11 +326,16 @@
     const finalScore = score*100;
     const playTimeSeconds = Math.floor(performance.now()/1000);
 
-    if(window.firebase && firebase.auth().currentUser){
-      fetch("https://payfast-backend-475447495901.europe-west1.run.app/scores/submit-score",{
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({uid:firebase.auth().currentUser.uid, score:finalScore, duration:playTimeSeconds})
-      }).then(r=>r.json()).then(d=>console.log("Score saved:",d)).catch(err=>console.error("Score error:",err));
+if (window.firebaseUser) {
+  fetch("https://payfast-backend-475447495901.europe-west1.run.app/scores/submit-score", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      uid: window.firebaseUser.uid,
+      score: finalScore,
+      duration: playTimeSeconds
+    })
+  }).then(r=>r.json()).then(d=>console.log("Score saved:",d)).catch(err=>console.error("Score error:",err));
     }
 
     overlayText.textContent='🏁 FINISHED';
@@ -338,7 +364,7 @@
     // Deduct life via backend
     try{
       const resp = await fetch(`https://payfast-backend-475447495901.europe-west1.run.app/game/continue`,{
-        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({uid:firebase.auth().currentUser.uid})
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ uid: window.firebaseUser.uid })
       });
       const data = await resp.json();
       if(data.success){
