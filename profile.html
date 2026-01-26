@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SPACE GLASS - Profile</title>
+<style>
+body { background-color:white; font-family: Arial, sans-serif; padding:20px; margin:0; }
+#back { cursor:pointer; font-size:20px; margin-bottom:10px; }
+h1 { font-size:12px; text-align:center; margin-bottom:15px; }
+.container { max-width:400px; margin:0 auto; }
+input { width:100%; padding:8px; margin:5px 0; border-radius:4px; border:1px solid #ccc; box-sizing:border-box; }
+input[readonly] { background-color:#eee; }
+button { width:100%; padding:10px; margin-top:10px; background-color:green; color:white; border:none; border-radius:4px; cursor:pointer; }
+#updated { position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:grey; color:white; padding:10px 20px; border-radius:6px; display:none; }
+</style>
+</head>
+<body>
+<div id="back" onclick="window.location.href='main-menu.html'">↩️</div>
+<h1>My Profile</h1>
+<div class="container">
+  <h2>Personal Details</h2>
+  <input id="name" readonly placeholder="Name">
+  <input id="surname" readonly placeholder="Surname">
+  <input id="idNumber" readonly placeholder="ID Number">
+  <input id="email" readonly placeholder="Email">
+  <input id="nationality" readonly placeholder="Nationality">
+  <input id="cellNumber" readonly placeholder="Cell Number">
+  <input id="homeAddress" readonly placeholder="Home Address">
+  <input id="suburb" readonly placeholder="Suburb">
+  <input id="city" readonly placeholder="City">
+  <input id="zipCode" readonly placeholder="Zip Code">
+
+  <h2>Bank Details</h2>
+  <input id="bankName" placeholder="Bank Name">
+  <input id="accountNumber" placeholder="Account Number">
+  <button id="updateBtn">UPDATE</button>
+</div>
+
+<div id="updated">UPDATED</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, child, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.firebasestorage.app",
+  messagingSenderId: "475447495901",
+  appId: "1:475447495901:web:9189276a162a3680afdf34",
+  measurementId: "G-PWC5R6Q8JD"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Get current user email from localStorage (set during login)
+const currentUserEmail = localStorage.getItem('currentUserEmail');
+if(!email){
+  setTimeout(() => {
+    window.location.href = "index.html";
+  }, 300);
+}
+
+
+// Load user details
+async function loadProfile() {
+  try {
+    const snapshot = await get(child(ref(db), 'users'));
+    const users = snapshot.val();
+    for (let key in users) {
+      if(users[key].email.toLowerCase() === currentUserEmail.toLowerCase()) {
+        // Populate Personal Details
+        document.getElementById('name').value = users[key].name;
+        document.getElementById('surname').value = users[key].surname;
+        document.getElementById('idNumber').value = users[key].idNumber;
+        document.getElementById('email').value = users[key].email;
+        document.getElementById('nationality').value = users[key].nationality;
+        document.getElementById('cellNumber').value = users[key].cellNumber;
+        document.getElementById('homeAddress').value = users[key].homeAddress;
+        document.getElementById('suburb').value = users[key].suburb;
+        document.getElementById('city').value = users[key].city;
+        document.getElementById('zipCode').value = users[key].zipCode;
+
+        // Populate Bank Details
+        document.getElementById('bankName').value = users[key].bankName;
+        document.getElementById('accountNumber').value = users[key].accountNumber;
+
+        // Store user key for updates
+        window.userKey = key;
+        break;
+      }
+    }
+  } catch(err) { alert(err.message); }
+}
+
+loadProfile();
+
+// Update bank details
+document.getElementById('updateBtn').addEventListener('click', async () => {
+  const bankName = document.getElementById('bankName').value.trim();
+  const accountNumber = document.getElementById('accountNumber').value.trim();
+  if(!bankName || !accountNumber) return alert('Fill bank details');
+
+  try {
+    await update(ref(db, 'users/' + window.userKey), {
+      bankName, accountNumber
+    });
+    const popup = document.getElementById('updated');
+    popup.style.display='block';
+    setTimeout(()=>{ popup.style.display='none'; },1000);
+  } catch(err) {
+    alert(err.message);
+  }
+});
+</script>
+</body>
+    </html>
