@@ -167,7 +167,14 @@ onAuthStateChanged(auth, (user) => {
     }
   }
 
-  await loadLives();
+  // Wait for firebaseUser to exist
+const waitForUser = setInterval(() => {
+  if (window.firebaseUser) {
+    clearInterval(waitForUser);
+    loadLives();
+  }
+}, 50);
+
 
   // ---------------------- PATCH 1 END ----------------------
 })();
