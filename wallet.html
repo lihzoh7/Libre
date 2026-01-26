@@ -153,9 +153,6 @@ async function loadWallet(){
     lives = snap.val() || 0;
     updateUI();
   });
-      break;
-    }
-  }
 }
 
 function updateUI(){
@@ -193,7 +190,7 @@ document.getElementById('heart').addEventListener('click', async () => {
   balance -= 0.5;
   lives += 1;
 
-  await update(ref(db, `users/${userKey}/wallet`), { balance, lives });
+  await update(ref(db, `users/${userUID}/wallet`), { balance, lives });
   updateUI();
 });
 
