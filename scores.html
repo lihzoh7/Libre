@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SPACE GLASS - Scores / Leaderboard</title>
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#001f3f;
+  color:white;
+  display:flex;
+  justify-content:center;
+}
+#container {
+  width:500px;
+  margin-top:20px;
+  padding:20px;
+}
+#back {
+  font-size:20px;
+  cursor:pointer;
+  margin-bottom:15px;
+}
+.tabs {
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:15px;
+}
+.tab {
+  padding:10px 20px;
+  cursor:pointer;
+  background:#003366;
+  border-radius:5px;
+}
+.tab.active {
+  background:#0074D9;
+}
+#content {
+  max-height:400px;
+  overflow-y:auto;
+}
+.score-row {
+  display:flex;
+  justify-content:space-between;
+  padding:5px 10px;
+  border-bottom:1px solid #444;
+}
+.score-row:nth-child(odd){
+  background: rgba(255,255,255,0.05);
+}
+.medal {
+  margin-right:5px;
+}
+</style>
+</head>
+
+<body>
+<div id="container">
+  <div id="back" onclick="window.location.href='main-menu.html'">↩️ Back</div>
+  
+  <div class="tabs">
+    <div class="tab active" id="highScoresTab">HIGH SCORES</div>
+    <div class="tab" id="leaderboardTab">LEADERBOARD</div>
+  </div>
+  
+  <div id="content"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.firebasestorage.app",
+  messagingSenderId: "475447495901",
+  appId: "1:475447495901:web:9189276a162a3680afdf34"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const content = document.getElementById('content');
+const highScoresTab = document.getElementById('highScoresTab');
+const leaderboardTab = document.getElementById('leaderboardTab');
+
+highScoresTab.addEventListener('click', ()=>{switchTab('high')});
+leaderboardTab.addEventListener('click', ()=>{switchTab('live')});
+
+let currentTab = 'high';
+
+function switchTab(tab){
+  currentTab = tab;
+  if(tab==='high'){
+    highScoresTab.classList.add('active');
+    leaderboardTab.classList.remove('active');
+    loadHighScores();
+  } else {
+    leaderboardTab.classList.add('active');
+    highScoresTab.classList.remove('active');
+    loadLeaderboard();
+  }
+}
+
+/* --- Load High Scores --- */
+async function loadHighScores(){
+  content.innerHTML = "Loading...";
+  const snap = await get(ref(db,'highScores'));
+  const allScores = snap.val() || {};
+  
+  // Flatten and sort
+  let scoresArr = [];
+  for(const uid in allScores){
+    const playerScores = allScores[uid];
+    for(const key in playerScores){
+      scoresArr.push({
+        uid,
+        score: playerScores[key].score,
+        timestamp: playerScores[key].timestamp
+      });
+    }
+  }
+  
+  // Sort descending
+  scoresArr.sort((a,b)=>b.score - a.score);
+  
+  displayScores(scoresArr.slice(0,20));
+}
+
+/* --- Load Live Leaderboard --- */
+function loadLeaderboard(){
+  content.innerHTML = "Loading...";
+  const lbRef = ref(db,'leaderboard/current');
+  
+  onValue(lbRef, snap=>{
+    const data = snap.val() || {};
+    let arr = [];
+    for(const uid in data){
+      arr.push({uid, score:data[uid].score, timestamp:data[uid].timestamp});
+    }
+    arr.sort((a,b)=>b.score - a.score);
+    displayScores(arr.slice(0,20), true);
+  });
+}
+
+/* --- Display Scores --- */
+async function displayScores(arr, isLive=false){
+  content.innerHTML = "";
+  
+  for(let i=0;i<arr.length;i++){
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    
+    // Get player info
+    let name = arr[i].uid;
+    try {
+      const snap = await get(ref(db,'users/'+arr[i].uid));
+      if(snap.exists()){
+        const user = snap.val();
+        name = user.name || user.Name || arr[i].uid;
+      }
+    } catch(e){}
+    
+    let medal = "";
+    if(i===0) medal = "🥇";
+    else if(i===1) medal = "🥈";
+    else if(i===2) medal = "🥉";
+    
+    const date = new Date(arr[i].timestamp);
+    const dateStr = date.toLocaleString();
+    
+    row.innerHTML = `<span>${medal} ${name}</span><span>${arr[i].score} (${dateStr})</span>`;
+    content.appendChild(row);
+  }
+}
+
+/* Load initial tab */
+loadHighScores();
+
+</script>
+
+</body>
+</html>
