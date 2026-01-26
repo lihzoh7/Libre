@@ -85,7 +85,10 @@ body{
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { initializeApp } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getDatabase, ref, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -100,11 +103,17 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
 
-const email = localStorage.getItem("currentUserEmail");
-if(!email){
-  setTimeout(()=>window.location.href="index.html",300);
-}
+// 🔒 AUTH GUARD — BLOCK UNAUTHENTICATED ACCESS
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.href = "index.html";
+  } else {
+    window.firebaseUser = user;
+    loadUser(); // start loading data ONLY after auth is confirmed
+  }
+});
 
 let userKey = null;
 
@@ -113,7 +122,7 @@ async function loadUser(){
   const snap = await get(ref(db,"users"));
   const users = snap.val() || {};
   for(const k in users){
-    if(users[k].email === email){
+    if (users[k].uid === window.firebaseUser.uid) {
       userKey = k;
       loadMessages();
       return;
@@ -169,7 +178,6 @@ function goBack(){
   window.location.href="main-menu.html";
 }
 
-loadUser();
 </script>
 
 </body>
