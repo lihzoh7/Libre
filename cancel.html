@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Payment Cancelled</title>
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:rgba(255,0,0,0.2);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+#popup {
+  background:red;
+  color:white;
+  padding:30px 50px;
+  border-radius:10px;
+  text-align:center;
+  font-size:24px;
+  font-weight:bold;
+}
+</style>
+</head>
+<body>
+<div id="popup">CANCELLED</div>
+
+<script>
+setTimeout(()=>window.location.href='wallet.html',2000); // redirect after 2s
+</script>
+</body>
+</html>
