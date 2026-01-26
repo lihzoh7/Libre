@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SPACE GLASS - Prizes</title>
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:navy;
+  color:white;
+  display:flex;
+  justify-content:center;
+}
+#container { width:800px; margin-top:20px; padding:20px; }
+#back { font-size:20px; cursor:pointer; margin-bottom:15px; display:inline-block; }
+#dateRange { margin-bottom:15px; }
+.schedule { display:grid; grid-template-columns:100px repeat(7,1fr); gap:5px; margin-bottom:20px; }
+.schedule div { padding:5px; text-align:center; border:1px solid #fff; }
+.schedule .time { font-weight:bold; cursor:default; }
+.schedule .past { background:#a00; }
+.schedule .ongoing { background:#0a0; }
+.medals { margin-top:20px; }
+.medals div { display:flex; justify-content:space-between; padding:5px 10px; border-bottom:1px solid #444; }
+.medals .medal-name { font-weight:bold; }
+</style>
+</head>
+<body>
+
+<div id="container">
+  <div id="back" onclick="window.location.href='main-menu.html'">↩️ Back</div>
+
+  <div id="dateRange"></div>
+
+  <div class="schedule" id="schedule"></div>
+
+  <div class="medals" id="medals">
+    <div>🥇 <span id="goldName">-</span> R<span id="goldAmount">0</span></div>
+    <div>🥈 <span id="silverName">-</span> R<span id="silverAmount">0</span></div>
+    <div>🥉 <span id="bronzeName">-</span> R<span id="bronzeAmount">0</span></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.firebasestorage.app",
+  messagingSenderId: "475447495901",
+  appId: "1:475447495901:web:9189276a162a3680afdf34"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const scheduleEl = document.getElementById('schedule');
+const dateRangeEl = document.getElementById('dateRange');
+const medals = { goldAmount:'goldAmount', silverAmount:'silverAmount', bronzeAmount:'bronzeAmount' };
+const days = ["Time","Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+// Render header
+days.forEach(d=>{
+  const div = document.createElement('div'); div.innerText=d; scheduleEl.appendChild(div);
+});
+
+// Render empty schedule (2 rows)
+const gameTimes = ["06:00-17:30","18:00-05:30"];
+gameTimes.forEach(time=>{
+  const timeDiv = document.createElement('div'); timeDiv.className='time'; timeDiv.innerText=time;
+  scheduleEl.appendChild(timeDiv);
+  for(let i=0;i<7;i++){
+    const cell = document.createElement('div');
+    cell.dataset.day = i;
+    cell.dataset.from = time.split('-')[0];
+    cell.dataset.to = time.split('-')[1];
+    cell.innerText = "-";
+    scheduleEl.appendChild(cell);
+  }
+});
+
+// Listen to admin/prizes
+onValue(ref(db,'admin/prizes'), snap=>{
+  const data = snap.val();
+  if(!data) return;
+
+  dateRangeEl.innerText = `From ${data.fromDate} to ${data.toDate}`;
+
+  // Fill schedule & detect current game
+  const now = new Date();
+  const day = now.getDay()===0?6:now.getDay()-1; // Sunday=6
+  const nowMinutes = now.getHours()*60 + now.getMinutes();
+  let currentCellValue = 0;
+
+  document.querySelectorAll('.schedule div[data-day]').forEach((cell,index)=>{
+    const cellDay = parseInt(cell.dataset.day);
+    const fromParts = cell.dataset.from.split(':').map(Number);
+    const toParts = cell.dataset.to.split(':').map(Number);
+    const fromMinutes = fromParts[0]*60+fromParts[1];
+    const toMinutes = toParts[0]*60+toParts[1]+(toParts[0]<fromParts[0]?1440:0);
+
+    // Set cell value from admin
+    const rowIndex = index % 2; // row 0 or 1
+    const cellData = data.schedule[cellDay] ? data.schedule[cellDay][rowIndex] : {value:0};
+    cell.innerText = cellData.value;
+
+    // Color cell
+    cell.classList.remove('ongoing','past');
+    if(cellDay===day && nowMinutes>=fromMinutes && nowMinutes<=toMinutes){
+      cell.classList.add('ongoing');
+      currentCellValue = parseInt(cellData.value) || 0;
+    } else if(cellDay<=day){
+      cell.classList.add('past');
+    }
+  });
+
+  // Set medals dynamically
+  document.getElementById(medals.goldAmount).innerText = Math.round(currentCellValue*0.65);
+  document.getElementById(medals.silverAmount).innerText = Math.round(currentCellValue*0.25);
+  document.getElementById(medals.bronzeAmount).innerText = Math.round(currentCellValue*0.10);
+});
+</script>
+</body>
+</html>
