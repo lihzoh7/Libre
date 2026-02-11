@@ -123,7 +123,10 @@ let userKey = null;
 let balance = 0;
 let lives = 0;
 
-/* LOAD USER WALLET */
+// ---------------- DEMO MODE FLAG ----------------
+const DEMO_MODE = true; // <- change to false later for real PayFast
+// ----------------------------------------------
+
 async function loadWallet(){
   const snap = await get(ref(db,'users'));
   const users = snap.val();
@@ -133,7 +136,7 @@ async function loadWallet(){
       balance = users[key].wallet?.balance || 0;
       lives = users[key].wallet?.lives || 0;
       updateUI();
-      // Listen for realtime balance changes
+
       onValue(ref(db, `users/${userKey}/wallet/balance`), snap => {
         balance = snap.val() || 0;
         updateUI();
@@ -154,20 +157,26 @@ function updateUI(){
 
 loadWallet();
 
-/* DEMO TOP-UP (NO PAYFAST) */
+// ---------------- DEMO TOP UP ----------------
 document.querySelectorAll('.amount').forEach(btn => {
   btn.addEventListener('click', async () => {
     const amount = Number(btn.dataset.amount);
     if(!userKey) return show("User not loaded");
 
-    balance += amount;
+    if(DEMO_MODE){
+      balance += amount;
+      await update(ref(db, `users/${userKey}/wallet`), { balance, lives });
+      show(`Demo +R${amount} added`);
+      updateUI();
+      return;
+    }
 
-    await update(ref(db, `users/${userKey}/wallet`), { balance, lives });
-    show(`DEMO TOP-UP: +R${amount.toFixed(2)}`);
+    // REAL MODE (PayFast) - disabled in demo
+    show("Real payments disabled in demo mode");
   });
 });
 
-/* BUY LIVES */
+// ---------------- BUY LIVES ----------------
 document.getElementById('heart').addEventListener('click', async () => {
   if(balance < 0.5) return show("INSUFFICIENT BALANCE");
   if(lives >= 5) return show("MAX 5 LIVES");
@@ -179,7 +188,7 @@ document.getElementById('heart').addEventListener('click', async () => {
   updateUI();
 });
 
-/* POPUP */
+// ---------------- POPUP ----------------
 function show(msg){
   const p = document.getElementById('popup');
   p.innerText = msg;
@@ -187,6 +196,7 @@ function show(msg){
   setTimeout(()=>p.style.display='none',1500);
 }
 </script>
+
 
 </body>
   </html>
