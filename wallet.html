@@ -99,7 +99,6 @@ body {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -114,17 +113,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const auth = getAuth(app);
-let userUID = null;
 
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = "index.html";
-  } else {
-    userUID = user.uid;
-    loadWallet();
-  }
-});
+const email = localStorage.getItem('currentUserEmail');
+if(!email){
+  setTimeout(() => window.location.href="index.html", 300);
+}
 
 let userKey = null;
 let balance = 0;
@@ -132,27 +125,26 @@ let lives = 0;
 
 /* LOAD USER WALLET */
 async function loadWallet(){
-  const snap = await get(ref(db, `users/${userUID}`));
-  if (!snap.exists()) {
-    show("Wallet not found");
-    return;
+  const snap = await get(ref(db,'users'));
+  const users = snap.val();
+  for(const key in users){
+    if(users[key].email === email){
+      userKey = key;
+      balance = users[key].wallet?.balance || 0;
+      lives = users[key].wallet?.lives || 0;
+      updateUI();
+      // Listen for realtime balance changes
+      onValue(ref(db, `users/${userKey}/wallet/balance`), snap => {
+        balance = snap.val() || 0;
+        updateUI();
+      });
+      onValue(ref(db, `users/${userKey}/wallet/lives`), snap => {
+        lives = snap.val() || 0;
+        updateUI();
+      });
+      break;
+    }
   }
-
-  const data = snap.val();
-  balance = data.wallet?.balance || 0;
-  lives = data.wallet?.lives || 0;
-
-  updateUI();
-
-  onValue(ref(db, `users/${userUID}/wallet/balance`), snap => {
-    balance = snap.val() || 0;
-    updateUI();
-  });
-
-  onValue(ref(db, `users/${userUID}/wallet/lives`), snap => {
-    lives = snap.val() || 0;
-    updateUI();
-  });
 }
 
 function updateUI(){
@@ -160,24 +152,18 @@ function updateUI(){
   document.getElementById('livesCount').innerText = lives;
 }
 
+loadWallet();
 
-/* PAYFAST REDIRECT */
+/* DEMO TOP-UP (NO PAYFAST) */
 document.querySelectorAll('.amount').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     const amount = Number(btn.dataset.amount);
-    if(!userUID) return show("User not authenticated");
+    if(!userKey) return show("User not loaded");
 
-    let link = "";
-if(amount === 5)  link = "18pm5";
-if(amount === 10) link = "dlwk9";
-if(amount === 15) link = "or9gp";
-if(amount === 20) link = "jg1my";
+    balance += amount;
 
-const payfastUrl =
-  `https://payf.st/${link}?merchant_reference=${userUID}`;
-
-window.location.href = payfastUrl;
-
+    await update(ref(db, `users/${userKey}/wallet`), { balance, lives });
+    show(`DEMO TOP-UP: +R${amount.toFixed(2)}`);
   });
 });
 
@@ -189,7 +175,7 @@ document.getElementById('heart').addEventListener('click', async () => {
   balance -= 0.5;
   lives += 1;
 
-  await update(ref(db, `users/${userUID}/wallet`), { balance, lives });
+  await update(ref(db, `users/${userKey}/wallet`), { balance, lives });
   updateUI();
 });
 
@@ -203,4 +189,4 @@ function show(msg){
 </script>
 
 </body>
-</html>
+  </html>
