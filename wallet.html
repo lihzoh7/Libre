@@ -3,74 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <title>SPACE GLASS - Wallet</title>
+
 <style>
-body {
+body{
   margin:0;
-  font-family: Arial, sans-serif;
-  background:#c8f7c5;
+  font-family:Arial, sans-serif;
+  background:#001f3f;
+  color:white;
   display:flex;
   justify-content:center;
   align-items:center;
   height:100vh;
 }
-#wallet {
+
+#wallet{
   width:400px;
-  background:#c8f7c5;
+  background:#003366;
   padding:20px;
-  border-radius:10px;
+  border-radius:12px;
   position:relative;
 }
-#back {
+
+#back{
   position:absolute;
-  top:5px;
-  left:5px;
-  font-size:20px;
+  top:10px;
+  left:10px;
   cursor:pointer;
+  font-size:18px;
 }
-#balance {
-  background:navy;
-  color:white;
-  padding:10px;
+
+h2{
   text-align:center;
-  font-weight:bold;
-  margin-bottom:15px;
-}
-.grid {
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:10px;
   margin-bottom:20px;
 }
-.amount {
-  background:#001f3f;
-  color:white;
+
+.stat{
+  display:flex;
+  justify-content:space-between;
   padding:10px;
-  text-align:center;
-  border-radius:5px;
-  cursor:pointer;
-}
-#livesSection {
-  text-align:center;
-}
-#livesLabel {
-  font-weight:bold;
   margin-bottom:10px;
+  background:#002244;
+  border-radius:6px;
 }
-#heart {
-  font-size:48px;
+
+button{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  border:none;
+  border-radius:6px;
   cursor:pointer;
+  font-weight:bold;
 }
-#popup {
+
+.green{
+  background:#2ecc40;
+  color:black;
+}
+
+.grey{
+  background:#555;
+  color:#aaa;
+  cursor:not-allowed;
+}
+
+#popup{
   position:absolute;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  background:#000;
-  color:white;
+  background:black;
   padding:15px;
   border-radius:6px;
   display:none;
-  z-index:10;
 }
 </style>
 </head>
@@ -78,125 +83,98 @@ body {
 <body>
 
 <div id="wallet">
-  <div id="back" onclick="window.location.href='main-menu.html'">↩️</div>
 
-  <div id="balance">BALANCE: R0.00</div>
+<div id="back" onclick="window.location.href='main-menu.html'">↩ Back</div>
 
-  <div class="grid">
-    <div class="amount" data-amount="5">R5</div>
-    <div class="amount" data-amount="10">R10</div>
-    <div class="amount" data-amount="15">R15</div>
-    <div class="amount" data-amount="20">R20</div>
-  </div>
+<h2>PLAYER WALLET</h2>
 
-  <div id="livesSection">
-    <div id="livesLabel">LIVES ♥ <span id="livesCount">0</span></div>
-    <div id="heart">♥</div>
-  </div>
+<div class="stat">💎 Gems <span id="gems">0</span></div>
+<div class="stat">❤️ Lives <span id="lives">0</span></div>
+<div class="stat">🥇 Gold <span id="gold">0</span></div>
+<div class="stat">🥈 Silver <span id="silver">0</span></div>
+<div class="stat">🥉 Bronze <span id="bronze">0</span></div>
+
+<button id="buyLifeBtn">Buy 1 Life (300 Gems)</button>
+<button id="convertGoldBtn">Convert Gold → 5 Lives</button>
+<button id="convertSilverBtn">Convert Silver → 3 Lives</button>
+<button id="convertBronzeBtn">Convert Bronze → 2 Lives</button>
+
 </div>
 
 <div id="popup"></div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+<script>
+const API_BASE = "https://payfast-backend-475447495901.europe-west1.run.app";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  authDomain: "tose-ccf8f.firebaseapp.com",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tose-ccf8f",
-  storageBucket: "tose-ccf8f.firebasestorage.app",
-  messagingSenderId: "475447495901",
-  appId: "1:475447495901:web:9189276a162a3680afdf34"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-const email = localStorage.getItem('currentUserEmail');
-if(!email){
-  setTimeout(() => window.location.href="index.html", 300);
+const uid = localStorage.getItem("uid");
+if(!uid){
+  window.location.href = "index.html";
 }
 
-let userKey = null;
-let balance = 0;
-let lives = 0;
+let economy = {};
 
-// ---------------- DEMO MODE FLAG ----------------
-const DEMO_MODE = true; // <- change to false later for real PayFast
-// ----------------------------------------------
-
-async function loadWallet(){
-  const snap = await get(ref(db,'users'));
-  const users = snap.val();
-  for(const key in users){
-    if(users[key].email === email){
-      userKey = key;
-      balance = users[key].wallet?.balance || 0;
-      lives = users[key].wallet?.lives || 0;
-      updateUI();
-
-      onValue(ref(db, `users/${userKey}/wallet/balance`), snap => {
-        balance = snap.val() || 0;
-        updateUI();
-      });
-      onValue(ref(db, `users/${userKey}/wallet/lives`), snap => {
-        lives = snap.val() || 0;
-        updateUI();
-      });
-      break;
-    }
-  }
+async function loadEconomy(){
+  const res = await fetch(`${API_BASE}/user/economy?uid=${uid}`);
+  const data = await res.json();
+  economy = data;
+  updateUI();
 }
 
 function updateUI(){
-  document.getElementById('balance').innerText = `BALANCE: R${balance.toFixed(2)}`;
-  document.getElementById('livesCount').innerText = lives;
+  document.getElementById("gems").innerText = economy.gems || 0;
+  document.getElementById("lives").innerText = economy.lives || 0;
+  document.getElementById("gold").innerText = economy.gold || 0;
+  document.getElementById("silver").innerText = economy.silver || 0;
+  document.getElementById("bronze").innerText = economy.bronze || 0;
+
+  const buyBtn = document.getElementById("buyLifeBtn");
+
+  if((economy.gems || 0) >= 300){
+    buyBtn.className = "green";
+    buyBtn.disabled = false;
+  } else {
+    buyBtn.className = "grey";
+    buyBtn.disabled = true;
+  }
 }
 
-loadWallet();
-
-// ---------------- DEMO TOP UP ----------------
-document.querySelectorAll('.amount').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const amount = Number(btn.dataset.amount);
-    if(!userKey) return show("User not loaded");
-
-    if(DEMO_MODE){
-      balance += amount;
-      await update(ref(db, `users/${userKey}/wallet`), { balance, lives });
-      show(`Demo +R${amount} added`);
-      updateUI();
-      return;
-    }
-
-    // REAL MODE (PayFast) - disabled in demo
-    show("Real payments disabled in demo mode");
+document.getElementById("buyLifeBtn").onclick = async () => {
+  const res = await fetch(`${API_BASE}/convert-gems`, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ uid })
   });
-});
 
-// ---------------- BUY LIVES ----------------
-document.getElementById('heart').addEventListener('click', async () => {
-  if(balance < 0.5) return show("INSUFFICIENT BALANCE");
-  if(lives >= 5) return show("MAX 5 LIVES");
+  const data = await res.json();
+  show(data.error || "Life Purchased!");
+  loadEconomy();
+};
 
-  balance -= 0.5;
-  lives += 1;
+document.getElementById("convertGoldBtn").onclick = () => convertMedal("gold");
+document.getElementById("convertSilverBtn").onclick = () => convertMedal("silver");
+document.getElementById("convertBronzeBtn").onclick = () => convertMedal("bronze");
 
-  await update(ref(db, `users/${userKey}/wallet`), { balance, lives });
-  updateUI();
-});
+async function convertMedal(type){
+  const res = await fetch(`${API_BASE}/convert-medal`, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ uid, type })
+  });
 
-// ---------------- POPUP ----------------
-function show(msg){
-  const p = document.getElementById('popup');
-  p.innerText = msg;
-  p.style.display='block';
-  setTimeout(()=>p.style.display='none',1500);
+  const data = await res.json();
+  show(data.error || "Converted!");
+  loadEconomy();
 }
+
+function show(msg){
+  const p = document.getElementById("popup");
+  p.innerText = msg;
+  p.style.display="block";
+  setTimeout(()=>p.style.display="none",1500);
+}
+
+loadEconomy();
 </script>
 
-
 </body>
-  </html>
+</html>
