@@ -169,6 +169,7 @@ window.firebaseUser=user
 </script>
 
 <script>
+const API_BASE = "https://payfast-backend-475447495901.europe-west1.run.app";
 
 let lives=10
 
@@ -337,15 +338,11 @@ method:"POST",
 
 headers:{"Content-Type":"application/json"},
 
-body:JSON.stringify({
-
-uid:window.firebaseUser.uid
-
-})
-
-})
-
-}
+await fetch(API_BASE + "/game/continue", {
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body: JSON.stringify({ uid: window.firebaseUser.uid })
+});
 
 catch(err){
 
