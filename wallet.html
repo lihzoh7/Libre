@@ -95,7 +95,7 @@ button{
 <div class="stat">🥈 Silver <span id="silver">0</span></div>
 <div class="stat">🥉 Bronze <span id="bronze">0</span></div>
 
-<button id="buyLifeBtn">Buy 1 Life (300 Gems)</button>
+<button onclick="deposit()">Deposit R10</button>
 <button id="convertGoldBtn">Convert Gold → 5 Lives</button>
 <button id="convertSilverBtn">Convert Silver → 3 Lives</button>
 <button id="convertBronzeBtn">Convert Bronze → 2 Lives</button>
@@ -140,6 +140,24 @@ document.getElementById("buyLifeBtn").onclick = async () => {
   alert(data.error || "Life Purchased!");
   loadEconomy();
 };
+async function deposit(){
+  const res = await fetch(`${API_BASE}/payments/create`, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      uid,
+      amount: 10
+    })
+  });
+
+  const data = await res.json();
+
+  if(data.paylinkUrl){
+    window.location.href = data.paylinkUrl;
+  } else {
+    alert("Payment failed");
+  }
+}
 
 async function convertMedal(type){
   const res = await fetch(`${API_BASE}/economy/convert-medal`, {
