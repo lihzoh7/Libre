@@ -115,7 +115,7 @@ if(!uid){
 let economy = {};
 
 async function loadEconomy(){
-  const res = await fetch(`${API_BASE}/user/economy?uid=${uid}`);
+  const res = await fetch(`${API_BASE}/economy/user/economy?uid=${uid}`);
   const data = await res.json();
   economy = data;
   updateUI();
@@ -127,55 +127,33 @@ function updateUI(){
   document.getElementById("gold").innerText = economy.gold || 0;
   document.getElementById("silver").innerText = economy.silver || 0;
   document.getElementById("bronze").innerText = economy.bronze || 0;
-
-  const buyBtn = document.getElementById("buyLifeBtn");
-
-  if((economy.gems || 0) >= 300){
-    buyBtn.className = "green";
-    buyBtn.disabled = false;
-  } else {
-    buyBtn.className = "grey";
-    buyBtn.disabled = true;
-  }
 }
 
 document.getElementById("buyLifeBtn").onclick = async () => {
-  const res = await fetch(`${API_BASE}/convert-gems`, {
+  const res = await fetch(`${API_BASE}/economy/convert-gems`, {
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({ uid })
   });
 
   const data = await res.json();
-  show(data.error || "Life Purchased!");
+  alert(data.error || "Life Purchased!");
   loadEconomy();
 };
 
-document.getElementById("convertGoldBtn").onclick = () => convertMedal("gold");
-document.getElementById("convertSilverBtn").onclick = () => convertMedal("silver");
-document.getElementById("convertBronzeBtn").onclick = () => convertMedal("bronze");
-
 async function convertMedal(type){
-  const res = await fetch(`${API_BASE}/convert-medal`, {
+  const res = await fetch(`${API_BASE}/economy/convert-medal`, {
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({ uid, type })
   });
 
   const data = await res.json();
-  show(data.error || "Converted!");
+  alert(data.error || "Converted!");
   loadEconomy();
-}
-
-function show(msg){
-  const p = document.getElementById("popup");
-  p.innerText = msg;
-  p.style.display="block";
-  setTimeout(()=>p.style.display="none",1500);
 }
 
 loadEconomy();
 </script>
-
 </body>
 </html>
