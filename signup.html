@@ -3,61 +3,85 @@
 <head>
 <meta charset="UTF-8">
 <title>SPACE GLASS - Sign Up</title>
+
 <style>
 body { 
   background-color: lightblue; 
-  font-family: Arial, sans-serif; 
+  font-family: Arial; 
   display:flex; 
   justify-content:center; 
   align-items:center; 
   height:100vh; 
   margin:0; 
 }
+
+/* BLUR EFFECT */
+.blur{
+  filter: blur(5px);
+  pointer-events:none;
+}
+
 .container { 
   width:400px; 
   background: rgba(0,0,0,0.1); 
   padding:20px; 
   border-radius:8px; 
+  position:relative;
 }
+
 h1 { 
   color:white; 
   font-size:14px; 
   text-align:center; 
-  margin-bottom:10px; 
 }
+
 input { 
   width:100%; 
   padding:10px; 
   margin:5px 0; 
-  box-sizing:border-box; 
-  border-radius:4px; 
   border:none; 
+  border-radius:4px; 
 }
+
 #submitBtn { 
   width:100%; 
   padding:10px; 
-  margin-top:10px; 
-  background-color:green; 
+  background:green; 
   color:white; 
   border:none; 
-  border-radius:4px; 
   cursor:pointer; 
 }
-#back { 
-  position:absolute; 
-  top:10px; 
-  left:10px; 
-  cursor:pointer; 
-  font-size:18px; 
+
+/* POPUP */
+#popup{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:white;
+  color:black;
+  padding:30px;
+  border-radius:10px;
+  text-align:center;
+  display:none;
+  z-index:1000;
+  width:300px;
 }
-small { color:white; font-size:10px; }
+
+#popup button{
+  margin-top:15px;
+  padding:10px;
+  background:#6a0dad;
+  color:white;
+  border:none;
+  cursor:pointer;
+}
 </style>
 </head>
 
 <body>
-<div id="back" onclick="window.location.href='index.html'">↩️</div>
 
-<div class="container">
+<div class="container" id="main">
   <h1>PERSONAL DETAILS</h1>
 
   <input id="name" placeholder="Name">
@@ -65,28 +89,29 @@ small { color:white; font-size:10px; }
   <input id="email" type="email" placeholder="Email">
   <input id="cellNumber" placeholder="Cell Number">
 
-  <h1 style="margin-top:15px;">SECURITY</h1>
+  <h1>SECURITY</h1>
   <input id="password" type="password" placeholder="Password">
-  <small>Password must be at least 8 characters</small>
   <input id="confirmPassword" type="password" placeholder="Confirm Password">
 
   <button id="submitBtn">SUBMIT</button>
 </div>
 
+<!-- POPUP -->
+<div id="popup">
+  <h2>✅ Account Created</h2>
+  <p>You will be redirected to login</p>
+  <button onclick="goLogin()">OK</button>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { 
-  getAuth, 
-  createUserWithEmailAndPassword 
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { 
-  getDatabase, 
-  ref, 
-  set 
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, createUserWithEmailAndPassword } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getDatabase, ref, set } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  apiKey: "AIzaSy...",
   authDomain: "tose-ccf8f.firebaseapp.com",
   databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "tose-ccf8f"
@@ -96,41 +121,69 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+const popup = document.getElementById("popup");
+const main = document.getElementById("main");
+
 document.getElementById("submitBtn").addEventListener("click", async () => {
-  const name = document.getElementById("name").value.trim();
-  const surname = document.getElementById("surname").value.trim();
-  const email = document.getElementById("email").value.trim().toLowerCase();
-  const cellNumber = document.getElementById("cellNumber").value.trim();
-  const password = document.getElementById("password").value;
-  const confirmPassword = document.getElementById("confirmPassword").value;
+
+  const name = nameInput.value.trim();
+  const surname = surnameInput.value.trim();
+  const email = emailInput.value.trim().toLowerCase();
+  const cellNumber = cellNumberInput.value.trim();
+  const password = passwordInput.value;
+  const confirmPassword = confirmPasswordInput.value;
 
   if (!name || !surname || !email || !cellNumber || !password || !confirmPassword) {
-    alert("Fill all fields");
-    return;
+    return alert("Fill all fields");
   }
 
   if (password.length < 8) {
-    alert("Password must be at least 8 characters");
-    return;
+    return alert("Password must be at least 8 characters");
   }
 
   if (password !== confirmPassword) {
-    alert("Passwords do not match");
-    return;
+    return alert("Passwords do not match");
   }
 
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
 
-    // store profile WITHOUT password
     await set(ref(db, "users/" + cred.user.uid), {
       uid: cred.user.uid,
       name,
       surname,
       email,
       cellNumber,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      economy:{ gems:0, lives:0 }
     });
 
-    alert("Account created successfully. Please log in.");
-    window.location.href = "index.html";
+    // SHOW POPUP + BLUR
+    main.classList.add("blur");
+    popup.style.display = "block";
+
+    // AUTO REDIRECT
+    setTimeout(()=>{
+      window.location.href="index.html";
+    },3000);
+
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+// FIX: define inputs
+const nameInput = document.getElementById("name");
+const surnameInput = document.getElementById("surname");
+const emailInput = document.getElementById("email");
+const cellNumberInput = document.getElementById("cellNumber");
+const passwordInput = document.getElementById("password");
+const confirmPasswordInput = document.getElementById("confirmPassword");
+
+window.goLogin = () => {
+  window.location.href = "index.html";
+};
+</script>
+
+</body>
+  </html>
