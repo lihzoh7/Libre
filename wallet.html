@@ -1,15 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>SPACE GLASS - Wallet</title>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7026930699288972"
-     crossorigin="anonymous"></script>
+<title>Wallet</title>
 <style>
 body{
   margin:0;
-  font-family:Arial, sans-serif;
   background:#001f3f;
+  font-family:Arial;
   color:white;
   display:flex;
   justify-content:center;
@@ -25,58 +22,28 @@ body{
   position:relative;
 }
 
-#back{
-  position:absolute;
-  top:10px;
-  left:10px;
-  cursor:pointer;
-  font-size:18px;
-}
-
-h2{
-  text-align:center;
-  margin-bottom:20px;
-}
-
-.stat{
+.top{
   display:flex;
   justify-content:space-between;
-  padding:10px;
-  margin-bottom:10px;
+}
+
+.tile{
+  width:48%;
   background:#002244;
-  border-radius:6px;
+  padding:20px;
+  text-align:center;
+  border-radius:10px;
+  margin-bottom:15px;
 }
 
-button{
+.tabs button{
   width:100%;
-  padding:10px;
   margin-top:10px;
+  padding:12px;
+  background:#001f5c;
+  color:white;
   border:none;
-  border-radius:6px;
   cursor:pointer;
-  font-weight:bold;
-}
-
-.green{
-  background:#2ecc40;
-  color:black;
-}
-
-.grey{
-  background:#555;
-  color:#aaa;
-  cursor:not-allowed;
-}
-
-#popup{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  background:black;
-  padding:15px;
-  border-radius:6px;
-  display:none;
 }
 </style>
 </head>
@@ -85,93 +52,66 @@ button{
 
 <div id="wallet">
 
-<div id="back" onclick="window.location.href='main-menu.html'">↩ Back</div>
+<div class="top">
+  <span onclick="go('funds.html')">FUNDS</span>
+  <span onclick="go('purchases.html')">PURCHASES</span>
+</div>
 
-<h2>PLAYER WALLET</h2>
+<div class="tile">❤️ Lives <span id="lives">0</span></div>
+<div class="tile">💎 Gems <span id="gems">0</span></div>
 
-<div class="stat">💎 Gems <span id="gems">0</span></div>
-<div class="stat">❤️ Lives <span id="lives">0</span></div>
-<div class="stat">🥇 Gold <span id="gold">0</span></div>
-<div class="stat">🥈 Silver <span id="silver">0</span></div>
-<div class="stat">🥉 Bronze <span id="bronze">0</span></div>
-
-<button onclick="deposit()">Deposit R10</button>
-<button id="convertGoldBtn">Convert Gold → 5 Lives</button>
-<button id="convertSilverBtn">Convert Silver → 3 Lives</button>
-<button id="convertBronzeBtn">Convert Bronze → 2 Lives</button>
+<div class="tabs">
+  <button onclick="buy('R1.50','300')">R1.50 (300 💎)</button>
+  <button onclick="buy('R3','900')">R3 (900 💎)</button>
+  <button onclick="buy('R5','2L500G')">R5 (2♥ + 500 💎)</button>
+</div>
 
 </div>
 
-<div id="popup"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-<script>
-const API_BASE = "https://payfast-backend-475447495901.europe-west1.run.app";
+const app = initializeApp({
+  apiKey:"AIza...",
+  databaseURL:"https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+});
 
+const db = getDatabase(app);
 const uid = localStorage.getItem("uid");
-if(!uid){
-  window.location.href = "index.html";
+
+async function load(){
+  const snap = await get(ref(db,`users/${uid}/economy`));
+  const d = snap.val() || {};
+  gems.innerText = d.gems || 0;
+  lives.innerText = d.lives || 0;
 }
 
-let economy = {};
+window.buy = async (price,type)=>{
 
-async function loadEconomy(){
-  const res = await fetch(`${API_BASE}/economy/user/economy?uid=${uid}`);
-  const data = await res.json();
-  economy = data;
-  updateUI();
-}
-
-function updateUI(){
-  document.getElementById("gems").innerText = economy.gems || 0;
-  document.getElementById("lives").innerText = economy.lives || 0;
-  document.getElementById("gold").innerText = economy.gold || 0;
-  document.getElementById("silver").innerText = economy.silver || 0;
-  document.getElementById("bronze").innerText = economy.bronze || 0;
-}
-
-document.getElementById("buyLifeBtn").onclick = async () => {
-  const res = await fetch(`${API_BASE}/economy/convert-gems`, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ uid })
+  await push(ref(db,"payments/pending"),{
+    uid,
+    product:type,
+    amount:price,
+    time:Date.now()
   });
 
-  const data = await res.json();
-  alert(data.error || "Life Purchased!");
-  loadEconomy();
-};
-async function deposit(){
-  const res = await fetch(`${API_BASE}/payments/create`, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({
-      uid,
-      amount: 10
-    })
-  });
-
-  const data = await res.json();
-
-  if(data.paylinkUrl){
-    window.location.href = data.paylinkUrl;
-  } else {
-    alert("Payment failed");
+  // redirect to ikhokha
+  if(type==="300"){
+    window.location.href="https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-150";
   }
-}
+  if(type==="900"){
+    window.location.href="https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-900";
+  }
+  if(type==="2L500G"){
+    window.location.href="https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-500";
+  }
+};
 
-async function convertMedal(type){
-  const res = await fetch(`${API_BASE}/economy/convert-medal`, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ uid, type })
-  });
+window.go = (p)=> window.location.href=p;
 
-  const data = await res.json();
-  alert(data.error || "Converted!");
-  loadEconomy();
-}
-
-loadEconomy();
+load();
 </script>
+
 </body>
 </html>
