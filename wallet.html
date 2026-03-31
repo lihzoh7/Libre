@@ -2,6 +2,7 @@
 <html>
 <head>
 <title>Wallet</title>
+
 <style>
 body{
   margin:0;
@@ -19,16 +20,9 @@ body{
   background:#003366;
   padding:20px;
   border-radius:12px;
-  position:relative;
-}
-
-.top{
-  display:flex;
-  justify-content:space-between;
 }
 
 .tile{
-  width:48%;
   background:#002244;
   padding:20px;
   text-align:center;
@@ -36,7 +30,7 @@ body{
   margin-bottom:15px;
 }
 
-.tabs button{
+button{
   width:100%;
   margin-top:10px;
   padding:12px;
@@ -52,65 +46,64 @@ body{
 
 <div id="wallet">
 
-<div class="top">
-  <span onclick="go('funds.html')">FUNDS</span>
-  <span onclick="go('purchases.html')">PURCHASES</span>
-</div>
+<div class="tile">❤️ Lives: <span id="lives">0</span></div>
+<div class="tile">💎 Gems: <span id="gems">0</span></div>
 
-<div class="tile">❤️ Lives <span id="lives">0</span></div>
-<div class="tile">💎 Gems <span id="gems">0</span></div>
-
-<div class="tabs">
-  <button onclick="buy('R1.50','300')">R1.50 (300 💎)</button>
-  <button onclick="buy('R3','900')">R3 (900 💎)</button>
-  <button onclick="buy('R5','2L500G')">R5 (2♥ + 500 💎)</button>
-</div>
+<button onclick="buy('150','300')">R1.50 (300 💎)</button>
+<button onclick="buy('900','900')">R3 (900 💎)</button>
+<button onclick="buy('500','2L500G')">R5 (2❤️ + 500 💎)</button>
 
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, get, push, onValue } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const app = initializeApp({
-  apiKey:"AIza...",
+  apiKey:"AIzaSy...",
   databaseURL:"https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
 });
 
 const db = getDatabase(app);
 const uid = localStorage.getItem("uid");
 
-async function load(){
-  const snap = await get(ref(db,`users/${uid}/economy`));
+// 🚨 PROTECT PAGE
+if(!uid){
+  alert("Please login first");
+  window.location.href="index.html";
+}
+
+// 🔥 LIVE ECONOMY UPDATE
+onValue(ref(db,`users/${uid}/economy`), snap=>{
   const d = snap.val() || {};
   gems.innerText = d.gems || 0;
   lives.innerText = d.lives || 0;
-}
+});
 
-window.buy = async (price,type)=>{
+// 💰 BUY FUNCTION
+window.buy = async (amount, product)=>{
 
+  // SAVE PAYMENT REQUEST
   await push(ref(db,"payments/pending"),{
     uid,
-    product:type,
-    amount:price,
-    time:Date.now()
+    product,
+    amount,
+    status:"pending",
+    createdAt:Date.now()
   });
 
-  // redirect to ikhokha
-  if(type==="300"){
+  // 🔥 REDIRECT (NO DELAY)
+  if(product==="300"){
     window.location.href="https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-150";
   }
-  if(type==="900"){
+  if(product==="900"){
     window.location.href="https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-900";
   }
-  if(type==="2L500G"){
+  if(product==="2L500G"){
     window.location.href="https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-500";
   }
 };
-
-window.go = (p)=> window.location.href=p;
-
-load();
 </script>
 
 </body>
