@@ -1,366 +1,241 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>***SLIDE***</title>
-
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7026930699288972" crossorigin="anonymous"></script>
+<meta charset="UTF-8">
+<title>SLIDE GAME</title>
 
 <style>
-:root{--game-width:100%;--game-height:500px}
-
 body{
-margin:0;
-display:flex;
-align-items:center;
-justify-content:center;
-height:100vh;
-background:#111;
-font-family:Inter,system-ui,Arial;
-color:#fff
+  margin:0;
+  background:#111;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  color:white;
+  font-family:Arial;
 }
 
-.game-wrap{
-width:800px;
-max-width:96vw;
-height:var(--game-height);
-position:relative;
-overflow:hidden;
-border-radius:12px;
-box-shadow:0 10px 40px rgba(0,0,0,.7)
+#game{
+  width:800px;
+  height:500px;
+  position:relative;
+  background:url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?fit=crop&w=1600&q=80');
+  overflow:hidden;
 }
 
-.bg{
-position:absolute;
-inset:0;
-background-image:url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?fit=crop&w=1600&q=80');
-background-size:cover;
-background-repeat:repeat-x
+#player{
+  position:absolute;
+  left:120px;
+  top:200px;
+  font-size:40px;
 }
 
-.player{
-position:absolute;
-left:120px;
-width:48px;
-height:72px;
-font-size:40px;
-display:flex;
-align-items:center;
-justify-content:center;
-z-index:30
+#hud{
+  position:absolute;
+  top:10px;
+  left:10px;
 }
 
-.hud{
-position:absolute;
-left:12px;
-top:12px;
-z-index:50
+#overlay{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,0.7);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
 }
 
-.title{
-font-weight:800;
-font-style:italic;
-font-size:20px
+#lifePopup{
+  position:fixed;
+  inset:0;
+  background:black;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
 }
 
-.score{
-margin-top:6px;
-font-size:16px
-}
-
-.overlay{
-position:absolute;
-inset:0;
-display:flex;
-align-items:center;
-justify-content:center;
-background:rgba(0,0,0,.6);
-flex-direction:column;
-z-index:120
-}
-
-.btn{
-margin-top:14px;
-padding:10px 16px;
-border-radius:8px;
-border:0;
-background:#1f8f3d;
-color:white;
-font-weight:700;
-cursor:pointer
+button{
+  padding:10px;
+  margin:5px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="game-wrap" id="game">
+<!-- LIFE SELECTOR -->
+<div id="lifePopup">
+  <h2>Lives ♥ = <span id="balance">0</span></h2>
 
-<div class="bg" id="bg"></div>
+  <div>
+    <button onclick="dec()">➖</button>
+    <span id="count">0</span>
+    <button onclick="inc()">➕</button>
+  </div>
 
-<div class="player" id="player">🍸</div>
-
-<div class="hud">
-<div class="title"><strong><em>SLIDE</em></strong></div>
-
-<div class="score">
-Score: <span id="score">0</span>
+  <button onclick="enterGame()">ENTER</button>
 </div>
 
-<div class="lives">
-Lives: <span id="lives">10</span>
+<div id="game">
+
+<div id="player">🍸</div>
+
+<div id="hud">
+Score: <span id="score">0</span><br>
+Lives: <span id="lives">0</span>
 </div>
 
-</div>
-
-<div id="rings"></div>
-<div id="fruits"></div>
-
-<div id="overlay" class="overlay" style="display:none">
-
-<div id="overlayText" style="font-size:28px;font-weight:800"></div>
-
-<div id="finalDetails"></div>
-
-<div style="display:flex;gap:12px">
-
-<button id="continueBtn" class="btn">
-CONTINUE (-1 LIFE)
-</button>
-
-<button id="leaveBtn" class="btn">
-LEAVE
-</button>
-
+<div id="overlay">
+<h2 id="msg"></h2>
+<button onclick="continueGame()">CONTINUE (-1)</button>
+<button onclick="exitGame()">EXIT</button>
 </div>
 
 </div>
-
-</div>
-
-<script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"
-import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"
-
-const firebaseConfig={
-apiKey:"AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-authDomain:"tose-ccf8f.firebaseapp.com",
-projectId:"tose-ccf8f"
-}
-
-const app=initializeApp(firebaseConfig)
-
-const auth=getAuth(app)
-
-onAuthStateChanged(auth,(user)=>{
-
-if(!user){
-window.location.href="index.html"
-}
-
-else{
-window.firebaseUser=user
-}
-
-})
-
-</script>
 
 <script>
 const API_BASE = "https://payfast-backend-475447495901.europe-west1.run.app";
+let selected = 0;
+let maxLives = 0;
+let sessionId = null;
 
-let lives=10
+let score = 0;
+let lives = 0;
 
-let score=0
+let y = 200;
+let velocity = 0;
 
-const livesEl=document.getElementById("lives")
+const GRAVITY = 0.6;
+const JUMP = -10;
 
+/* ---------------- LOAD LIVES ---------------- */
 async function loadLives(){
+  const uid = localStorage.getItem("uid");
 
-try{
+  const res = await fetch(API+"/economy/user/economy?uid="+uid);
+  const data = await res.json();
 
-const uid=window.firebaseUser.uid
-
-const resp=await fetch("https://payfast-backend-475447495901.europe-west1.run.app/game/start",{
-
-method:"POST",
-
-headers:{"Content-Type":"application/json"},
-
-body:JSON.stringify({uid})
-
-})
-
-const data=await resp.json()
-
-lives=data.lives ?? 10
-
-livesEl.textContent=lives
-
-if(lives<=0){
-
-overlay.style.display="flex"
-
-overlayText.textContent="No Lives Available"
-
-continueBtn.style.display="none"
-
+  maxLives = data.lives || 0;
+  document.getElementById("balance").innerText = maxLives;
 }
 
+/* ---------------- SELECTOR ---------------- */
+function inc(){
+  if(selected < maxLives && selected < 5){
+    selected++;
+    count.innerText = selected;
+  }
 }
 
-catch(err){
-
-console.log("Lives fallback to 10")
-
-lives=10
-
-livesEl.textContent=lives
-
+function dec(){
+  if(selected > 0){
+    selected--;
+    count.innerText = selected;
+  }
 }
 
+/* ---------------- START GAME ---------------- */
+async function enterGame(){
+
+  if(selected <= 0){
+    alert("INSUFFICIENT LIVES");
+    return;
+  }
+
+  const uid = localStorage.getItem("uid");
+
+  const res = await fetch(API+"/game/start",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ uid })
+  });
+
+  const data = await res.json();
+
+  if(data.error){
+    alert(data.error);
+    return;
+  }
+
+  sessionId = data.sessionId;
+  lives = data.livesRemaining;
+
+  document.getElementById("lives").innerText = lives;
+
+  document.getElementById("lifePopup").style.display="none";
+
+  startGame();
 }
 
-const waitUser=setInterval(()=>{
+/* ---------------- GAME LOOP ---------------- */
+function startGame(){
 
-if(window.firebaseUser){
+  function loop(){
+    velocity += GRAVITY;
+    y += velocity;
 
-clearInterval(waitUser)
+    if(y > 420){
+      endGame("💔 You crashed");
+      return;
+    }
 
-loadLives()
+    player.style.top = y+"px";
 
+    requestAnimationFrame(loop);
+  }
+
+  loop();
 }
 
-},50)
-
-
-const continueBtn=document.getElementById("continueBtn")
-
-const leaveBtn=document.getElementById("leaveBtn")
-
-const overlay=document.getElementById("overlay")
-
-const overlayText=document.getElementById("overlayText")
-
-const scoreEl=document.getElementById("score")
-
-let gameOver=false
-
-let playerY=200
-
-let velocity=0
-
-const GRAVITY=0.6
-
-const JUMP_FORCE=-10
-
-const GAME_HEIGHT=500
-
-function endGame(text){
-
-if(gameOver) return
-
-gameOver=true
-
-overlayText.textContent=text
-
-overlay.style.display="flex"
-
-continueBtn.style.display=lives>0?"inline-block":"none"
-
-}
-
-function jump(){
-
-if(gameOver) return
-
-velocity=JUMP_FORCE
-
-}
-
-document.getElementById("game").addEventListener("click",jump)
-
-window.addEventListener("keydown",(e)=>{
-
-if(e.code==="Space"){
-
-jump()
-
-}
-
-})
-
-function update(){
-
-if(gameOver) return
-
-velocity+=GRAVITY
-
-playerY+=velocity
-
-if(playerY>GAME_HEIGHT-80){
-
-playerY=GAME_HEIGHT-80
-
-endGame("💔 Glass Shattered")
-
-return
-
-}
-
-requestAnimationFrame(update)
-
-}
-
-requestAnimationFrame(update)
-
-continueBtn.addEventListener("click",async()=>{
-
-if(lives<=0) return
-
-lives--
-
-livesEl.textContent=lives
-
-overlay.style.display="none"
-
-gameOver=false
-
-velocity=0
-
-try{
-
-await fetch("https://payfast-backend-475447495901.europe-west1.run.app/game/continue",{
-
-method:"POST",
-
-headers:{"Content-Type":"application/json"},
-
-await fetch(API_BASE + "/game/continue", {
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body: JSON.stringify({ uid: window.firebaseUser.uid })
+/* ---------------- JUMP ---------------- */
+document.addEventListener("click",()=>{
+  velocity = JUMP;
 });
 
-catch(err){
-
-console.log("Backend continue skipped")
-
+/* ---------------- END GAME ---------------- */
+function endGame(text){
+  msg.innerText = text;
+  overlay.style.display="flex";
 }
 
-requestAnimationFrame(update)
+/* ---------------- CONTINUE ---------------- */
+async function continueGame(){
 
-})
+  const uid = localStorage.getItem("uid");
 
-leaveBtn.addEventListener("click",()=>{
+  const res = await fetch(API+"/game/continue",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ uid, sessionId })
+  });
 
-location.reload()
+  const data = await res.json();
 
-})
+  if(data.error){
+    alert(data.error);
+    return;
+  }
 
+  lives = data.livesRemaining;
+  document.getElementById("lives").innerText = lives;
+
+  overlay.style.display="none";
+  y = 200;
+  velocity = 0;
+  startGame();
+}
+
+/* ---------------- EXIT ---------------- */
+function exitGame(){
+  location.reload();
+}
+
+/* ---------------- INIT ---------------- */
+loadLives();
 </script>
 
 </body>
-  </html>
+      </html>
