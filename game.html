@@ -1,374 +1,355 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>SLIDE GAME</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SLIDE</title>
 
 <style>
 body{
-  margin:0;
-  background:#000;
-  overflow:hidden;
-  font-family:Arial;
-  color:white;
+margin:0;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+background:#111;
+color:white;
+font-family:Arial;
 }
 
-#game{
-  position:relative;
-  width:100vw;
-  height:100vh;
-  overflow:hidden;
+.game{
+width:800px;
+height:500px;
+position:relative;
+overflow:hidden;
+background:url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?fit=crop&w=1600&q=80');
+background-size:cover;
 }
 
-#bg{
-  position:absolute;
-  width:100%;
-  height:100%;
-  background:url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?fit=crop&w=1600&q=80');
-  background-size:cover;
-}
-
-/* PLAYER */
 #player{
-  position:absolute;
-  left:80px;
-  top:200px;
-  font-size:42px;
-  z-index:10;
+position:absolute;
+left:120px;
+top:200px;
+font-size:40px;
 }
 
-/* HUD */
-#hud{
-  position:absolute;
-  top:10px;
-  width:100%;
-  display:flex;
-  justify-content:space-between;
-  padding:0 20px;
-  font-weight:bold;
-  z-index:50;
+.hud{
+position:absolute;
+top:10px;
+left:10px;
+z-index:10;
 }
 
-#centerHud{
-  position:absolute;
-  top:10px;
-  width:100%;
-  text-align:center;
-  font-weight:bold;
-}
-
-/* POPUPS */
 .popup{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  background:rgba(0,0,0,0.8);
-  padding:20px;
-  border-radius:10px;
-  text-align:center;
-  z-index:100;
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:black;
+padding:20px;
+text-align:center;
+z-index:100;
 }
 
-/* RINGS */
-.ring{
-  position:absolute;
-  font-size:40px;
+.btn{
+padding:10px;
+margin:5px;
+cursor:pointer;
 }
 
-/* FRUITS */
-.fruit{
-  position:absolute;
-  font-size:28px;
+.ring,.enemy,.fruit{
+position:absolute;
+font-size:30px;
 }
-
-/* ENEMIES */
-.enemy{
-  position:absolute;
-  font-size:32px;
-}
-
 </style>
 </head>
 
 <body>
 
-<div id="game">
-
-<div id="bg"></div>
+<div class="game" id="game">
 
 <div id="player">🍸</div>
 
-<div id="hud">
-  <div>Score: <span id="score">0</span></div>
-  <div>❤️ <span id="lives">0</span></div>
+<div class="hud">
+Score: <span id="score">0</span><br>
+❤️ <span id="lives">0</span>
 </div>
 
-<div id="centerHud">💍 <span id="ringsPassed">0</span></div>
+<div id="popup" class="popup"></div>
 
 </div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  authDomain: "tose-ccf8f.firebaseapp.com",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tose-ccf8f"
-};
-
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-
-onAuthStateChanged(auth,(user)=>{
-  if(!user) location.href="index.html";
-  else{
-    window.firebaseUser = user;
-    initGame(user);
-  }
-});
 
 <script>
-const API = "https://payfast-backend-475447495901.europe-west1.run.app";
+const uid = localStorage.getItem("uid");
 
-let player=document.getElementById("player");
-let scoreEl=document.getElementById("score");
-let livesEl=document.getElementById("lives");
-let ringsEl=document.getElementById("ringsPassed");
+let player = document.getElementById("player");
+let popup = document.getElementById("popup");
 
 let y=200, velocity=0;
-let gravity=0.6;
-let jumpForce=-10;
+let gravity=0.6, jump=-10;
 
 let score=0;
-let lives=3;
-let ringsPassed=0;
-let missedRings=0;
+let lives=0;
+let gameLives=0;
+let running=false;
 
-let boost=false;
-let gameRunning=true;
+/* =========================
+   🧠 GAME TIMER (OPEN/CLOSE)
+========================= */
+function gameOpen(){
+  const hour = new Date().getHours();
+  return hour >= 8 && hour <= 22; // OPEN 8AM - 10PM
+}
 
-/* INIT */
-function initGame(user){
+/* =========================
+   🎯 LIFE SELECTOR
+========================= */
+function showLifeSelector(){
 
-  const data = JSON.parse(localStorage.getItem("wallet_"+user.uid) || "{}");
-
+  let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
   lives = data.lives || 0;
 
-  if(lives <= 0){
-    alert("NO LIVES");
-    location.href = "main-menu.html";
+  if(!gameOpen()){
+    popup.innerHTML = "<h2>GAME CLOSED</h2>";
     return;
   }
 
-  livesEl.innerText = lives;
+  let count = 0;
 
-  startLoops();
-  }
+  popup.style.display="block";
 
-/* GAME LOOP */
-function startLoops(){
-  requestAnimationFrame(update);
-  spawnRings();
-  spawnFruits();
-  spawnEnemies();
+  popup.innerHTML = `
+    <h3>Lives ♥ = ${lives}</h3>
+
+    <div>
+      <button onclick="dec()">➖</button>
+      <span id="count">0</span>
+      <button onclick="inc()">➕</button>
+    </div>
+
+    <button onclick="enterGame()">ENTER</button>
+  `;
+
+  window.inc = ()=>{
+    if(count < lives && count < 5){
+      count++;
+      document.getElementById("count").innerText=count;
+    }
+  };
+
+  window.dec = ()=>{
+    if(count > 0){
+      count--;
+      document.getElementById("count").innerText=count;
+    }
+  };
+
+  window.enterGame = ()=>{
+    if(count <= 0){
+      alert("SELECT LIVES");
+      return;
+    }
+
+    if(count > lives){
+      alert("INSUFFICIENT LIVES");
+      return;
+    }
+
+    let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
+
+    data.lives -= count;
+    localStorage.setItem("wallet_"+uid, JSON.stringify(data));
+
+    gameLives = count - 1; // one used immediately
+    document.getElementById("lives").innerText = gameLives;
+
+    popup.style.display="none";
+
+    startGame();
+  };
 }
 
-/* UPDATE */
-function update(){
+/* =========================
+   🚀 START GAME
+========================= */
+function startGame(){
+  running = true;
+  requestAnimationFrame(update);
+  spawnRings();
+  spawnEnemies();
+  spawnFruits();
+}
 
-  if(!gameRunning) return;
+/* =========================
+   🎮 PLAYER CONTROL
+========================= */
+document.addEventListener("click",()=>{
+  velocity = jump;
+});
+
+/* =========================
+   🔄 GAME LOOP
+========================= */
+function update(){
+  if(!running) return;
 
   velocity += gravity;
   y += velocity;
 
-  if(y < 0) y = 0;
-  if(y > window.innerHeight-80){
-    death();
+  if(y > 420){
+    loseLife();
     return;
   }
 
-  player.style.top = y + "px";
+  player.style.top = y+"px";
 
   requestAnimationFrame(update);
 }
 
-/* JUMP */
-document.addEventListener("click",()=>{
-  velocity = jumpForce;
-});
-
-/* RINGS */
+/* =========================
+   💍 RINGS
+========================= */
 function spawnRings(){
-  let count=0;
+  setInterval(()=>{
+    if(!running) return;
 
-  let interval=setInterval(()=>{
-    if(count>=150){ clearInterval(interval); winGame(); return; }
+    let r=document.createElement("div");
+    r.className="ring";
+    r.innerText="💍";
+    r.style.left="800px";
+    r.style.top=Math.random()*400+"px";
 
-    let ring=document.createElement("div");
-    ring.className="ring";
-    ring.innerText="💍";
-    ring.style.left=window.innerWidth+"px";
-    ring.style.top=Math.random()*400+"px";
-
-    document.getElementById("game").appendChild(ring);
+    game.appendChild(r);
 
     let move=setInterval(()=>{
-      let x=ring.offsetLeft-4;
-      ring.style.left=x+"px";
+      let x=r.offsetLeft-5;
+      r.style.left=x+"px";
 
-      if(checkCollision(ring)){
-        score+=7;
-        ringsPassed++;
-        updateHUD();
-        ring.remove();
+      if(hit(r)){
+        score+=10;
+        scoreEl.innerText=score;
+        r.remove();
         clearInterval(move);
-
-        if([30,70,100,140].includes(ringsPassed)){
-          score*=2;
-          alert("✖2️⃣");
-        }
       }
 
       if(x<0){
-        missedRings++;
-        ring.remove();
+        r.remove();
         clearInterval(move);
-        if(missedRings>=5) death();
       }
 
     },16);
 
-    count++;
-
-  },2500);
+  },2000);
 }
 
-/* FRUITS */
-function spawnFruits(){
-
-  const fruits=[
-    {emoji:"🍒",points:4,time:3000},
-    {emoji:"🫐",points:6,time:5000},
-    {emoji:"🍓",points:8,time:7000}
-  ];
-
-  fruits.forEach(f=>{
-    setInterval(()=>{
-      let el=document.createElement("div");
-      el.className="fruit";
-      el.innerText=f.emoji;
-      el.style.left=Math.random()*window.innerWidth+"px";
-      el.style.top=Math.random()*window.innerHeight+"px";
-
-      document.getElementById("game").appendChild(el);
-
-      let move=setInterval(()=>{
-        if(checkCollision(el)){
-          score+=f.points;
-          updateHUD();
-          el.remove();
-          clearInterval(move);
-        }
-      },100);
-
-      setTimeout(()=>el.remove(),4000);
-
-    },f.time);
-  });
-
-}
-
-/* ENEMIES */
+/* =========================
+   🪰 ENEMIES
+========================= */
 function spawnEnemies(){
-
   setInterval(()=>{
-    let fly=document.createElement("div");
-    fly.className="enemy";
-    fly.innerText="🪰";
-    fly.style.left=window.innerWidth+"px";
-    fly.style.top=Math.random()*400+"px";
+    if(!running) return;
 
-    document.getElementById("game").appendChild(fly);
+    let e=document.createElement("div");
+    e.className="enemy";
+    e.innerText="🪰";
+    e.style.left="800px";
+    e.style.top=Math.random()*400+"px";
+
+    game.appendChild(e);
 
     let move=setInterval(()=>{
-      fly.style.left=(fly.offsetLeft-6)+"px";
+      e.style.left=(e.offsetLeft-6)+"px";
 
-      if(checkCollision(fly)){
-        death();
+      if(hit(e)){
+        loseLife();
       }
 
-      if(fly.offsetLeft<0){
-        fly.remove();
+      if(e.offsetLeft<0){
+        e.remove();
         clearInterval(move);
       }
 
     },16);
 
-  },7500);
-
+  },5000);
 }
 
-/* COLLISION */
-function checkCollision(el){
-  let r1=player.getBoundingClientRect();
-  let r2=el.getBoundingClientRect();
+/* =========================
+   🍓 FRUITS
+========================= */
+function spawnFruits(){
+  setInterval(()=>{
+    if(!running) return;
 
-  return !(r1.right<r2.left || r1.left>r2.right || r1.bottom<r2.top || r1.top>r2.bottom);
+    let f=document.createElement("div");
+    f.className="fruit";
+    f.innerText="🍓";
+    f.style.left=Math.random()*700+"px";
+    f.style.top=Math.random()*400+"px";
+
+    game.appendChild(f);
+
+    setTimeout(()=>{
+      if(hit(f)){
+        score+=5;
+        scoreEl.innerText=score;
+      }
+      f.remove();
+    },3000);
+
+  },4000);
 }
 
-/* UPDATE HUD */
-function updateHUD(){
-  scoreEl.innerText=score;
-  ringsEl.innerText=ringsPassed;
+/* =========================
+   💥 COLLISION
+========================= */
+function hit(el){
+  let a=player.getBoundingClientRect();
+  let b=el.getBoundingClientRect();
+
+  return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
 }
 
-/* DEATH */
-function death(){
-  gameRunning=false;
+/* =========================
+   💔 LIFE SYSTEM
+========================= */
+function loseLife(){
+  running=false;
 
-  if(lives>0){
-    if(confirm("💔 BROKEN\nContinue?")){
-      lives--;
-      livesEl.innerText=lives;
-      gameRunning=true;
-      y=200;
-      velocity=0;
-      update();
-      return;
-    }
+  if(gameLives>0){
+    popup.style.display="block";
+    popup.innerHTML=`
+      <h2>💔 Continue?</h2>
+      <button onclick="cont()">YES (-1)</button>
+      <button onclick="exit()">EXIT</button>
+    `;
+  }else{
+    endGame();
   }
-
-  endGame();
 }
 
-/* WIN */
-function winGame(){
-  gameRunning=false;
-  alert("🎉 CONGRATULATIONS");
-  endGame();
-}
+window.cont = ()=>{
+  gameLives--;
+  document.getElementById("lives").innerText=gameLives;
+  popup.style.display="none";
+  y=200;
+  velocity=0;
+  running=true;
+  update();
+};
 
-/* SAVE SCORE */
-async function endGame(){
+window.exit = ()=> endGame();
 
-  try{
-    await fetch("https://payfast-backend-475447495901.europe-west1.run.app/scores/current",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        uid:window.firebaseUser.uid,
-        score:score
-      })
-    });
-  }catch(e){}
-
+/* =========================
+   🏁 END GAME
+========================= */
+function endGame(){
   alert("FINAL SCORE: "+score);
   location.href="main-menu.html";
 }
 
+/* START */
+showLifeSelector();
 </script>
 
 </body>
