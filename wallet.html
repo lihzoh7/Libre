@@ -71,32 +71,22 @@ R5 (2♥ + 500 💎)
 <script>
 const uid = localStorage.getItem("uid");
 
-/* LOAD WALLET */
+/* LOAD */
 function load(){
   const data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
 
-  document.getElementById("gems").innerText = data.gems || 0;
-  document.getElementById("lives").innerText = data.lives || 0;
+  gems.innerText = data.gems || 0;
+  lives.innerText = data.lives || 0;
 }
 
-/* BUY (SAVE LOCALLY FOR ADMIN) */
+/* BUY REQUEST */
 function buy(price,item,link){
-
-  if(!uid){
-    alert("User not logged in");
-    return;
-  }
 
   let requests = JSON.parse(localStorage.getItem("walletRequests") || "[]");
 
   requests.push({
     id: Date.now(),
     uid,
-    name: localStorage.getItem("name") || "Unknown",
-    surname: localStorage.getItem("surname") || "",
-    email: localStorage.getItem("email") || "",
-    number: localStorage.getItem("number") || "",
-    reference: localStorage.getItem("reference") || "",
     price,
     item,
     timestamp: Date.now()
@@ -106,17 +96,15 @@ function buy(price,item,link){
 
   alert("Request sent. Complete payment.");
 
-  setTimeout(()=>{
-    window.location.href = link;
-  },800);
+  setTimeout(()=> window.location.href = link, 800);
 }
 
-/* CONVERT GEMS TO LIFE */
+/* ADMIN WILL ADD LIVES — BUT THIS IS MANUAL OPTION */
 function buyLife(){
   let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
 
   if((data.gems || 0) < 300){
-    alert("Insufficient Gems");
+    alert("Not enough gems");
     return;
   }
 
