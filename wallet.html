@@ -1,43 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Wallet</title>
+<meta charset="UTF-8">
+<title>WALLET</title>
 
 <style>
 body{
   margin:0;
-  background:#001f3f;
   font-family:Arial;
+  background:#001f3f;
   color:white;
   display:flex;
   justify-content:center;
-  align-items:center;
-  height:100vh;
 }
 
 #wallet{
   width:400px;
-  background:#003366;
   padding:20px;
-  border-radius:12px;
+}
+
+.tiles{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
 }
 
 .tile{
-  background:#002244;
+  background:#003366;
   padding:20px;
   text-align:center;
   border-radius:10px;
-  margin-bottom:15px;
+  cursor:pointer;
 }
 
-button{
-  width:100%;
+.tab{
   margin-top:10px;
-  padding:12px;
   background:#001f5c;
-  color:white;
-  border:none;
+  padding:15px;
+  text-align:center;
   cursor:pointer;
+}
+
+#popup{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:white;
+  color:black;
+  padding:20px;
+  display:none;
 }
 </style>
 </head>
@@ -46,65 +58,70 @@ button{
 
 <div id="wallet">
 
-<div class="tile">❤️ Lives: <span id="lives">0</span></div>
-<div class="tile">💎 Gems: <span id="gems">0</span></div>
+<h2>WALLET</h2>
 
-<button onclick="buy('150','300')">R1.50 (300 💎)</button>
-<button onclick="buy('900','900')">R3 (900 💎)</button>
-<button onclick="buy('500','2L500G')">R5 (2❤️ + 500 💎)</button>
+<div class="tiles">
+  <div class="tile">💎 <span id="gems">0</span></div>
+  <div class="tile" onclick="buyLife()">❤️ <span id="lives">0</span></div>
+</div>
+
+<div class="tab" onclick="buy('R1.50','300 gems','https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-150')">
+R1.50 (300 💎)
+</div>
+
+<div class="tab" onclick="buy('R3','900 gems','https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-900')">
+R3 (900 💎)
+</div>
+
+<div class="tab" onclick="buy('R5','2 lives + 500 gems','https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-500')">
+R5 (2♥ + 500 💎)
+</div>
 
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get, push, onValue } 
-from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+<div id="popup"></div>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  authDomain: "tose-ccf8f.firebaseapp.com",
-  projectId: "tose-ccf8f"
-};
-
-const db = getDatabase(app);
+<script>
+const API = "https://payfast-backend-475447495901.europe-west1.run.app";
 const uid = localStorage.getItem("uid");
 
-// 🚨 PROTECT PAGE
-if(!uid){
-  alert("Please login first");
-  window.location.href="index.html";
+async function load(){
+  const res = await fetch(API+"/economy/user/economy?uid="+uid);
+  const data = await res.json();
+
+  gems.innerText = data.gems || 0;
+  lives.innerText = data.lives || 0;
 }
 
-// 🔥 LIVE ECONOMY UPDATE
-onValue(ref(db,`users/${uid}/economy`), snap=>{
-  const d = snap.val() || {};
-  gems.innerText = d.gems || 0;
-  lives.innerText = d.lives || 0;
-});
-
-// 💰 BUY FUNCTION
-window.buy = async (amount, product)=>{
-
-  // SAVE PAYMENT REQUEST
-  await push(ref(db,"payments/pending"),{
-    uid,
-    product,
-    amount,
-    status:"pending",
-    createdAt:Date.now()
+function buy(price,item,link){
+  // SEND REQUEST TO ADMIN
+  fetch(API+"/money/request",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      uid,
+      price,
+      item,
+      timestamp:Date.now()
+    })
   });
 
-  // 🔥 REDIRECT (NO DELAY)
-  if(product==="300"){
-    window.location.href="https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-150";
-  }
-  if(product==="900"){
-    window.location.href="https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-900";
-  }
-  if(product==="2L500G"){
-    window.location.href="https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-500";
-  }
-};
+  // REDIRECT TO IKHOKHA
+  window.location.href = link;
+}
+
+function buyLife(){
+  fetch(API+"/economy/convert-gems",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({uid})
+  }).then(r=>r.json()).then(d=>{
+    alert(d.error || "Life Purchased");
+    load();
+  });
+}
+
+load();
 </script>
 
 </body>
