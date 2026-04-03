@@ -133,26 +133,19 @@ const API = "https://payfast-backend-475447495901.europe-west1.run.app";
 const uid = localStorage.getItem("uid");
 
 /* PLAY BUTTON */
-document.getElementById("playBtn").onclick = async ()=>{
-  const res = await fetch(API + "/game/start",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({uid})
-  });
+document.getElementById("playBtn").onclick = ()=>{
 
-  const data = await res.json();
+  const data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
 
-  if(data.error === "GAME_RESTING"){
-    alert("GAME CLOSED");
-    return;
-  }
-
-  if(data.error === "NO_LIVES"){
+  if(!data.lives || data.lives <= 0){
     alert("NO LIVES");
     return;
   }
 
-  localStorage.setItem("sessionId", data.sessionId);
+  // REMOVE 1 LIFE BEFORE PLAY
+  data.lives -= 1;
+  localStorage.setItem("wallet_"+uid, JSON.stringify(data));
+
   window.location.href="game.html";
 };
 
