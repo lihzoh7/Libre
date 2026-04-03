@@ -151,21 +151,22 @@ let boost=false;
 let gameRunning=true;
 
 /* INIT */
-async function initGame(user){
+function initGame(user){
 
-  const res = await fetch(API + "/game/start",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({uid:user.uid})
-  });
+  const data = JSON.parse(localStorage.getItem("wallet_"+user.uid) || "{}");
 
-  const data = await res.json();
+  lives = data.lives || 0;
 
-  lives = data.lives || 3;
+  if(lives <= 0){
+    alert("NO LIVES");
+    location.href = "main-menu.html";
+    return;
+  }
+
   livesEl.innerText = lives;
 
   startLoops();
-}
+  }
 
 /* GAME LOOP */
 function startLoops(){
