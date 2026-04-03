@@ -7,235 +7,366 @@
 <style>
 body{
   margin:0;
-  background:#111;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  color:white;
+  background:#000;
+  overflow:hidden;
   font-family:Arial;
+  color:white;
 }
 
 #game{
-  width:800px;
-  height:500px;
   position:relative;
-  background:url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?fit=crop&w=1600&q=80');
+  width:100vw;
+  height:100vh;
   overflow:hidden;
 }
 
-#player{
+#bg{
   position:absolute;
-  left:120px;
-  top:200px;
-  font-size:40px;
+  width:100%;
+  height:100%;
+  background:url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?fit=crop&w=1600&q=80');
+  background-size:cover;
 }
 
+/* PLAYER */
+#player{
+  position:absolute;
+  left:80px;
+  top:200px;
+  font-size:42px;
+  z-index:10;
+}
+
+/* HUD */
 #hud{
   position:absolute;
   top:10px;
-  left:10px;
-}
-
-#overlay{
-  position:absolute;
-  inset:0;
-  background:rgba(0,0,0,0.7);
-  display:none;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
-}
-
-#lifePopup{
-  position:fixed;
-  inset:0;
-  background:black;
+  width:100%;
   display:flex;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
+  justify-content:space-between;
+  padding:0 20px;
+  font-weight:bold;
+  z-index:50;
 }
 
-button{
-  padding:10px;
-  margin:5px;
+#centerHud{
+  position:absolute;
+  top:10px;
+  width:100%;
+  text-align:center;
+  font-weight:bold;
 }
+
+/* POPUPS */
+.popup{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:rgba(0,0,0,0.8);
+  padding:20px;
+  border-radius:10px;
+  text-align:center;
+  z-index:100;
+}
+
+/* RINGS */
+.ring{
+  position:absolute;
+  font-size:40px;
+}
+
+/* FRUITS */
+.fruit{
+  position:absolute;
+  font-size:28px;
+}
+
+/* ENEMIES */
+.enemy{
+  position:absolute;
+  font-size:32px;
+}
+
 </style>
 </head>
 
 <body>
 
-<!-- LIFE SELECTOR -->
-<div id="lifePopup">
-  <h2>Lives ♥ = <span id="balance">0</span></h2>
-
-  <div>
-    <button onclick="dec()">➖</button>
-    <span id="count">0</span>
-    <button onclick="inc()">➕</button>
-  </div>
-
-  <button onclick="enterGame()">ENTER</button>
-</div>
-
 <div id="game">
+
+<div id="bg"></div>
 
 <div id="player">🍸</div>
 
 <div id="hud">
-Score: <span id="score">0</span><br>
-Lives: <span id="lives">0</span>
+  <div>Score: <span id="score">0</span></div>
+  <div>❤️ <span id="lives">0</span></div>
 </div>
 
-<div id="overlay">
-<h2 id="msg"></h2>
-<button onclick="continueGame()">CONTINUE (-1)</button>
-<button onclick="exitGame()">EXIT</button>
-</div>
+<div id="centerHud">💍 <span id="ringsPassed">0</span></div>
 
 </div>
 
-<script>
-const API_BASE = "https://payfast-backend-475447495901.europe-west1.run.app";
-let selected = 0;
-let maxLives = 0;
-let sessionId = null;
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-let score = 0;
-let lives = 0;
+const firebaseConfig={
+  apiKey:"AIzaSy...",
+  authDomain:"tose-ccf8f.firebaseapp.com",
+  projectId:"tose-ccf8f"
+};
 
-let y = 200;
-let velocity = 0;
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
 
-const GRAVITY = 0.6;
-const JUMP = -10;
-
-/* ---------------- LOAD LIVES ---------------- */
-async function loadLives(){
-  const uid = localStorage.getItem("uid");
-
-  const res = await fetch(API+"/economy/user/economy?uid="+uid);
-  const data = await res.json();
-
-  maxLives = data.lives || 0;
-  document.getElementById("balance").innerText = maxLives;
-}
-
-/* ---------------- SELECTOR ---------------- */
-function inc(){
-  if(selected < maxLives && selected < 5){
-    selected++;
-    count.innerText = selected;
-  }
-}
-
-function dec(){
-  if(selected > 0){
-    selected--;
-    count.innerText = selected;
-  }
-}
-
-/* ---------------- START GAME ---------------- */
-async function enterGame(){
-
-  if(selected <= 0){
-    alert("INSUFFICIENT LIVES");
-    return;
-  }
-
-  const uid = localStorage.getItem("uid");
-
-  const res = await fetch(API+"/game/start",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ uid })
-  });
-
-  const data = await res.json();
-
-  if(data.error){
-    alert(data.error);
-    return;
-  }
-
-  sessionId = data.sessionId;
-  lives = data.livesRemaining;
-
-  document.getElementById("lives").innerText = lives;
-
-  document.getElementById("lifePopup").style.display="none";
-
-  startGame();
-}
-
-/* ---------------- GAME LOOP ---------------- */
-function startGame(){
-
-  function loop(){
-    velocity += GRAVITY;
-    y += velocity;
-
-    if(y > 420){
-      endGame("💔 You crashed");
-      return;
-    }
-
-    player.style.top = y+"px";
-
-    requestAnimationFrame(loop);
-  }
-
-  loop();
-}
-
-/* ---------------- JUMP ---------------- */
-document.addEventListener("click",()=>{
-  velocity = JUMP;
+onAuthStateChanged(auth,(user)=>{
+  if(!user) location.href="index.html";
+  else initGame(user);
 });
 
-/* ---------------- END GAME ---------------- */
-function endGame(text){
-  msg.innerText = text;
-  overlay.style.display="flex";
-}
+</script>
 
-/* ---------------- CONTINUE ---------------- */
-async function continueGame(){
+<script>
+const API = "https://payfast-backend-475447495901.europe-west1.run.app";
 
-  const uid = localStorage.getItem("uid");
+let player=document.getElementById("player");
+let scoreEl=document.getElementById("score");
+let livesEl=document.getElementById("lives");
+let ringsEl=document.getElementById("ringsPassed");
 
-  const res = await fetch(API+"/game/continue",{
+let y=200, velocity=0;
+let gravity=0.6;
+let jumpForce=-10;
+
+let score=0;
+let lives=3;
+let ringsPassed=0;
+let missedRings=0;
+
+let boost=false;
+let gameRunning=true;
+
+/* INIT */
+async function initGame(user){
+
+  const res = await fetch(API + "/game/start",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ uid, sessionId })
+    body:JSON.stringify({uid:user.uid})
   });
 
   const data = await res.json();
 
-  if(data.error){
-    alert(data.error);
+  lives = data.lives || 3;
+  livesEl.innerText = lives;
+
+  startLoops();
+}
+
+/* GAME LOOP */
+function startLoops(){
+  requestAnimationFrame(update);
+  spawnRings();
+  spawnFruits();
+  spawnEnemies();
+}
+
+/* UPDATE */
+function update(){
+
+  if(!gameRunning) return;
+
+  velocity += gravity;
+  y += velocity;
+
+  if(y < 0) y = 0;
+  if(y > window.innerHeight-80){
+    death();
     return;
   }
 
-  lives = data.livesRemaining;
-  document.getElementById("lives").innerText = lives;
+  player.style.top = y + "px";
 
-  overlay.style.display="none";
-  y = 200;
-  velocity = 0;
-  startGame();
+  requestAnimationFrame(update);
 }
 
-/* ---------------- EXIT ---------------- */
-function exitGame(){
-  location.reload();
+/* JUMP */
+document.addEventListener("click",()=>{
+  velocity = jumpForce;
+});
+
+/* RINGS */
+function spawnRings(){
+  let count=0;
+
+  let interval=setInterval(()=>{
+    if(count>=150){ clearInterval(interval); winGame(); return; }
+
+    let ring=document.createElement("div");
+    ring.className="ring";
+    ring.innerText="💍";
+    ring.style.left=window.innerWidth+"px";
+    ring.style.top=Math.random()*400+"px";
+
+    document.getElementById("game").appendChild(ring);
+
+    let move=setInterval(()=>{
+      let x=ring.offsetLeft-4;
+      ring.style.left=x+"px";
+
+      if(checkCollision(ring)){
+        score+=7;
+        ringsPassed++;
+        updateHUD();
+        ring.remove();
+        clearInterval(move);
+
+        if([30,70,100,140].includes(ringsPassed)){
+          score*=2;
+          alert("✖2️⃣");
+        }
+      }
+
+      if(x<0){
+        missedRings++;
+        ring.remove();
+        clearInterval(move);
+        if(missedRings>=5) death();
+      }
+
+    },16);
+
+    count++;
+
+  },2500);
 }
 
-/* ---------------- INIT ---------------- */
-loadLives();
+/* FRUITS */
+function spawnFruits(){
+
+  const fruits=[
+    {emoji:"🍒",points:4,time:3000},
+    {emoji:"🫐",points:6,time:5000},
+    {emoji:"🍓",points:8,time:7000}
+  ];
+
+  fruits.forEach(f=>{
+    setInterval(()=>{
+      let el=document.createElement("div");
+      el.className="fruit";
+      el.innerText=f.emoji;
+      el.style.left=Math.random()*window.innerWidth+"px";
+      el.style.top=Math.random()*window.innerHeight+"px";
+
+      document.getElementById("game").appendChild(el);
+
+      let move=setInterval(()=>{
+        if(checkCollision(el)){
+          score+=f.points;
+          updateHUD();
+          el.remove();
+          clearInterval(move);
+        }
+      },100);
+
+      setTimeout(()=>el.remove(),4000);
+
+    },f.time);
+  });
+
+}
+
+/* ENEMIES */
+function spawnEnemies(){
+
+  setInterval(()=>{
+    let fly=document.createElement("div");
+    fly.className="enemy";
+    fly.innerText="🪰";
+    fly.style.left=window.innerWidth+"px";
+    fly.style.top=Math.random()*400+"px";
+
+    document.getElementById("game").appendChild(fly);
+
+    let move=setInterval(()=>{
+      fly.style.left=(fly.offsetLeft-6)+"px";
+
+      if(checkCollision(fly)){
+        death();
+      }
+
+      if(fly.offsetLeft<0){
+        fly.remove();
+        clearInterval(move);
+      }
+
+    },16);
+
+  },7500);
+
+}
+
+/* COLLISION */
+function checkCollision(el){
+  let r1=player.getBoundingClientRect();
+  let r2=el.getBoundingClientRect();
+
+  return !(r1.right<r2.left || r1.left>r2.right || r1.bottom<r2.top || r1.top>r2.bottom);
+}
+
+/* UPDATE HUD */
+function updateHUD(){
+  scoreEl.innerText=score;
+  ringsEl.innerText=ringsPassed;
+}
+
+/* DEATH */
+function death(){
+  gameRunning=false;
+
+  if(lives>0){
+    if(confirm("💔 BROKEN\nContinue?")){
+      lives--;
+      livesEl.innerText=lives;
+      gameRunning=true;
+      y=200;
+      velocity=0;
+      update();
+      return;
+    }
+  }
+
+  endGame();
+}
+
+/* WIN */
+function winGame(){
+  gameRunning=false;
+  alert("🎉 CONGRATULATIONS");
+  endGame();
+}
+
+/* SAVE SCORE */
+async function endGame(){
+
+  try{
+    await fetch("https://payfast-backend-475447495901.europe-west1.run.app/scores/current",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        uid:window.firebaseUser.uid,
+        score:score
+      })
+    });
+  }catch(e){}
+
+  alert("FINAL SCORE: "+score);
+  location.href="main-menu.html";
+}
+
 </script>
 
 </body>
-      </html>
+  </html>
