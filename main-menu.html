@@ -3,62 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <title>SPACE GLASS - Main Menu</title>
+
 <style>
-body {
-  margin:0; padding:0; font-family: Arial, sans-serif;
-  background: url('https://images.unsplash.com/photo-1549924231-f129b911e442?auto=format&fit=crop&w=1470&q=80') no-repeat center center fixed;
-  background-size: cover;
+body{
+  margin:0;
+  font-family:Arial;
+  background:url('https://images.unsplash.com/photo-1549924231-f129b911e442?auto=format&fit=crop&w=1470&q=80') no-repeat center;
+  background-size:cover;
   height:100vh;
   overflow:hidden;
 }
-#glass {
+
+.tabs{
   position:absolute;
-  top:50%; left:50%;
-  width:350px; height:350px;
-  background: rgba(255,255,255,0.1);
-  border-radius:50%;
-  transform: translate(-50%, -50%) rotate(15deg);
+  bottom:50px;
+  width:100%;
+  display:flex;
+  justify-content:center;
+  gap:20px;
 }
-.tabs {
-  position:absolute; bottom:50px; width:100%;
-  display:flex; justify-content:center; gap:20px;
+
+.tab{
+  width:100px;
+  height:50px;
+  background:rgba(255,255,255,0.2);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:8px;
+  cursor:pointer;
+  color:white;
 }
-.tab {
-  width:100px; height:50px; background:rgba(255,255,255,0.2);
-  display:flex; justify-content:center; align-items:center;
-  border-radius:8px; cursor:pointer; font-weight:bold; color:white;
+
+#logout{position:absolute;top:10px;left:10px;color:white;cursor:pointer}
+#profile{position:absolute;top:10px;right:10px;color:white;cursor:pointer}
+#messages{position:absolute;top:10px;right:50px;color:white;cursor:pointer}
+
+/* APPLICATION POPUP */
+#applicationPopup{
+  display:none;
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,0.7);
+  justify-content:center;
+  align-items:center;
 }
-#logout { position:absolute; top:10px; left:10px; cursor:pointer; font-size:24px; color:white; }
-#profile { position:absolute; top:10px; right:10px; cursor:pointer; font-size:24px; color:white; }
-#messages { position:absolute; top:10px; right:50px; cursor:pointer; font-size:24px; color:white; }
+
+.popup-box{
+  background:white;
+  padding:20px;
+  border-radius:10px;
+  text-align:center;
+  width:280px;
+}
+
+input{
+  width:100%;
+  padding:8px;
+  margin:5px 0;
+}
+
+button{
+  padding:10px;
+  width:100%;
+  background:lightblue;
+  border:none;
+  cursor:pointer;
+}
+
+/* REFERENCE POPUP */
+#referencePopup{
+  display:none;
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:black;
+  color:white;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+}
 </style>
 </head>
+
 <body>
 
-<div id="glass"></div>
-
-<div id="logout">🔙</div>
-<div id="messages">✉</div>
-<div id="profile">👤</div>
+<div id="logout" onclick="location.href='index.html'">🔙</div>
+<div id="messages" onclick="location.href='messages.html'">✉</div>
+<div id="profile" onclick="location.href='profile.html'">👤</div>
 
 <div class="tabs">
-  <div class="tab" id="prizesTab">PRIZES</div>
-  <div class="tab" id="scoresTab">SCORES</div>
-  <div class="tab" id="playTab">PLAY</div>
-  <div class="tab" id="walletTab">WALLET</div>
-<div id="applicationPopup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); justify-content:center; align-items:center;">
+  <div class="tab" onclick="location.href='prizes.html'">PRIZES</div>
+  <div class="tab" onclick="location.href='scores.html'">SCORES</div>
+  <div class="tab" id="playBtn">PLAY</div>
+  <div class="tab" onclick="location.href='wallet.html'">WALLET</div>
+</div>
 
-  <div style="background:white; padding:20px; border-radius:10px; width:300px; text-align:center;">
+<!-- APPLICATION -->
+<div id="applicationPopup">
+  <div class="popup-box">
 
-    <div id="appForm">
-      <h3>Application</h3>
-      <input id="name" placeholder="Name"><br><br>
-      <input id="surname" placeholder="Surname"><br><br>
-      <input id="number" placeholder="Number"><br><br>
-      <input id="age" placeholder="Age"><br><br>
-      <input id="referral" placeholder="Referral (optional)"><br><br>
-
-      <button onclick="submitApp()" style="background:lightblue;">Submit</button>
+    <div id="form">
+      <h3>Apply</h3>
+      <input id="name" placeholder="Name">
+      <input id="surname" placeholder="Surname">
+      <input id="number" placeholder="Number">
+      <input id="age" placeholder="Age">
+      <input id="referral" placeholder="Referral (optional)">
+      <button onclick="submitApp()">Submit</button>
     </div>
 
     <div id="waiting" style="display:none;">
@@ -68,73 +121,108 @@ body {
   </div>
 </div>
 
-<div id="referencePopup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; color:white; justify-content:center; align-items:center; text-align:center;">
+<div id="referencePopup">
   <div>
-    <h2 id="referenceText"></h2>
+    <h2 id="refText"></h2>
     <p>Click anywhere to continue</p>
   </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+<script>
+const API = "https://payfast-backend-475447495901.europe-west1.run.app";
+const uid = localStorage.getItem("uid");
 
-// Firebase Config
-const firebaseConfig = {
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  authDomain: "tose-ccf8f.firebaseapp.com",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tose-ccf8f",
-  storageBucket: "tose-ccf8f.firebasestorage.app",
-  messagingSenderId: "475447495901",
-  appId: "1:475447495901:web:9189276a162a3680afdf34",
-  measurementId: "G-PWC5R6Q8JD"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-// ---------------------- NAVIGATION ----------------------
-document.getElementById('logout').addEventListener('click', () => { window.location.href = 'index.html'; });
-document.getElementById('profile').addEventListener('click', () => { window.location.href = 'profile.html'; });
-document.getElementById('messages').addEventListener('click', () => { window.location.href = 'messages.html'; });
-document.getElementById('prizesTab').addEventListener('click', () => { window.location.href='prizes.html'; });
-document.getElementById('scoresTab').addEventListener('click', () => { window.location.href='scores.html'; });
-document.getElementById('walletTab').addEventListener('click', () => { window.location.href='wallet.html'; });
-
-// ---------------------- PLAY BUTTON SCHEDULE ----------------------
-document.getElementById('playTab').addEventListener('click', () => {
-  const now = new Date();
-  let nowMinutes = now.getHours() * 60 + now.getMinutes(); // minutes since midnight
-
-  // Define rest periods in minutes since midnight
-  const restPeriods = [
-    { start: 17*60 + 30, end: 18*60 },  // 17:30 - 18:00
-    { start: 5*60 + 30, end: 6*60 }     // 5:30 - 6:00
-  ];
-
-  // Check if we are in a rest period
-  const inRest = restPeriods.some(period => {
-    let start = period.start;
-    let end = period.end;
-
-    // Handle rest period that wraps past midnight
-    if (end < start) {
-      if (nowMinutes >= start || nowMinutes < end) return true;
-    } else {
-      if (nowMinutes >= start && nowMinutes < end) return true;
-    }
-    return false;
+/* PLAY BUTTON */
+document.getElementById("playBtn").onclick = async ()=>{
+  const res = await fetch(API + "/game/start",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({uid})
   });
 
-  if (inRest) {
-    alert('GAME NOT RUNNING NOW (rest period)');
+  const data = await res.json();
+
+  if(data.error === "GAME_RESTING"){
+    alert("GAME CLOSED");
     return;
   }
 
-  // Otherwise, game is active
-  window.location.href = 'game.html';
-});
+  if(data.error === "NO_LIVES"){
+    alert("NO LIVES");
+    return;
+  }
+
+  localStorage.setItem("sessionId", data.sessionId);
+  window.location.href="game.html";
+};
+
+/* APPLICATION CHECK */
+async function checkApp(){
+  const res = await fetch(API+"/applications/status?uid="+uid);
+  const data = await res.json();
+
+  if(!data.approved){
+    document.getElementById("applicationPopup").style.display="flex";
+
+    if(data.status==="pending"){
+      showWaiting();
+    }
+  }
+}
+
+function submitApp(){
+  fetch(API+"/applications/submit",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      uid,
+      name:name.value,
+      surname:surname.value,
+      number:number.value,
+      age:age.value,
+      referral:referral.value
+    })
+  });
+
+  showWaiting();
+}
+
+function showWaiting(){
+  form.style.display="none";
+  waiting.style.display="block";
+
+  let d=1;
+  setInterval(()=>{
+    dots.innerText=".".repeat(d);
+    d=d===3?1:d+1;
+  },500);
+
+  listenApproval();
+}
+
+function listenApproval(){
+  setInterval(async ()=>{
+    const res = await fetch(API+"/applications/status?uid="+uid);
+    const data = await res.json();
+
+    if(data.approved){
+      applicationPopup.style.display="none";
+      showRef(data.reference);
+    }
+  },3000);
+}
+
+function showRef(ref){
+  referencePopup.style.display="flex";
+  refText.innerText = ref;
+
+  referencePopup.onclick=()=>{
+    referencePopup.style.display="none";
+  }
+}
+
+checkApp();
 </script>
+
 </body>
 </html>
