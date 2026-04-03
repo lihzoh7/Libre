@@ -123,10 +123,11 @@ const auth=getAuth(app);
 
 onAuthStateChanged(auth,(user)=>{
   if(!user) location.href="index.html";
-  else initGame(user);
+  else{
+    window.firebaseUser = user;
+    initGame(user);
+  }
 });
-
-</script>
 
 <script>
 const API = "https://payfast-backend-475447495901.europe-west1.run.app";
