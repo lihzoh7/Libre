@@ -40,17 +40,6 @@ body{
   text-align:center;
   cursor:pointer;
 }
-
-#popup{
-  position:fixed;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  background:white;
-  color:black;
-  padding:20px;
-  display:none;
-}
 </style>
 </head>
 
@@ -79,50 +68,68 @@ R5 (2♥ + 500 💎)
 
 </div>
 
-<div id="popup"></div>
-
 <script>
-const API = "https://payfast-backend-475447495901.europe-west1.run.app";
 const uid = localStorage.getItem("uid");
 
-async function load(){
-  const res = await fetch(API+"/economy/user/economy?uid="+uid);
-  const data = await res.json();
+/* LOAD WALLET */
+function load(){
+  const data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
 
-  gems.innerText = data.gems || 0;
-  lives.innerText = data.lives || 0;
+  document.getElementById("gems").innerText = data.gems || 0;
+  document.getElementById("lives").innerText = data.lives || 0;
 }
 
+/* BUY (SAVE LOCALLY FOR ADMIN) */
 function buy(price,item,link){
-  // SEND REQUEST TO ADMIN
-  fetch(API+"/money/request",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      uid,
-      price,
-      item,
-      timestamp:Date.now()
-    })
+
+  if(!uid){
+    alert("User not logged in");
+    return;
+  }
+
+  let requests = JSON.parse(localStorage.getItem("walletRequests") || "[]");
+
+  requests.push({
+    id: Date.now(),
+    uid,
+    name: localStorage.getItem("name") || "Unknown",
+    surname: localStorage.getItem("surname") || "",
+    email: localStorage.getItem("email") || "",
+    number: localStorage.getItem("number") || "",
+    reference: localStorage.getItem("reference") || "",
+    price,
+    item,
+    timestamp: Date.now()
   });
 
-  // REDIRECT TO IKHOKHA
-  window.location.href = link;
+  localStorage.setItem("walletRequests", JSON.stringify(requests));
+
+  alert("Request sent. Complete payment.");
+
+  setTimeout(()=>{
+    window.location.href = link;
+  },800);
 }
 
+/* CONVERT GEMS TO LIFE */
 function buyLife(){
-  fetch(API+"/economy/convert-gems",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({uid})
-  }).then(r=>r.json()).then(d=>{
-    alert(d.error || "Life Purchased");
-    load();
-  });
+  let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
+
+  if((data.gems || 0) < 300){
+    alert("Insufficient Gems");
+    return;
+  }
+
+  data.gems -= 300;
+  data.lives = (data.lives || 0) + 1;
+
+  localStorage.setItem("wallet_"+uid, JSON.stringify(data));
+
+  load();
 }
 
 load();
 </script>
 
 </body>
-</html>
+  </html>
