@@ -1,96 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>SLIDE</title>
+<title>SLIDE FINAL</title>
 
 <style>
 body{
-  margin:0;
-  background:#000;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  color:white;
-  font-family:Arial;
+margin:0;
+background:black;
+overflow:hidden;
+font-family:Arial;
 }
 
-/* 2:3 MOBILE GAME */
 #game{
-  width:100vw;
-  max-width:400px;
-  height:100vh;
-  position:relative;
-  overflow:hidden;
+position:relative;
+width:100vw;
+height:100vh;
+overflow:hidden;
 }
 
-/* MOVING BACKGROUND */
+/* MOVING BG */
 #bg{
-  position:absolute;
-  width:200%;
-  height:100%;
-  background:url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?fit=crop&w=1600&q=80');
-  background-size:cover;
+position:absolute;
+width:200%;
+height:100%;
+background:url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?fit=crop&w=1600&q=80');
+background-size:cover;
+animation:bgMove 20s linear infinite;
+}
+@keyframes bgMove{
+0%{left:0}
+100%{left:-100%}
 }
 
 /* PLAYER */
 #player{
-  position:absolute;
-  left:80px;
-  top:200px;
-  font-size:42px;
-  z-index:10;
+position:absolute;
+left:80px;
+top:200px;
+font-size:45px;
+z-index:10;
 }
 
 /* HUD */
 #hud{
-  position:absolute;
-  top:10px;
-  width:100%;
-  display:flex;
-  justify-content:space-between;
-  padding:0 15px;
-  z-index:50;
+position:absolute;
+top:10px;
+left:10px;
+z-index:50;
+color:white;
+font-weight:bold;
 }
 
 #centerHud{
-  position:absolute;
-  top:10px;
-  width:100%;
-  text-align:center;
-  font-weight:bold;
+position:absolute;
+top:10px;
+width:100%;
+text-align:center;
+font-weight:bold;
 }
 
 /* POPUP */
-.popup{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  background:black;
-  padding:20px;
-  border-radius:10px;
-  text-align:center;
-  z-index:100;
+#popup{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:black;
+padding:20px;
+text-align:center;
+z-index:100;
+display:none;
 }
 
-/* MISS POPUP */
+/* MISSED ALERT */
 .miss{
-  position:absolute;
-  top:20%;
-  left:50%;
-  transform:translateX(-50%);
-  background:#ff4d4d;
-  padding:10px;
-  border-radius:8px;
+position:absolute;
+top:80px;
+left:50%;
+transform:translateX(-50%);
+background:#ff4d4d;
+color:white;
+padding:10px;
+border-radius:5px;
+z-index:200;
 }
 
-/* ITEMS */
-.ring{position:absolute;font-size:48px;}
-.enemy{position:absolute;font-size:32px;}
-.fruit{position:absolute;font-size:26px;}
+/* OBJECTS */
+.ring,.fruit,.enemy{
+position:absolute;
+font-size:30px;
+}
+.ring{font-size:42px;} /* bigger gold ring */
 </style>
 </head>
 
@@ -103,341 +104,326 @@ body{
 <div id="player">🍸</div>
 
 <div id="hud">
-  <div>Score: <span id="score">0</span></div>
-  <div>❤️ <span id="lives">0</span></div>
+Score: <span id="score">0</span><br>
+❤️ <span id="lives">0</span>
 </div>
 
 <div id="centerHud">💍 <span id="rings">0</span></div>
 
-<div id="popup" class="popup"></div>
+<div id="popup"></div>
 
 </div>
 
 <script>
 
-/* =========================
-   ⏰ GAME TIMER (REAL SLOTS)
-========================= */
+const uid = localStorage.getItem("uid")
+
+let player=document.getElementById("player")
+let popup=document.getElementById("popup")
+
+let y=200, velocity=0
+let gravity=0.6, jump=-10
+
+let score=0
+let lives=0
+let gameLives=0
+let rings=0
+let missed=0
+
+let running=false
+
+/* ================= GAME TIMER ================= */
 function gameOpen(){
-  let now = new Date();
-  let minutes = now.getHours()*60 + now.getMinutes();
+  const now=new Date()
+  const h=now.getHours()
+  const m=now.getMinutes()
 
-  let morningStart = 6*60;
-  let morningEnd = 17*60 + 30;
+  const time=h*60+m
 
-  let eveningStart = 18*60;
-  let eveningEnd = 24*60 + (5*60 + 30);
+  // SLOT 1: 6:00 - 17:30
+  if(time>=360 && time<=1050) return true
 
-  if(minutes >= morningStart && minutes <= morningEnd) return true;
-  if(minutes >= eveningStart || minutes <= (5*60+30)) return true;
+  // BREAK: 17:30 - 18:00
+  if(time>1050 && time<1080) return false
 
-  return false;
+  // SLOT 2: 18:00 - 05:30
+  if(time>=1080 || time<=330) return true
+
+  // BREAK: 05:30 - 06:00
+  return false
 }
 
-/* =========================
-   VARIABLES
-========================= */
-let uid = localStorage.getItem("uid");
-
-let player = document.getElementById("player");
-let popup = document.getElementById("popup");
-
-let score=0;
-let rings=0;
-let missed=0;
-
-let lives=0;
-let gameLives=0;
-
-let y=200, vel=0;
-let gravity=0.6;
-let jump=-10;
-
-let running=false;
-
-/* =========================
-   LIFE SELECTOR
-========================= */
+/* ================= LIFE SELECT ================= */
 function showSelector(){
 
-  let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
-  lives = data.lives || 0;
+let data=JSON.parse(localStorage.getItem("wallet_"+uid)||"{}")
+lives=data.lives||0
 
-  if(!gameOpen()){
-    popup.innerHTML="<h2>GAME CLOSED</h2>";
-    popup.style.display="block";
-    return;
-  }
-
-  let count=0;
-
-  popup.style.display="block";
-  popup.innerHTML=`
-    <h3>Lives ♥ = ${lives}</h3>
-    <div>
-      <button onclick="dec()">➖</button>
-      <span id="count">0</span>
-      <button onclick="inc()">➕</button>
-    </div>
-    <button onclick="enter()">ENTER</button>
-  `;
-
-  window.inc=()=>{
-    if(count < lives && count < 5){
-      count++;
-      document.getElementById("count").innerText=count;
-    }
-  }
-
-  window.dec=()=>{
-    if(count>0){
-      count--;
-      document.getElementById("count").innerText=count;
-    }
-  }
-
-  window.enter=()=>{
-
-    if(count<=0){
-      alert("SELECT LIVES");
-      return;
-    }
-
-    if(count>lives){
-      alert("INSUFFICIENT LIVES");
-      return;
-    }
-
-    data.lives -= count;
-    localStorage.setItem("wallet_"+uid, JSON.stringify(data));
-
-    gameLives = count - 1; // one used instantly
-    document.getElementById("lives").innerText = gameLives;
-
-    popup.style.display="none";
-
-    startGame();
-  }
+if(!gameOpen()){
+popup.style.display="block"
+popup.innerHTML="<h2>GAME CLOSED</h2>"
+return
 }
 
-/* =========================
-   START GAME
-========================= */
+let count=0
+
+popup.style.display="block"
+
+popup.innerHTML=`
+<h3>Lives ♥ = ${lives}</h3>
+
+<button onclick="dec()">➖</button>
+<span id="count">0</span>
+<button onclick="inc()">➕</button>
+<br><br>
+<button onclick="enter()">ENTER</button>
+`
+
+window.inc=()=>{
+if(count<lives && count<5){
+count++
+document.getElementById("count").innerText=count
+}}
+
+window.dec=()=>{
+if(count>0){
+count--
+document.getElementById("count").innerText=count
+}}
+
+window.enter=()=>{
+if(count<=0){
+alert("SELECT LIVES")
+return
+}
+
+if(count>lives){
+alert("INSUFFICIENT LIVES")
+return
+}
+
+let data=JSON.parse(localStorage.getItem("wallet_"+uid)||"{}")
+data.lives-=count
+localStorage.setItem("wallet_"+uid,JSON.stringify(data))
+
+gameLives=count-1
+document.getElementById("lives").innerText=gameLives
+
+popup.style.display="none"
+
+startGame()
+}
+}
+
+/* ================= START ================= */
 function startGame(){
-  running=true;
-  moveBg();
-  update();
-  spawnRings();
-  spawnEnemies();
-  spawnFruits();
+running=true
+requestAnimationFrame(update)
+spawnRings()
+spawnEnemies()
+spawnFruits()
 }
 
-/* =========================
-   BACKGROUND MOVE
-========================= */
-function moveBg(){
-  let bg=document.getElementById("bg");
-  let pos=0;
+/* ================= PLAYER ================= */
+document.addEventListener("click",()=>{
+velocity=jump
+})
 
-  setInterval(()=>{
-    pos-=1;
-    bg.style.left=pos+"px";
-  },16);
-}
-
-/* =========================
-   PLAYER CONTROL
-========================= */
-document.addEventListener("click",()=> vel=jump);
-
-/* =========================
-   LOOP
-========================= */
 function update(){
-  if(!running) return;
+if(!running) return
 
-  vel+=gravity;
-  y+=vel;
+velocity+=gravity
+y+=velocity
 
-  if(y>window.innerHeight-100){
-    loseLife();
-    return;
-  }
-
-  player.style.top=y+"px";
-
-  requestAnimationFrame(update);
+if(y>window.innerHeight-80){
+loseLife()
+return
 }
 
-/* =========================
-   RINGS (GOLD +1.8x)
-========================= */
+player.style.top=y+"px"
+
+requestAnimationFrame(update)
+}
+
+/* ================= RINGS ================= */
 function spawnRings(){
-  setInterval(()=>{
-    if(!running) return;
+setInterval(()=>{
+if(!running) return
 
-    let r=document.createElement("div");
-    r.className="ring";
-    r.innerText="💍";
-    r.style.left="100%";
-    r.style.top=Math.random()*400+"px";
+let r=document.createElement("div")
+r.className="ring"
+r.innerText="💍"
+r.style.left=window.innerWidth+"px"
+r.style.top=Math.random()*400+"px"
 
-    game.appendChild(r);
+game.appendChild(r)
 
-    let move=setInterval(()=>{
-      r.style.left=(r.offsetLeft-5)+"px";
+let move=setInterval(()=>{
+r.style.left=(r.offsetLeft-6)+"px"
 
-      if(hit(r)){
-        score += Math.floor(10 * 1.8);
-        rings++;
-        updateHUD();
-        r.remove();
-        clearInterval(move);
-      }
-
-      if(r.offsetLeft<0){
-        missed++;
-        showMiss();
-        r.remove();
-        clearInterval(move);
-
-        if(missed>=5) loseLife();
-      }
-
-    },16);
-
-  },2000);
+if(hit(r)){
+score+=Math.floor(10*1.9)
+rings++
+updateHUD()
+r.remove()
+clearInterval(move)
 }
 
-/* =========================
-   MISS POPUP
-========================= */
+if(r.offsetLeft<0){
+missed++
+showMiss()
+r.remove()
+clearInterval(move)
+
+if(missed>=5){
+loseLife()
+}
+}
+
+},16)
+
+},2000)
+}
+
+/* ================= MISS ================= */
 function showMiss(){
-  let m=document.createElement("div");
-  m.className="miss";
-  m.innerText="MISSED "+missed+"/5";
-  game.appendChild(m);
+let m=document.createElement("div")
+m.className="miss"
+m.innerText="MISSED "+missed+"/5"
+game.appendChild(m)
 
-  setTimeout(()=>m.remove(),1000);
+setTimeout(()=>m.remove(),1000)
 }
 
-/* =========================
-   ENEMIES
-========================= */
-function spawnEnemies(){
-  setInterval(()=>{
-    if(!running) return;
-
-    let e=document.createElement("div");
-    e.className="enemy";
-    e.innerText="🪰";
-    e.style.left="100%";
-    e.style.top=Math.random()*400+"px";
-
-    game.appendChild(e);
-
-    let move=setInterval(()=>{
-      e.style.left=(e.offsetLeft-6)+"px";
-
-      if(hit(e)) loseLife();
-
-      if(e.offsetLeft<0){
-        e.remove();
-        clearInterval(move);
-      }
-
-    },16);
-
-  },5000);
-}
-
-/* =========================
-   FRUITS
-========================= */
+/* ================= FRUITS ================= */
 function spawnFruits(){
-  setInterval(()=>{
-    if(!running) return;
+setInterval(()=>{
+if(!running) return
 
-    let f=document.createElement("div");
-    f.className="fruit";
-    f.innerText="🍓";
-    f.style.left=Math.random()*300+"px";
-    f.style.top=Math.random()*400+"px";
+let f=document.createElement("div")
+f.className="fruit"
+f.innerText="🍓"
 
-    game.appendChild(f);
+f.style.left="-50px"
+f.style.top=Math.random()*400+"px"
 
-    setTimeout(()=>{
-      if(hit(f)){
-        score+=5;
-        updateHUD();
-      }
-      f.remove();
-    },3000);
+game.appendChild(f)
 
-  },4000);
+let move=setInterval(()=>{
+f.style.left=(f.offsetLeft+4)+"px"
+
+if(hit(f)){
+score+=5
+updateHUD()
+f.remove()
+clearInterval(move)
 }
 
-/* =========================
-   COLLISION
-========================= */
+if(f.offsetLeft>window.innerWidth){
+f.remove()
+clearInterval(move)
+}
+
+},16)
+
+},4000)
+}
+
+/* ================= ENEMY ================= */
+function spawnEnemies(){
+setInterval(()=>{
+if(!running) return
+
+let e=document.createElement("div")
+e.className="enemy"
+e.innerText="🪰"
+
+let x=window.innerWidth
+let yPos=Math.random()*400
+
+e.style.left=x+"px"
+e.style.top=yPos+"px"
+
+game.appendChild(e)
+
+let dir=1
+
+let move=setInterval(()=>{
+x-=6
+yPos+=dir*3
+
+if(yPos>400||yPos<0) dir*=-1
+
+e.style.left=x+"px"
+e.style.top=yPos+"px"
+
+if(hit(e)){
+loseLife()
+}
+
+if(x<0){
+e.remove()
+clearInterval(move)
+}
+
+},16)
+
+},5000)
+}
+
+/* ================= COLLISION ================= */
 function hit(el){
-  let a=player.getBoundingClientRect();
-  let b=el.getBoundingClientRect();
+let a=player.getBoundingClientRect()
+let b=el.getBoundingClientRect()
 
-  return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
+return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom)
 }
 
-/* =========================
-   HUD
-========================= */
+/* ================= HUD ================= */
 function updateHUD(){
-  scoreEl.innerText=score;
-  document.getElementById("rings").innerText=rings;
+document.getElementById("score").innerText=score
+document.getElementById("rings").innerText=rings
 }
 
-/* =========================
-   LIFE SYSTEM
-========================= */
+/* ================= LIFE SYSTEM ================= */
 function loseLife(){
-  running=false;
+running=false
 
-  if(gameLives>0){
-    popup.style.display="block";
-    popup.innerHTML=`
-      <h2>💔 Continue?</h2>
-      <button onclick="cont()">YES (-1)</button>
-      <button onclick="exit()">EXIT</button>
-    `;
-  }else{
-    endGame();
-  }
+if(gameLives>0){
+
+popup.style.display="block"
+popup.innerHTML=`
+<h2>💔 Continue?</h2>
+<button onclick="cont()">YES (-1)</button>
+<button onclick="exit()">EXIT</button>
+`
+
+}else{
+endGame()
+}
 }
 
 window.cont=()=>{
-  gameLives--;
-  missed=0; // RESET MISSED
-  document.getElementById("lives").innerText=gameLives;
+gameLives--
+missed=0
+document.getElementById("lives").innerText=gameLives
+popup.style.display="none"
+y=200
+velocity=0
+running=true
+update()
+}
 
-  popup.style.display="none";
+window.exit=()=>endGame()
 
-  y=200;
-  vel=0;
-  running=true;
-  update();
-};
-
-window.exit=()=> endGame();
-
-/* =========================
-   END GAME
-========================= */
+/* ================= END ================= */
 function endGame(){
-  alert("FINAL SCORE: "+score);
-  location.href="main-menu.html";
+alert("FINAL SCORE: "+score)
+location.href="main-menu.html"
 }
 
 /* START */
-showSelector();
+showSelector()
 
 </script>
 
