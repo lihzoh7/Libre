@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SLIDE FINAL</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SLIDE</title>
 
 <style>
 body{
@@ -13,8 +13,8 @@ body{
   justify-content:center;
   align-items:center;
   height:100vh;
-  font-family:Arial;
   color:white;
+  font-family:Arial;
 }
 
 /* 2:3 MOBILE GAME */
@@ -22,13 +22,11 @@ body{
   width:100vw;
   max-width:400px;
   height:100vh;
-  max-height:600px;
   position:relative;
   overflow:hidden;
-  background:black;
 }
 
-/* MOVING BG */
+/* MOVING BACKGROUND */
 #bg{
   position:absolute;
   width:200%;
@@ -40,7 +38,7 @@ body{
 /* PLAYER */
 #player{
   position:absolute;
-  left:70px;
+  left:80px;
   top:200px;
   font-size:42px;
   z-index:10;
@@ -50,7 +48,11 @@ body{
 #hud{
   position:absolute;
   top:10px;
-  left:10px;
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  padding:0 15px;
+  z-index:50;
 }
 
 #centerHud{
@@ -61,37 +63,34 @@ body{
   font-weight:bold;
 }
 
-/* POPUPS */
+/* POPUP */
 .popup{
   position:absolute;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  background:#000;
+  background:black;
   padding:20px;
   border-radius:10px;
   text-align:center;
   z-index:100;
 }
 
-/* RED MISS POPUP */
+/* MISS POPUP */
 .miss{
   position:absolute;
-  top:40%;
+  top:20%;
   left:50%;
-  transform:translate(-50%,-50%);
+  transform:translateX(-50%);
   background:#ff4d4d;
-  color:white;
   padding:10px;
   border-radius:8px;
 }
 
-/* OBJECTS */
-.ring{position:absolute;font-size:50px;}
+/* ITEMS */
+.ring{position:absolute;font-size:48px;}
 .enemy{position:absolute;font-size:32px;}
-.fruit{position:absolute;font-size:28px;}
-
-button{padding:8px;margin:5px;}
+.fruit{position:absolute;font-size:26px;}
 </style>
 </head>
 
@@ -100,56 +99,68 @@ button{padding:8px;margin:5px;}
 <div id="game">
 
 <div id="bg"></div>
+
 <div id="player">🍸</div>
 
 <div id="hud">
-Score: <span id="score">0</span><br>
-❤️ <span id="lives">0</span>
+  <div>Score: <span id="score">0</span></div>
+  <div>❤️ <span id="lives">0</span></div>
 </div>
 
-<div id="centerHud">
-💍 <span id="rings">0</span>
-</div>
+<div id="centerHud">💍 <span id="rings">0</span></div>
 
 <div id="popup" class="popup"></div>
 
 </div>
 
 <script>
-const uid = localStorage.getItem("uid");
 
-/* GAME VARS */
-let y=200, velocity=0;
-let gravity=0.6, jump=-10;
-
-let score=0;
-let lives=0;
-let gameLives=0;
-let ringsPassed=0;
-let missed=0;
-
-let running=false;
-
-/* SLOT SYSTEM */
+/* =========================
+   ⏰ GAME TIMER (REAL SLOTS)
+========================= */
 function gameOpen(){
-  const now = new Date();
-  let h = now.getHours();
-  let m = now.getMinutes();
+  let now = new Date();
+  let minutes = now.getHours()*60 + now.getMinutes();
 
-  let t = h*60 + m;
+  let morningStart = 6*60;
+  let morningEnd = 17*60 + 30;
 
-  // 06:00 → 17:30
-  if(t>=360 && t<=1050) return true;
+  let eveningStart = 18*60;
+  let eveningEnd = 24*60 + (5*60 + 30);
 
-  // 18:00 → 05:30 (overnight)
-  if(t>=1080 || t<=330) return true;
+  if(minutes >= morningStart && minutes <= morningEnd) return true;
+  if(minutes >= eveningStart || minutes <= (5*60+30)) return true;
 
   return false;
 }
 
-/* LIFE SELECTOR */
+/* =========================
+   VARIABLES
+========================= */
+let uid = localStorage.getItem("uid");
+
+let player = document.getElementById("player");
+let popup = document.getElementById("popup");
+
+let score=0;
+let rings=0;
+let missed=0;
+
+let lives=0;
+let gameLives=0;
+
+let y=200, vel=0;
+let gravity=0.6;
+let jump=-10;
+
+let running=false;
+
+/* =========================
+   LIFE SELECTOR
+========================= */
 function showSelector(){
-  let data = JSON.parse(localStorage.getItem("wallet_"+uid)||"{}");
+
+  let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
   lives = data.lives || 0;
 
   if(!gameOpen()){
@@ -163,72 +174,92 @@ function showSelector(){
   popup.style.display="block";
   popup.innerHTML=`
     <h3>Lives ♥ = ${lives}</h3>
-    <button onclick="dec()">➖</button>
-    <span id="count">0</span>
-    <button onclick="inc()">➕</button><br>
+    <div>
+      <button onclick="dec()">➖</button>
+      <span id="count">0</span>
+      <button onclick="inc()">➕</button>
+    </div>
     <button onclick="enter()">ENTER</button>
   `;
 
   window.inc=()=>{
-    if(count<lives && count<5){
+    if(count < lives && count < 5){
       count++;
-      countEl.innerText=count;
+      document.getElementById("count").innerText=count;
     }
-  };
+  }
 
   window.dec=()=>{
     if(count>0){
       count--;
-      countEl.innerText=count;
+      document.getElementById("count").innerText=count;
     }
-  };
+  }
 
   window.enter=()=>{
-    if(count<=0) return alert("SELECT LIVES");
-    if(count>lives) return alert("INSUFFICIENT LIVES");
+
+    if(count<=0){
+      alert("SELECT LIVES");
+      return;
+    }
+
+    if(count>lives){
+      alert("INSUFFICIENT LIVES");
+      return;
+    }
 
     data.lives -= count;
-    localStorage.setItem("wallet_"+uid,JSON.stringify(data));
+    localStorage.setItem("wallet_"+uid, JSON.stringify(data));
 
-    gameLives = count-1;
-    livesEl.innerText = gameLives;
+    gameLives = count - 1; // one used instantly
+    document.getElementById("lives").innerText = gameLives;
 
     popup.style.display="none";
+
     startGame();
-  };
+  }
 }
 
-/* START */
+/* =========================
+   START GAME
+========================= */
 function startGame(){
   running=true;
-  moveBG();
+  moveBg();
   update();
   spawnRings();
   spawnEnemies();
   spawnFruits();
 }
 
-/* BG MOVE */
-function moveBG(){
-  let x=0;
+/* =========================
+   BACKGROUND MOVE
+========================= */
+function moveBg(){
+  let bg=document.getElementById("bg");
+  let pos=0;
+
   setInterval(()=>{
-    if(!running) return;
-    x-=1;
-    bg.style.backgroundPosition = x+"px 0";
-  },20);
+    pos-=1;
+    bg.style.left=pos+"px";
+  },16);
 }
 
-/* PLAYER */
-document.addEventListener("click",()=>velocity=jump);
+/* =========================
+   PLAYER CONTROL
+========================= */
+document.addEventListener("click",()=> vel=jump);
 
-/* LOOP */
+/* =========================
+   LOOP
+========================= */
 function update(){
   if(!running) return;
 
-  velocity+=gravity;
-  y+=velocity;
+  vel+=gravity;
+  y+=vel;
 
-  if(y>520){
+  if(y>window.innerHeight-100){
     loseLife();
     return;
   }
@@ -238,7 +269,9 @@ function update(){
   requestAnimationFrame(update);
 }
 
-/* RINGS (GOLD +1.8x) */
+/* =========================
+   RINGS (GOLD +1.8x)
+========================= */
 function spawnRings(){
   setInterval(()=>{
     if(!running) return;
@@ -246,18 +279,18 @@ function spawnRings(){
     let r=document.createElement("div");
     r.className="ring";
     r.innerText="💍";
-    r.style.left="400px";
+    r.style.left="100%";
     r.style.top=Math.random()*400+"px";
+
     game.appendChild(r);
 
     let move=setInterval(()=>{
       r.style.left=(r.offsetLeft-5)+"px";
 
       if(hit(r)){
-        score += Math.floor(10*1.8);
-        ringsPassed++;
-        scoreEl.innerText=score;
-        rings.innerText=ringsPassed;
+        score += Math.floor(10 * 1.8);
+        rings++;
+        updateHUD();
         r.remove();
         clearInterval(move);
       }
@@ -276,17 +309,21 @@ function spawnRings(){
   },2000);
 }
 
-/* MISS POPUP */
+/* =========================
+   MISS POPUP
+========================= */
 function showMiss(){
   let m=document.createElement("div");
   m.className="miss";
   m.innerText="MISSED "+missed+"/5";
   game.appendChild(m);
 
-  setTimeout(()=>m.remove(),800);
+  setTimeout(()=>m.remove(),1000);
 }
 
-/* ENEMIES */
+/* =========================
+   ENEMIES
+========================= */
 function spawnEnemies(){
   setInterval(()=>{
     if(!running) return;
@@ -294,8 +331,9 @@ function spawnEnemies(){
     let e=document.createElement("div");
     e.className="enemy";
     e.innerText="🪰";
-    e.style.left="400px";
+    e.style.left="100%";
     e.style.top=Math.random()*400+"px";
+
     game.appendChild(e);
 
     let move=setInterval(()=>{
@@ -307,12 +345,15 @@ function spawnEnemies(){
         e.remove();
         clearInterval(move);
       }
+
     },16);
 
   },5000);
 }
 
-/* FRUITS */
+/* =========================
+   FRUITS
+========================= */
 function spawnFruits(){
   setInterval(()=>{
     if(!running) return;
@@ -320,14 +361,15 @@ function spawnFruits(){
     let f=document.createElement("div");
     f.className="fruit";
     f.innerText="🍓";
-    f.style.left=Math.random()*350+"px";
+    f.style.left=Math.random()*300+"px";
     f.style.top=Math.random()*400+"px";
+
     game.appendChild(f);
 
     setTimeout(()=>{
       if(hit(f)){
         score+=5;
-        scoreEl.innerText=score;
+        updateHUD();
       }
       f.remove();
     },3000);
@@ -335,14 +377,27 @@ function spawnFruits(){
   },4000);
 }
 
-/* COLLISION */
+/* =========================
+   COLLISION
+========================= */
 function hit(el){
   let a=player.getBoundingClientRect();
   let b=el.getBoundingClientRect();
+
   return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
 }
 
-/* LIFE LOSS */
+/* =========================
+   HUD
+========================= */
+function updateHUD(){
+  scoreEl.innerText=score;
+  document.getElementById("rings").innerText=rings;
+}
+
+/* =========================
+   LIFE SYSTEM
+========================= */
 function loseLife(){
   running=false;
 
@@ -350,7 +405,7 @@ function loseLife(){
     popup.style.display="block";
     popup.innerHTML=`
       <h2>💔 Continue?</h2>
-      <button onclick="cont()">YES</button>
+      <button onclick="cont()">YES (-1)</button>
       <button onclick="exit()">EXIT</button>
     `;
   }else{
@@ -358,23 +413,24 @@ function loseLife(){
   }
 }
 
-/* CONTINUE (RESET MISS COUNT) */
 window.cont=()=>{
   gameLives--;
-  livesEl.innerText=gameLives;
-  missed=0;
+  missed=0; // RESET MISSED
+  document.getElementById("lives").innerText=gameLives;
 
   popup.style.display="none";
+
   y=200;
-  velocity=0;
+  vel=0;
   running=true;
   update();
 };
 
-/* EXIT */
-window.exit=()=>endGame();
+window.exit=()=> endGame();
 
-/* END */
+/* =========================
+   END GAME
+========================= */
 function endGame(){
   alert("FINAL SCORE: "+score);
   location.href="main-menu.html";
@@ -382,6 +438,7 @@ function endGame(){
 
 /* START */
 showSelector();
+
 </script>
 
 </body>
