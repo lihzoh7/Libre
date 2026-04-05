@@ -1,9 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>SLIDE</title>
+<meta charset="UTF-8">
+<title>SLIDE FINAL</title>
 
 <style>
 body{
@@ -12,7 +11,7 @@ display:flex;
 justify-content:center;
 align-items:center;
 height:100vh;
-background:#111;
+background:#000;
 color:white;
 font-family:Arial;
 }
@@ -24,6 +23,7 @@ position:relative;
 overflow:hidden;
 background:url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?fit=crop&w=1600&q=80');
 background-size:cover;
+background-repeat:repeat-x;
 }
 
 #player{
@@ -31,8 +31,10 @@ position:absolute;
 left:120px;
 top:200px;
 font-size:40px;
+z-index:10;
 }
 
+/* HUD */
 .hud{
 position:absolute;
 top:10px;
@@ -40,6 +42,15 @@ left:10px;
 z-index:10;
 }
 
+#centerHUD{
+position:absolute;
+top:10px;
+width:100%;
+text-align:center;
+font-weight:bold;
+}
+
+/* popup */
 .popup{
 position:absolute;
 top:50%;
@@ -49,6 +60,16 @@ background:black;
 padding:20px;
 text-align:center;
 z-index:100;
+border-radius:10px;
+}
+
+/* red warning */
+.warning{
+background:#ff4d4d;
+color:white;
+padding:10px;
+margin-top:10px;
+border-radius:6px;
 }
 
 .btn{
@@ -57,9 +78,10 @@ margin:5px;
 cursor:pointer;
 }
 
+/* GAME ITEMS */
 .ring,.enemy,.fruit{
 position:absolute;
-font-size:30px;
+font-size:54px; /* 🔥 BIGGER RINGS */
 }
 </style>
 </head>
@@ -73,6 +95,10 @@ font-size:30px;
 <div class="hud">
 Score: <span id="score">0</span><br>
 ❤️ <span id="lives">0</span>
+</div>
+
+<div id="centerHUD">
+💍 <span id="ringsPassed">0</span>
 </div>
 
 <div id="popup" class="popup"></div>
@@ -93,12 +119,34 @@ let lives=0;
 let gameLives=0;
 let running=false;
 
+let ringsPassed=0;
+let ringsMissed=0;
+
 /* =========================
-   🧠 GAME TIMER (OPEN/CLOSE)
+   ⏰ GAME TIME SYSTEM
 ========================= */
-function gameOpen(){
-  const hour = new Date().getHours();
-  return hour >= 8 && hour <= 22; // OPEN 8AM - 10PM
+function isGameOpen(){
+  let now = new Date();
+  let h = now.getHours();
+  let m = now.getMinutes();
+
+  let current = h*60+m;
+
+  let morningStart = 6*60;
+  let morningEnd = 17*60+30;
+
+  let nightStart = 18*60;
+  let nightEnd = (5*60+30) + 1440;
+
+  if(current >= morningStart && current <= morningEnd) return true;
+
+  if(current < 6*60){
+    current += 1440;
+  }
+
+  if(current >= nightStart && current <= nightEnd) return true;
+
+  return false;
 }
 
 /* =========================
@@ -109,8 +157,9 @@ function showLifeSelector(){
   let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
   lives = data.lives || 0;
 
-  if(!gameOpen()){
-    popup.innerHTML = "<h2>GAME CLOSED</h2>";
+  if(!isGameOpen()){
+    popup.style.display="block";
+    popup.innerHTML="<h2>GAME CLOSED</h2>";
     return;
   }
 
@@ -133,16 +182,20 @@ function showLifeSelector(){
   window.inc = ()=>{
     if(count < lives && count < 5){
       count++;
-      document.getElementById("count").innerText=count;
+      countEl();
     }
   };
 
   window.dec = ()=>{
     if(count > 0){
       count--;
-      document.getElementById("count").innerText=count;
+      countEl();
     }
   };
+
+  function countEl(){
+    document.getElementById("count").innerText=count;
+  }
 
   window.enterGame = ()=>{
     if(count <= 0){
@@ -160,7 +213,7 @@ function showLifeSelector(){
     data.lives -= count;
     localStorage.setItem("wallet_"+uid, JSON.stringify(data));
 
-    gameLives = count - 1; // one used immediately
+    gameLives = count - 1; // 🔥 one auto used
     document.getElementById("lives").innerText = gameLives;
 
     popup.style.display="none";
@@ -175,20 +228,34 @@ function showLifeSelector(){
 function startGame(){
   running = true;
   requestAnimationFrame(update);
+  scrollBG();
   spawnRings();
   spawnEnemies();
   spawnFruits();
 }
 
 /* =========================
-   🎮 PLAYER CONTROL
+   🌄 BACKGROUND SCROLL
+========================= */
+let bgPos=0;
+function scrollBG(){
+  if(!running) return;
+
+  bgPos -= 1;
+  game.style.backgroundPosition = bgPos+"px 0";
+
+  requestAnimationFrame(scrollBG);
+}
+
+/* =========================
+   🎮 PLAYER
 ========================= */
 document.addEventListener("click",()=>{
   velocity = jump;
 });
 
 /* =========================
-   🔄 GAME LOOP
+   🔄 LOOP
 ========================= */
 function update(){
   if(!running) return;
@@ -227,19 +294,43 @@ function spawnRings(){
 
       if(hit(r)){
         score+=10;
-        scoreEl.innerText=score;
+        ringsPassed++;
+        updateHUD();
         r.remove();
         clearInterval(move);
       }
 
       if(x<0){
+        ringsMissed++;
+        showMiss();
         r.remove();
         clearInterval(move);
+
+        if(ringsMissed>=5){
+          loseLife();
+        }
       }
 
     },16);
 
   },2000);
+}
+
+/* =========================
+   ❗ MISSED RINGS POPUP
+========================= */
+function showMiss(){
+  let warn=document.createElement("div");
+  warn.className="warning";
+  warn.innerText="MISSED: "+ringsMissed;
+
+  popup.style.display="block";
+  popup.innerHTML="";
+  popup.appendChild(warn);
+
+  setTimeout(()=>{
+    popup.style.display="none";
+  },800);
 }
 
 /* =========================
@@ -292,7 +383,7 @@ function spawnFruits(){
     setTimeout(()=>{
       if(hit(f)){
         score+=5;
-        scoreEl.innerText=score;
+        updateHUD();
       }
       f.remove();
     },3000);
@@ -330,6 +421,7 @@ function loseLife(){
 
 window.cont = ()=>{
   gameLives--;
+  ringsMissed=0; // 🔥 RESET MISSED
   document.getElementById("lives").innerText=gameLives;
   popup.style.display="none";
   y=200;
@@ -345,7 +437,19 @@ window.exit = ()=> endGame();
 ========================= */
 function endGame(){
   alert("FINAL SCORE: "+score);
+
+  // 🔥 TODO: SEND TO FIREBASE
+  // saveScore(uid, score)
+
   location.href="main-menu.html";
+}
+
+/* =========================
+   📊 HUD
+========================= */
+function updateHUD(){
+  document.getElementById("score").innerText=score;
+  document.getElementById("ringsPassed").innerText=ringsPassed;
 }
 
 /* START */
@@ -353,4 +457,4 @@ showLifeSelector();
 </script>
 
 </body>
-  </html>
+   </html>
