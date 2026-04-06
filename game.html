@@ -472,52 +472,77 @@ function activateBoost(){
     player.innerText="🍸";
   },7000);
   }
-function spawnRockets(){
-  setInterval(()=>{
-    if(!running) return;
-    if(rocketCount>=60) return;
+/* 🚀 ROCKET (ARC + ROTATION + WIGGLE) 
+   Travel time: ~3.7 Seconds 
+===================== */
+function spawnRockets() {
+  setInterval(() => {
+    if (!running) return;
+    // (Note: ensure rocketCount is defined globally)
+    if (typeof rocketCount !== 'undefined' && rocketCount >= 60) return;
 
-    rocketCount++;
-
-    let r=document.createElement("div");
-    r.className="enemy";
-    r.innerText="🚀";
-    r.style.left=window.innerWidth+"px";
-    r.style.top="200px";
-
+    let r = document.createElement("div");
+    r.className = "enemy";
+    r.innerText = "🚀";
+    
+    // Setup initial positions
+    const startX = window.innerWidth;
+    const bottomY = window.innerHeight - 150; 
+    const peakHeight = 400; 
+    
+    r.style.left = startX + "px";
+    r.style.top = bottomY + "px";
+    r.style.position = "absolute"; // Ensure it can move
     game.appendChild(r);
 
-    let angle=0;
-    let life=0;
+    let startTime = Date.now();
+    const duration = 3700; // 3.7 Seconds
 
-    let move=setInterval(()=>{
-      life++;
+    let move = setInterval(() => {
+      let elapsed = Date.now() - startTime;
+      let progress = elapsed / duration; 
 
-      let speed = window.innerWidth / (3.7 * 60);
-
-      r.style.left=(r.offsetLeft-speed)+"px";
-
-      angle+=0.3;
-      r.style.top=(200+Math.sin(angle)*120)+"px";
-
-      if(hit(r)){
-  r.innerText="💥";
-  setTimeout(()=>r.remove(),200);
-  clearInterval(move);
-
-  if(!boostActive){
-    lose();
-  }
-      }
-      if(life > 220){
+      if (progress >= 1) {
         r.remove();
         clearInterval(move);
+        return;
       }
 
-    },16);
+      // 1. Horizontal Movement
+      let currentX = startX - (progress * (startX + 100));
+      r.style.left = currentX + "px";
 
-  },11000);
-  }
+      // 2. Vertical Arc (Upside down U)
+      let curve = 4 * progress * (1 - progress); 
+      let currentY = bottomY - (curve * peakHeight);
+      r.style.top = currentY + "px";
+
+      // 3. Directional Rotation
+      // As progress goes 0 -> 0.5 (climbing), 0.5 -> 1 (falling)
+      // We tilt the rocket to face the path.
+      let tilt = (progress < 0.5) ? -45 : 45; 
+      
+      // 4. The Wiggle (Fast Sine Wave)
+      let wiggle = Math.sin(Date.now() * 0.02) * 10; 
+
+      // Apply all transformations:
+      // scaleX(-1) flips the rocket to face LEFT
+      // rotate handles the arc direction + the wiggle
+      r.style.transform = `scaleX(-1) rotate(${tilt + wiggle}deg)`;
+
+      // Collision Logic
+      if (hit(r)) {
+        r.innerText = "💥";
+        setTimeout(() => r.remove(), 200);
+        clearInterval(move);
+        if (typeof boostActive !== 'undefined' && !boostActive) {
+          lose();
+        }
+      }
+    }, 16);
+  }, 11000);
+}
+
   
 /* =====================
    💥 COLLISION
