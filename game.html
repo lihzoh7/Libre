@@ -367,12 +367,11 @@ if(hit(e)){
     e.remove(); // destroy enemy during boost
     clearInterval(move);
   }
-
+  }
     }, 16);
 
   }, 6000); // New enemy spawns every 6 seconds
 }
-
 
 /* =====================
    🍓 FRUITS
@@ -509,7 +508,7 @@ function spawnRockets(){
   if(!boostActive){
     lose();
   }
-
+      }
       if(life > 220){
         r.remove();
         clearInterval(move);
