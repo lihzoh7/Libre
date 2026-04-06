@@ -363,36 +363,52 @@ function spawnEnemies(){
    🍓 FRUITS
 ===================== */
 function spawnFruits(){
+
+const fruits=[
+{emoji:"🍒",points:4,interval:3000},
+{emoji:"🫐",points:6,interval:5000},
+{emoji:"🍓",points:8,interval:7000},
+{emoji:"🍇",points:10,interval:8500},
+{emoji:"🍎",points:14,interval:12000},
+{emoji:"🍌",points:20,interval:15000},
+{emoji:"🥭",points:30,interval:20000},
+{emoji:"🍉",points:50,interval:33000}
+];
+
+fruits.forEach(f=>{
   setInterval(()=>{
     if(!running) return;
 
-    let f=document.createElement("div");
-    f.className="fruit";
-    f.innerText="🍓";
-    f.style.left=window.innerWidth+"px";
-    f.style.top=Math.random()*400+"px";
+    let el=document.createElement("div");
+    el.className="fruit";
+    el.innerText=f.emoji;
+    el.style.left=window.innerWidth+"px";
+    el.style.top=Math.random()*350+"px";
 
-    game.appendChild(f);
+    game.appendChild(el);
 
     let move=setInterval(()=>{
-      f.style.left=(f.offsetLeft-4)+"px";
+      el.style.left=(el.offsetLeft-(3*speedMultiplier))+"px";
 
-      if(hit(f)){
-        score+=5;
+      if(hit(el)){
+        score+=f.points;
         document.getElementById("score").innerText=score;
-        f.remove();
+        el.remove();
         clearInterval(move);
       }
 
-      if(f.offsetLeft<0){
-        f.remove();
+      if(el.offsetLeft<0){
+        el.remove();
         clearInterval(move);
       }
 
     },16);
 
-  },4000);
-}
+  },f.interval);
+});
+
+  }
+  
 function spawnBoost(){
   setInterval(()=>{
     if(!running) return;
