@@ -393,7 +393,37 @@ function spawnFruits(){
 
   },4000);
 }
+function spawnBoost(){
+  setInterval(()=>{
+    if(!running) return;
 
+    let b=document.createElement("div");
+    b.innerText="⚡";
+    b.className="fruit";
+    b.style.left=window.innerWidth+"px";
+    b.style.top=Math.random()*300+"px";
+
+    game.appendChild(b);
+
+    let move=setInterval(()=>{
+      b.style.left=(b.offsetLeft-4)+"px";
+
+      if(hit(b)){
+        activateBoost();
+        b.remove();
+        clearInterval(move);
+      }
+
+      if(b.offsetLeft<0){
+        b.remove();
+        clearInterval(move);
+      }
+
+    },16);
+
+  },15000); // every 15s
+  }
+  
 /* =====================
    💥 COLLISION
 ===================== */
