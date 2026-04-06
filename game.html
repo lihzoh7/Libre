@@ -346,14 +346,13 @@ function spawnEnemies(){
       // Vertical Zigzag (Sine Wave)
       angle += 0.2; 
       e.style.top = (200 + Math.sin(angle) * 100) + "px";
-
-      if(hit(e)) lose();
-
-      // Remove the enemy once it is completely off-screen to the left
-      if(e.offsetLeft < -50){
-        e.remove();
-        clearInterval(move);
-      }
+if(hit(e)){
+  if(!boostActive){
+    lose();
+  } else {
+    e.remove(); // destroy enemy during boost
+    clearInterval(move);
+  }
 
     }, 16);
 
@@ -489,11 +488,13 @@ function spawnRockets(){
       r.style.top=(200+Math.sin(angle)*120)+"px";
 
       if(hit(r)){
-        r.innerText="💥";
-        setTimeout(()=>r.remove(),200);
-        clearInterval(move);
-        lose();
-      }
+  r.innerText="💥";
+  setTimeout(()=>r.remove(),200);
+  clearInterval(move);
+
+  if(!boostActive){
+    lose();
+  }
 
       if(life > 220){
         r.remove();
