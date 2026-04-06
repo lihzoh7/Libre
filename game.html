@@ -589,9 +589,18 @@ window.exit=()=>endGame();
    🏁 END
 ===================== */
 function endGame(){
-  alert("FINAL SCORE: "+score);
-  location.href="main-menu.html";
+  popup.style.display="block";
+
+  popup.innerHTML=`
+    <h2>FINAL SCORE</h2>
+    <h1>${score}</h1>
+    <button onclick="goMenu()">OK</button>
+  `;
 }
+
+window.goMenu = ()=>{
+  location.href="main-menu.html";
+};
 
 /* START */
 showSelector();
