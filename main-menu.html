@@ -142,10 +142,7 @@ document.getElementById("playBtn").onclick = ()=>{
     return;
   }
 
-  // REMOVE 1 LIFE BEFORE PLAY
-  data.lives -= 1;
-  localStorage.setItem("wallet_"+uid, JSON.stringify(data));
-
+  // ✅ DO NOT DEDUCT HERE
   window.location.href="game.html";
 };
 
