@@ -310,39 +310,50 @@ function showMiss(){
   setTimeout(()=>m.remove(),800);
 }
 
-/* =====================
-   🪰 ENEMY (ZIGZAG)
+/* 🪰 ENEMY (ZIGZAG) 
+   Travel time: 4 Seconds (Responsive)
 ===================== */
 function spawnEnemies(){
   setInterval(()=>{
     if(!running) return;
 
-    let e=document.createElement("div");
-    e.className="enemy";
-    e.innerText="🪰";
-    e.style.left=window.innerWidth+"px";
-    e.style.top="200px";
+    let e = document.createElement("div");
+    e.className = "enemy";
+    e.innerText = "🪰";
+    
+    // Start at the far right edge
+    e.style.left = window.innerWidth + "px";
+    e.style.top = "200px";
 
     game.appendChild(e);
 
-    let angle=0;
+    let angle = 0;
 
-    let move=setInterval(()=>{
-      e.style.left=(e.offsetLeft-7.7)+"px";
-      angle+=0.2;
-      e.style.top=(200+Math.sin(angle)*100)+"px";
+    let move = setInterval(() => {
+      // CALCULATE SPEED: Screen width divided by (Seconds * 62.5 frames per second)
+      // window.innerWidth / 250 = 4 seconds total travel time
+      let speed = window.innerWidth / 250; 
+      
+      // Horizontal Movement
+      e.style.left = (e.offsetLeft - speed) + "px";
+      
+      // Vertical Zigzag (Sine Wave)
+      angle += 0.2; 
+      e.style.top = (200 + Math.sin(angle) * 100) + "px";
 
       if(hit(e)) lose();
 
-      if(e.offsetLeft<0){
+      // Remove the enemy once it is completely off-screen to the left
+      if(e.offsetLeft < -50){
         e.remove();
         clearInterval(move);
       }
 
-    },16);
+    }, 16);
 
-  },6000);
+  }, 6000); // New enemy spawns every 6 seconds
 }
+
 
 /* =====================
    🍓 FRUITS
