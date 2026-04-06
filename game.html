@@ -423,6 +423,69 @@ function spawnBoost(){
 
   },15000); // every 15s
   }
+function activateBoost(){
+  if(boostActive) return;
+
+  boostActive=true;
+
+  // slow entry effect
+  speedMultiplier = 0.7;
+
+  setTimeout(()=>{
+    speedMultiplier = 3;
+    player.innerText="🦅"; // eagle
+  },500);
+
+  setTimeout(()=>{
+    boostActive=false;
+    speedMultiplier=1;
+    player.innerText="🍸";
+  },7000);
+  }
+function spawnRockets(){
+  setInterval(()=>{
+    if(!running) return;
+    if(rocketCount>=60) return;
+
+    rocketCount++;
+
+    let r=document.createElement("div");
+    r.className="enemy";
+    r.innerText="🚀";
+    r.style.left=window.innerWidth+"px";
+    r.style.top="200px";
+
+    game.appendChild(r);
+
+    let angle=0;
+    let life=0;
+
+    let move=setInterval(()=>{
+      life++;
+
+      let speed = window.innerWidth / (3.7 * 60);
+
+      r.style.left=(r.offsetLeft-speed)+"px";
+
+      angle+=0.3;
+      r.style.top=(200+Math.sin(angle)*120)+"px";
+
+      if(hit(r)){
+        r.innerText="💥";
+        setTimeout(()=>r.remove(),200);
+        clearInterval(move);
+        lose();
+      }
+
+      if(life > 220){
+        r.remove();
+        clearInterval(move);
+      }
+
+    },16);
+
+  },11000);
+  }
   
 /* =====================
    💥 COLLISION
