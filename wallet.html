@@ -104,21 +104,22 @@ function buyLife(){
 /* BUY PACK (SEND TO ADMIN + OPEN PAYMENT) */
 function buy(price, item, link){
 
-  let requests = JSON.parse(localStorage.getItem("walletRequests") || "[]");
+  const userData = JSON.parse(localStorage.getItem("userData"));
 
-  const newRequest = {
+  const request = {
     id: Date.now(),
-    uid: uid,
-    item: item,
-    price: price,
-    reference: "PAY-" + Date.now(),
+    uid,
+    name: userData.name,
+    surname: userData.surname,
+    email: userData.email,
+    item,
+    price,
     timestamp: Date.now()
   };
 
-  requests.push(newRequest);
-  localStorage.setItem("walletRequests", JSON.stringify(requests));
+  push(ref(db,"walletRequests"), request);
 
-  window.location.href = link;
+  window.open(link);
 
   alert("Payment opened. After paying, wait for admin approval.");
 }
