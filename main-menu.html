@@ -129,107 +129,36 @@ button{
 </div>
 
 <script>
-const API = "https://payfast-backend-475447495901.europe-west1.run.app";
+
 const uid = localStorage.getItem("uid");
 
 /* PLAY BUTTON */
-<script type="module">
+document.getElementById("playBtn").onclick = () => {
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { firebaseConfig } from "./firebase-config.js";
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
-
-document.getElementById("playBtn").onclick = async ()=>{
-
-  const user = auth.currentUser;
-  if(!user) return alert("LOGIN FIRST");
-
-  const snap = await get(ref(db,"users/"+user.uid+"/wallet"));
-  let lives = snap.val()?.lives || 0;
+  let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
+  let lives = data.lives || 0;
 
   if(lives <= 0){
     alert("NO LIVES");
     return;
   }
 
-  // go to game (selector handles deduction)
-  window.location.href="game.html";
+  window.location.href = "game.html";
 };
 
-</script>
+/* OPTIONAL: SIMPLE APPLICATION POPUP */
+const approved = localStorage.getItem("approved_"+uid);
 
-/* APPLICATION CHECK */
-async function checkApp(){
-  const res = await fetch(API+"/applications/status?uid="+uid);
-  const data = await res.json();
-
-  if(!data.approved){
-    document.getElementById("applicationPopup").style.display="flex";
-
-    if(data.status==="pending"){
-      showWaiting();
-    }
-  }
+if(!approved){
+  document.getElementById("applicationPopup").style.display = "flex";
 }
 
-function submitApp(){
-  fetch(API+"/applications/submit",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      uid,
-      name:name.value,
-      surname:surname.value,
-      number:number.value,
-      age:age.value,
-      referral:referral.value
-    })
-  });
+/* CLOSE POPUP ON CLICK */
+document.getElementById("applicationPopup").onclick = () => {
+  document.getElementById("applicationPopup").style.display = "none";
+};
 
-  showWaiting();
-}
-
-function showWaiting(){
-  form.style.display="none";
-  waiting.style.display="block";
-
-  let d=1;
-  setInterval(()=>{
-    dots.innerText=".".repeat(d);
-    d=d===3?1:d+1;
-  },500);
-
-  listenApproval();
-}
-
-function listenApproval(){
-  setInterval(async ()=>{
-    const res = await fetch(API+"/applications/status?uid="+uid);
-    const data = await res.json();
-
-    if(data.approved){
-      applicationPopup.style.display="none";
-      showRef(data.reference);
-    }
-  },3000);
-}
-
-function showRef(ref){
-  referencePopup.style.display="flex";
-  refText.innerText = ref;
-
-  referencePopup.onclick=()=>{
-    referencePopup.style.display="none";
-  }
-}
-
-checkApp();
-</script>
+  </script>
 
 </body>
 </html>
