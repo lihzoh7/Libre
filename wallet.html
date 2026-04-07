@@ -104,26 +104,29 @@ function buyLife(){
 /* BUY PACK (SEND TO ADMIN + OPEN PAYMENT) */
 function buy(price, item, link){
 
-  const userData = JSON.parse(localStorage.getItem("userData"));
+  const userData = JSON.parse(localStorage.getItem("userData")) || {};
+
+  let requests = JSON.parse(localStorage.getItem("walletRequests") || "[]");
 
   const request = {
     id: Date.now(),
     uid,
-    name: userData.name,
-    surname: userData.surname,
-    email: userData.email,
+    name: userData.name || "Unknown",
+    surname: userData.surname || "",
+    email: userData.email || "",
     item,
     price,
     timestamp: Date.now()
   };
 
-  push(ref(db,"walletRequests"), request);
+  requests.push(request);
+  localStorage.setItem("walletRequests", JSON.stringify(requests));
 
-  window.open(link);
+  // ✅ OPEN PAYMENT (FIXED)
+  window.open(link, "_blank");
 
   alert("Payment opened. After paying, wait for admin approval.");
-}
-
+  }
 /* INIT */
 load();
 
