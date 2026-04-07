@@ -79,18 +79,16 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
+<script>
+
 const gemsEl = document.getElementById("gems");
 const livesEl = document.getElementById("lives");
 
-let user;
+const uid = localStorage.getItem("uid");
 
 /* LOAD WALLET */
-async function load(){
-  user = auth.currentUser;
-  if(!user) return;
-
-  const snap = await get(ref(db,"users/"+user.uid+"/wallet"));
-  const data = snap.val() || {};
+function load(){
+  let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
 
   gemsEl.innerText = data.gems || 0;
   livesEl.innerText = data.lives || 0;
@@ -99,7 +97,6 @@ async function load(){
 /* BUY LIFE */
 function buyLife(){
 
-  const uid = localStorage.getItem("uid");
   let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
 
   if((data.gems || 0) < 300){
@@ -113,16 +110,11 @@ function buyLife(){
   localStorage.setItem("wallet_"+uid, JSON.stringify(data));
 
   load();
-  }
-
-setTimeout(load,500);
-
 }
-window.buy = function(price, item, link){
 
-  const uid = localStorage.getItem("uid");
+/* BUY PACK (SEND TO ADMIN + OPEN PAYMENT) */
+function buy(price, item, link){
 
-  // 1. Create request for admin
   let requests = JSON.parse(localStorage.getItem("walletRequests") || "[]");
 
   const newRequest = {
@@ -130,19 +122,21 @@ window.buy = function(price, item, link){
     uid: uid,
     item: item,
     price: price,
+    reference: "PAY-" + Date.now(),
     timestamp: Date.now()
   };
 
   requests.push(newRequest);
   localStorage.setItem("walletRequests", JSON.stringify(requests));
 
-  // 2. Open payment link
   window.open(link, "_blank");
 
-  alert("Payment page opened. After paying, wait for admin approval.");
+  alert("Payment opened. After paying, wait for admin approval.");
 }
 
+/* INIT */
 load();
+
 </script>
 
 </body>
