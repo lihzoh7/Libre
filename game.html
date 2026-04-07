@@ -129,7 +129,56 @@ Score: <span id="score">0</span><br>
 
 </div>
 
-<script>
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+let user;
+
+onAuthStateChanged(auth, (u)=>{
+  if(!u) location.href="index.html";
+  else user = u;
+});
+
+/* SAVE SCORE */
+async function saveScore(finalScore){
+
+  const uid = user.uid;
+  const time = Date.now();
+
+  // HIGH SCORES
+  await push(ref(db,"highScores/"+uid),{
+    score: finalScore,
+    timestamp: time
+  });
+
+  // LIVE LEADERBOARD
+  await set(ref(db,"leaderboard/current/"+uid),{
+    score: finalScore,
+    timestamp: time
+  });
+}
+
+/* OVERRIDE YOUR END GAME */
+window.endGame = async function(){
+
+  await saveScore(score);
+
+  popup.style.display="block";
+  popup.innerHTML=`
+    <h2>FINAL SCORE</h2>
+    <h1>${score}</h1>
+    <button onclick="goMenu()">OK</button>
+  `;
+};
+  
 const uid = localStorage.getItem("uid");
 
 /* GAME VARIABLES */
