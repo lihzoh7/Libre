@@ -118,7 +118,7 @@ function buy(price, item, link){
   requests.push(newRequest);
   localStorage.setItem("walletRequests", JSON.stringify(requests));
 
-  window.open(link, "_blank");
+  window.location.href = link;
 
   alert("Payment opened. After paying, wait for admin approval.");
 }
