@@ -68,35 +68,55 @@ R5 (2♥ + 500 💎)
 
 </div>
 
-<script>
-const uid = localStorage.getItem("uid");
+<script type="module">
 
-/* LOAD */
-function load(){
-  const data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { firebaseConfig } from "./firebase-config.js";
 
-  gems.innerText = data.gems || 0;
-  lives.innerText = data.lives || 0;
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+const gemsEl = document.getElementById("gems");
+const livesEl = document.getElementById("lives");
+
+let user;
+
+/* LOAD WALLET */
+async function load(){
+  user = auth.currentUser;
+  if(!user) return;
+
+  const snap = await get(ref(db,"users/"+user.uid+"/wallet"));
+  const data = snap.val() || {};
+
+  gemsEl.innerText = data.gems || 0;
+  livesEl.innerText = data.lives || 0;
 }
 
-/* BUY REQUEST */
-function buy(price,item,link){
+/* BUY LIFE */
+window.buyLife = async function(){
 
-  let requests = JSON.parse(localStorage.getItem("walletRequests") || "[]");
+  const snap = await get(ref(db,"users/"+user.uid+"/wallet"));
+  let data = snap.val() || {};
 
-  requests.push({
-    id: Date.now(),
-    uid,
-    price,
-    item,
-    timestamp: Date.now()
-  });
+  if((data.gems || 0) < 300){
+    alert("INSUFFICIENT GEMS");
+    return;
+  }
 
-  localStorage.setItem("walletRequests", JSON.stringify(requests));
+  data.gems -= 300;
+  data.lives = (data.lives || 0) + 1;
 
-  alert("Request sent. Complete payment.");
+  await update(ref(db,"users/"+user.uid+"/wallet"), data);
 
-  setTimeout(()=> window.location.href = link, 800);
+  load();
+}
+
+setTimeout(load,500);
+
 }
 
 /* ADMIN WILL ADD LIVES — BUT THIS IS MANUAL OPTION */
