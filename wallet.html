@@ -97,23 +97,23 @@ async function load(){
 }
 
 /* BUY LIFE */
-window.buyLife = async function(){
+function buyLife(){
 
-  const snap = await get(ref(db,"users/"+user.uid+"/wallet"));
-  let data = snap.val() || {};
+  const uid = localStorage.getItem("uid");
+  let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
 
   if((data.gems || 0) < 300){
-    alert("INSUFFICIENT GEMS");
+    alert("Not enough gems");
     return;
   }
 
   data.gems -= 300;
   data.lives = (data.lives || 0) + 1;
 
-  await update(ref(db,"users/"+user.uid+"/wallet"), data);
+  localStorage.setItem("wallet_"+uid, JSON.stringify(data));
 
   load();
-}
+  }
 
 setTimeout(load,500);
 
@@ -140,23 +140,6 @@ window.buy = function(price, item, link){
   window.open(link, "_blank");
 
   alert("Payment page opened. After paying, wait for admin approval.");
-};
-  
-/* ADMIN WILL ADD LIVES — BUT THIS IS MANUAL OPTION */
-function buyLife(){
-  let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
-
-  if((data.gems || 0) < 300){
-    alert("Not enough gems");
-    return;
-  }
-
-  data.gems -= 300;
-  data.lives = (data.lives || 0) + 1;
-
-  localStorage.setItem("wallet_"+uid, JSON.stringify(data));
-
-  load();
 }
 
 load();
