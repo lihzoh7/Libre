@@ -133,18 +133,35 @@ const API = "https://payfast-backend-475447495901.europe-west1.run.app";
 const uid = localStorage.getItem("uid");
 
 /* PLAY BUTTON */
-document.getElementById("playBtn").onclick = ()=>{
+<script type="module">
 
-  const data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { firebaseConfig } from "./firebase-config.js";
 
-  if(!data.lives || data.lives <= 0){
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+document.getElementById("playBtn").onclick = async ()=>{
+
+  const user = auth.currentUser;
+  if(!user) return alert("LOGIN FIRST");
+
+  const snap = await get(ref(db,"users/"+user.uid+"/wallet"));
+  let lives = snap.val()?.lives || 0;
+
+  if(lives <= 0){
     alert("NO LIVES");
     return;
   }
 
-  // ✅ DO NOT DEDUCT HERE
+  // go to game (selector handles deduction)
   window.location.href="game.html";
 };
+
+</script>
 
 /* APPLICATION CHECK */
 async function checkApp(){
