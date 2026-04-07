@@ -118,7 +118,30 @@ window.buyLife = async function(){
 setTimeout(load,500);
 
 }
+window.buy = function(price, item, link){
 
+  const uid = localStorage.getItem("uid");
+
+  // 1. Create request for admin
+  let requests = JSON.parse(localStorage.getItem("walletRequests") || "[]");
+
+  const newRequest = {
+    id: Date.now(),
+    uid: uid,
+    item: item,
+    price: price,
+    timestamp: Date.now()
+  };
+
+  requests.push(newRequest);
+  localStorage.setItem("walletRequests", JSON.stringify(requests));
+
+  // 2. Open payment link
+  window.open(link, "_blank");
+
+  alert("Payment page opened. After paying, wait for admin approval.");
+};
+  
 /* ADMIN WILL ADD LIVES — BUT THIS IS MANUAL OPTION */
 function buyLife(){
   let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
