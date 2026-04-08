@@ -107,15 +107,22 @@ async function sendRequest(price,item){
   const user = userSnap.val() || {};
 
   const request = {
-    uid,
-    name: user.name || "",
-    surname: user.surname || "",
-    email: user.email || "",
-    item,
-    price,
-    status: "pending",
-    timestamp: Date.now()
-  };
+  uid,
+  name: user.name || "",
+  surname: user.surname || "",
+  email: user.email || "",
+  item,
+  price,
+
+  gems: item.includes("300") ? 300 :
+        item.includes("900") ? 900 :
+        item.includes("500") ? 500 : 0,
+
+  lives: item.includes("2 lives") ? 2 : 0,
+
+  status: "pending",
+  timestamp: Date.now()
+};
 
   await push(ref(db,"walletRequests"), request);
 
