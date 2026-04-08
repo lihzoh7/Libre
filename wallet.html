@@ -92,7 +92,16 @@ async function load(){
 }
 
 /* BUY */
-window.buy = async function(price,item,link){
+window.buy = function(price,item,link){
+
+  // ✅ OPEN FIRST (this fixes your issue)
+  window.open(link, "_blank");
+
+  // THEN do Firebase stuff
+  sendRequest(price,item);
+};
+
+async function sendRequest(price,item){
 
   const userSnap = await get(ref(db,"users/"+uid));
   const user = userSnap.val() || {};
@@ -109,8 +118,6 @@ window.buy = async function(price,item,link){
   };
 
   await push(ref(db,"walletRequests"), request);
-
-  window.open(link, "_blank");
 
   alert("Payment opened. Wait for approval.");
 }
