@@ -228,8 +228,13 @@ function gameOpen(){
 ===================== */
 function showSelector(){
 
-  let data=JSON.parse(localStorage.getItem("wallet_"+uid)||"{}");
-  walletLives=data.lives||0;
+import { get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+async function loadWallet(){
+  const snap = await get(ref(db,"wallet/"+uid));
+  const data = snap.val() || {};
+  walletLives = data.lives || 0;
+  }
 
   if(!gameOpen()){
     popup.style.display="block";
