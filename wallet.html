@@ -13,26 +13,21 @@ body{
   display:flex;
   justify-content:center;
 }
-
 #wallet{
   width:400px;
   padding:20px;
 }
-
 .tiles{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:10px;
 }
-
 .tile{
   background:#003366;
   padding:20px;
   text-align:center;
   border-radius:10px;
-  cursor:pointer;
 }
-
 .tab{
   margin-top:10px;
   background:#001f5c;
@@ -46,12 +41,11 @@ body{
 <body>
 
 <div id="wallet">
-
 <h2>WALLET</h2>
 
 <div class="tiles">
   <div class="tile">💎 <span id="gems">0</span></div>
-  <div class="tile" onclick="buyLife()">❤️ <span id="lives">0</span></div>
+  <div class="tile">❤️ <span id="lives">0</span></div>
 </div>
 
 <div class="tab" onclick="buy('R1.50','300 gems','https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-150')">
@@ -68,7 +62,21 @@ R5 (2♥ + 500 💎)
 
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIza...",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
 
 const gemsEl = document.getElementById("gems");
 const livesEl = document.getElementById("lives");
@@ -76,61 +84,40 @@ const livesEl = document.getElementById("lives");
 const uid = localStorage.getItem("uid");
 
 /* LOAD WALLET */
-function load(){
-  let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
+async function load(){
+  const snap = await get(ref(db,"wallet/"+uid));
+  const data = snap.val() || {};
 
   gemsEl.innerText = data.gems || 0;
   livesEl.innerText = data.lives || 0;
 }
 
-/* BUY LIFE */
-function buyLife(){
+/* BUY */
+window.buy = async function(price,item,link){
 
-  let data = JSON.parse(localStorage.getItem("wallet_"+uid) || "{}");
-
-  if((data.gems || 0) < 300){
-    alert("Not enough gems");
-    return;
-  }
-
-  data.gems -= 300;
-  data.lives = (data.lives || 0) + 1;
-
-  localStorage.setItem("wallet_"+uid, JSON.stringify(data));
-
-  load();
-}
-
-/* BUY PACK (SEND TO ADMIN + OPEN PAYMENT) */
-function buy(price, item, link){
-
-  const userData = JSON.parse(localStorage.getItem("userData")) || {};
-
-  let requests = JSON.parse(localStorage.getItem("walletRequests") || "[]");
+  const userSnap = await get(ref(db,"users/"+uid));
+  const user = userSnap.val() || {};
 
   const request = {
-    id: Date.now(),
     uid,
-    name: userData.name || "Unknown",
-    surname: userData.surname || "",
-    email: userData.email || "",
+    name: user.name || "",
+    surname: user.surname || "",
+    email: user.email || "",
     item,
     price,
+    status: "pending",
     timestamp: Date.now()
   };
 
-  requests.push(request);
-  localStorage.setItem("walletRequests", JSON.stringify(requests));
+  await push(ref(db,"walletRequests"), request);
 
-  // ✅ OPEN PAYMENT (FIXED)
   window.open(link, "_blank");
 
-  alert("Payment opened. After paying, wait for admin approval.");
-  }
-/* INIT */
-load();
+  alert("Payment opened. Wait for approval.");
+}
 
+load();
 </script>
 
 </body>
-  </html>
+</html>
