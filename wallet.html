@@ -84,7 +84,10 @@ const gemsEl = document.getElementById("gems");
 const livesEl = document.getElementById("lives");
 
 const uid = localStorage.getItem("uid");
-
+if(!uid){
+  alert("User not logged in");
+  throw new Error("No UID");
+  }
 /* LOAD WALLET */
 async function load(){
   const snap = await get(ref(db,"wallet/"+uid));
