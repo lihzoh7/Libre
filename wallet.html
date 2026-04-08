@@ -89,13 +89,16 @@ if(!uid){
   throw new Error("No UID");
   }
 /* LOAD WALLET */
-async function load(){
-  const snap = await get(ref(db,"wallet/"+uid));
-  const data = snap.val() || {};
+import { onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-  gemsEl.innerText = data.gems || 0;
-  livesEl.innerText = data.lives || 0;
-}
+function load(){
+  onValue(ref(db,"wallet/"+uid),(snap)=>{
+    const data = snap.val() || {};
+
+    gemsEl.innerText = data.gems || 0;
+    livesEl.innerText = data.lives || 0;
+  });
+  }
 
 /* BUY */
 window.buy = function(price,item,link){
