@@ -130,7 +130,7 @@ Score: <span id="score">0</span><br>
 </div>
 
 <script type="module">
-
+import { get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
@@ -236,15 +236,12 @@ function gameOpen(){
 /* =====================
    ❤️ LIFE SELECTOR
 ===================== */
-function showSelector(){
+async function showSelector(){
 
-import { get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
-async function loadWallet(){
   const snap = await get(ref(db,"wallet/"+uid));
   const data = snap.val() || {};
+
   walletLives = data.lives || 0;
-  }
 
   if(!gameOpen()){
     popup.style.display="block";
@@ -279,14 +276,13 @@ async function loadWallet(){
     }
   }
 
-  window.enter=()=>{
+  window.enter=async ()=>{
     if(count<=0) return alert("SELECT LIVES");
 
     if(count>walletLives) return alert("INSUFFICIENT LIVES");
 
-    let data=JSON.parse(localStorage.getItem("wallet_"+uid)||"{}");
-    data.lives-=count;
-    localStorage.setItem("wallet_"+uid,JSON.stringify(data));
+    // 🔥 SUBTRACT FROM FIREBASE
+    await set(ref(db,"wallet/"+uid+"/lives"), walletLives - count);
 
     gameLives=count-1;
     document.getElementById("lives").innerText=gameLives;
@@ -295,7 +291,7 @@ async function loadWallet(){
 
     startGame();
   }
-}
+  }
 
 /* =====================
    🚀 START GAME
