@@ -109,7 +109,26 @@ window.buy = function(price,item,link){
   // THEN do Firebase stuff
   sendRequest(price,item);
 };
+document.querySelector(".tile:nth-child(2)").onclick = async ()=>{
 
+  const snap = await get(ref(db,"wallet/"+uid));
+  const data = snap.val() || {};
+
+  let gems = data.gems || 0;
+  let lives = data.lives || 0;
+
+  if(gems < 100){
+    alert("Not enough gems (100 💎 = 1 ❤️)");
+    return;
+  }
+
+  await set(ref(db,"wallet/"+uid),{
+    gems: gems - 100,
+    lives: lives + 1
+  });
+
+  alert("+1 ❤️ purchased!");
+};
 async function sendRequest(price,item){
 
   const userSnap = await get(ref(db,"users/"+uid));
