@@ -230,71 +230,7 @@ function gameOpen(){
 /* =====================
    ❤️ LIFE SELECTOR
 ===================== */
-async function showSelector(){
-
-  if(!user) return;
-
-const snap = await get(ref(db,"wallet/"+user.uid));
-  const data = snap.val() || {};
-  walletLives = data.lives || 0;
-
-  if(!gameOpen()){
-    popup.style.display="block";
-    popup.innerHTML="<h2>GAME CLOSED</h2>";
-    return;
-  }
-
-  let count=0;
-
-  popup.style.display="block";
-
-  popup.innerHTML=`
-  <h2 style="margin-bottom:10px;">Select Lives ❤️</h2>
-
-  <div style="font-size:18px;margin-bottom:10px;">
-    Wallet: ${walletLives}
-  </div>
-
-  <div style="display:flex;justify-content:center;align-items:center;gap:15px;margin-bottom:15px;">
-    <button onclick="dec()">➖</button>
-    <span id="count" style="font-size:22px;">0</span>
-    <button onclick="inc()">➕</button>
-  </div>
-
-  <button onclick="enter()" style="width:100%;">ENTER GAME</button>
-`;
-
-  window.inc=()=>{
-    if(count<walletLives && count<5){
-      count++;
-      document.getElementById("count").innerText=count;
-    }
-  }
-
-  window.dec=()=>{
-    if(count>0){
-      count--;
-      document.getElementById("count").innerText=count;
-    }
-  }
-
-  window.enter=async ()=>{
-    if(count<=0) return alert("SELECT LIVES");
-
-    if(count>walletLives) return alert("INSUFFICIENT LIVES");
-
-    // 🔥 SUBTRACT FROM FIREBASE
-    await set(ref(db,"wallet/"+user.uid+"/lives"), walletLives - count);
-
-    gameLives=count-1;
-    document.getElementById("lives").innerText=gameLives;
-
-    popup.style.display="none";
-
-    startGame();
-  }
-  }
-
+ 
 /* =====================
    🚀 START GAME
 ===================== */
@@ -668,11 +604,28 @@ window.goMenu = ()=>{
 
 /* START */
 onAuthStateChanged(auth, (u)=>{
-  if(!u) location.href="index.html";
-  else{
-    user = u;
-    showSelector(); // 🔥 ONLY HERE
+  if(!u){
+    location.href="index.html";
+    return;
   }
+
+  user = u;
+
+  // ✅ GET SELECTED LIVES FROM SELECTOR PAGE
+  let selected = parseInt(localStorage.getItem("selectedLives")) || 0;
+
+  // 🚫 if user came here without selecting
+  if(selected <= 0){
+    location.href = "main-menu.html";
+    return;
+  }
+
+  // 🎯 SET GAME LIVES
+  gameLives = selected - 1;
+  document.getElementById("lives").innerText = gameLives;
+
+  // 🚀 START GAME
+  startGame();
 });
 </script>
 
