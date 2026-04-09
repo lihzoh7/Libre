@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Select Lives</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#2b2b2b;
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.box{
+  background:#111;
+  padding:30px;
+  border-radius:16px;
+  text-align:center;
+  width:300px;
+  border:2px solid #0074D9;
+}
+
+button{
+  padding:10px 15px;
+  margin:5px;
+  font-size:18px;
+  border:none;
+  border-radius:8px;
+  background:#0074D9;
+  color:white;
+  cursor:pointer;
+}
+
+#count{
+  font-size:22px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h2>Select Lives ❤️</h2>
+
+  <div>Wallet: <span id="wallet">0</span></div>
+
+  <br>
+
+  <button onclick="dec()">➖</button>
+  <span id="count">0</span>
+  <button onclick="inc()">➕</button>
+
+  <br><br>
+
+  <button onclick="enter()">ENTER GAME</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.appspot.com",
+  messagingSenderId: "475447495901",
+  appId: "1:475447495901:web:9189276a162a3680afdf34"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+let user;
+let walletLives = 0;
+let count = 0;
+
+onAuthStateChanged(auth, async (u)=>{
+  if(!u) location.href="index.html";
+
+  user = u;
+
+  const snap = await get(ref(db,"wallet/"+user.uid));
+  const data = snap.val() || {};
+
+  walletLives = data.lives || 0;
+
+  document.getElementById("wallet").innerText = walletLives;
+});
+
+/* BUTTONS */
+window.inc = ()=>{
+  if(count < walletLives && count < 5){
+    count++;
+    document.getElementById("count").innerText = count;
+  }
+};
+
+window.dec = ()=>{
+  if(count > 0){
+    count--;
+    document.getElementById("count").innerText = count;
+  }
+};
+
+/* ENTER GAME */
+window.enter = async ()=>{
+  if(count <= 0) return alert("SELECT LIVES");
+
+  if(count > walletLives) return alert("NOT ENOUGH LIVES");
+
+  // 🔥 SUBTRACT
+  await set(ref(db,"wallet/"+user.uid+"/lives"), walletLives - count);
+
+  // 🔥 PASS TO GAME (IMPORTANT)
+  localStorage.setItem("selectedLives", count);
+
+  location.href = "game.html";
+};
+</script>
+
+</body>
+  </html>
