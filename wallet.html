@@ -45,7 +45,7 @@ body{
 
 <div class="tiles">
   <div class="tile">💎 <span id="gems">0</span></div>
-  <div class="tile">❤️ <span id="lives">0</span></div>
+  <div class="tile" id="buyLife">❤️ <span id="lives">0</span></div>
 </div>
 
 <div class="tab" onclick="buy('R1.50','300 gems','https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-150')">
@@ -64,7 +64,7 @@ R5 (2♥ + 500 💎)
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, push, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -109,7 +109,7 @@ window.buy = function(price,item,link){
   // THEN do Firebase stuff
   sendRequest(price,item);
 };
-document.querySelector(".tile:nth-child(2)").onclick = async ()=>{
+document.getElementById("buyLife").onclick = async ()=>{
 
   const snap = await get(ref(db,"wallet/"+uid));
   const data = snap.val() || {};
@@ -118,14 +118,12 @@ document.querySelector(".tile:nth-child(2)").onclick = async ()=>{
   let lives = data.lives || 0;
 
   if(gems < 100){
-    alert("Not enough gems (100 💎 = 1 ❤️)");
+    alert("Not enough gems (300 💎 = 1 ❤️)");
     return;
   }
 
-  await set(ref(db,"wallet/"+uid),{
-    gems: gems - 100,
-    lives: lives + 1
-  });
+  await set(ref(db,"wallet/"+uid+"/gems"), gems - 100);
+  await set(ref(db,"wallet/"+uid+"/lives"), lives + 1);
 
   alert("+1 ❤️ purchased!");
 };
