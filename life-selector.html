@@ -8,8 +8,8 @@
 <style>
 body{
   margin:0;
+  background:#0a0a0a;
   font-family:Arial;
-  background:#2b2b2b;
   color:white;
   display:flex;
   justify-content:center;
@@ -27,7 +27,7 @@ body{
 }
 
 button{
-  padding:10px 15px;
+  padding:10px;
   margin:5px;
   font-size:18px;
   border:none;
@@ -37,8 +37,9 @@ button{
   cursor:pointer;
 }
 
-#count{
-  font-size:22px;
+.count{
+  font-size:24px;
+  margin:10px;
 }
 </style>
 </head>
@@ -50,24 +51,23 @@ button{
 
   <div>Wallet: <span id="wallet">0</span></div>
 
-  <br>
-
-  <button onclick="dec()">➖</button>
-  <span id="count">0</span>
-  <button onclick="inc()">➕</button>
-
-  <br><br>
+  <div>
+    <button onclick="dec()">➖</button>
+    <span id="count" class="count">0</span>
+    <button onclick="inc()">➕</button>
+  </div>
 
   <button onclick="enter()">ENTER GAME</button>
 </div>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSy...",
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   authDomain: "tose-ccf8f.firebaseapp.com",
   databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "tose-ccf8f",
@@ -85,7 +85,10 @@ let walletLives = 0;
 let count = 0;
 
 onAuthStateChanged(auth, async (u)=>{
-  if(!u) location.href="index.html";
+  if(!u){
+    location.href="index.html";
+    return;
+  }
 
   user = u;
 
@@ -97,7 +100,6 @@ onAuthStateChanged(auth, async (u)=>{
   document.getElementById("wallet").innerText = walletLives;
 });
 
-/* BUTTONS */
 window.inc = ()=>{
   if(count < walletLives && count < 5){
     count++;
@@ -112,20 +114,27 @@ window.dec = ()=>{
   }
 };
 
-/* ENTER GAME */
 window.enter = async ()=>{
-  if(count <= 0) return alert("SELECT LIVES");
+  if(count <= 0){
+    alert("SELECT LIVES");
+    return;
+  }
 
-  if(count > walletLives) return alert("NOT ENOUGH LIVES");
+  if(count > walletLives){
+    alert("NOT ENOUGH LIVES");
+    return;
+  }
 
-  // 🔥 SUBTRACT
+  // 🔥 Deduct from Firebase
   await set(ref(db,"wallet/"+user.uid+"/lives"), walletLives - count);
 
-  // 🔥 PASS TO GAME (IMPORTANT)
+  // ✅ Save for game
   localStorage.setItem("selectedLives", count);
 
+  // 🚀 Go to game
   location.href = "game.html";
 };
+
 </script>
 
 </body>
