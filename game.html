@@ -317,8 +317,10 @@ function startGame(){
 /* =====================
    🎮 PLAYER
 ===================== */
-document.addEventListener("click",()=>velocity=jump);
-
+document.addEventListener("click",(e)=>{
+  if(e.target.closest(".popup")) return; // ignore popup clicks
+  velocity = jump;
+});
 /* =====================
    🔄 LOOP
 ===================== */
