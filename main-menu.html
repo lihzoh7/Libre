@@ -14,6 +14,12 @@ body{
   overflow:hidden;
 }
 
+/* NAV */
+#logout{position:absolute;top:10px;left:10px;color:white;cursor:pointer}
+#profile{position:absolute;top:10px;right:10px;color:white;cursor:pointer}
+#messages{position:absolute;top:10px;right:50px;color:white;cursor:pointer}
+
+/* TABS */
 .tabs{
   position:absolute;
   bottom:50px;
@@ -22,67 +28,70 @@ body{
   justify-content:center;
   gap:20px;
 }
-
 .tab{
-  width:100px;
-  height:50px;
-  background:rgba(255,255,255,0.2);
+  width:110px;
+  height:55px;
+  background:rgba(255,255,255,0.25);
   display:flex;
   align-items:center;
   justify-content:center;
-  border-radius:8px;
+  border-radius:10px;
   cursor:pointer;
   color:white;
+  font-weight:bold;
 }
 
-#logout{position:absolute;top:10px;left:10px;color:white;cursor:pointer}
-#profile{position:absolute;top:10px;right:10px;color:white;cursor:pointer}
-#messages{position:absolute;top:10px;right:50px;color:white;cursor:pointer}
-
-/* APPLICATION POPUP */
+/* POPUP */
 #applicationPopup{
-  display:none;
   position:fixed;
   top:0;left:0;
   width:100%;height:100%;
-  background:rgba(0,0,0,0.7);
+  background:rgba(0,0,0,0.85);
+  display:none;
   justify-content:center;
   align-items:center;
+  z-index:999;
 }
 
+/* IMPORTANT: allow clicking inside */
 .popup-box{
   background:white;
-  padding:20px;
-  border-radius:10px;
+  padding:25px;
+  border-radius:15px;
+  width:90%;
+  max-width:350px;
   text-align:center;
-  width:280px;
+}
+
+/* prevent closing when clicking inside */
+.popup-box *{
+  pointer-events:auto;
 }
 
 input{
   width:100%;
-  padding:8px;
-  margin:5px 0;
+  padding:12px;
+  margin:6px 0;
+  font-size:16px;
 }
 
 button{
-  padding:10px;
+  padding:12px;
   width:100%;
-  background:lightblue;
+  background:#4CAF50;
+  color:white;
   border:none;
   cursor:pointer;
+  margin-top:10px;
+  font-size:16px;
 }
 
-/* REFERENCE POPUP */
-#referencePopup{
+/* WAITING STYLE */
+#waiting{
   display:none;
-  position:fixed;
-  top:0;left:0;
-  width:100%;height:100%;
-  background:black;
-  color:white;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
+  font-weight:bold;
+  color:orange;
+  font-size:18px;
 }
 </style>
 </head>
@@ -100,12 +109,12 @@ button{
   <div class="tab" onclick="location.href='wallet.html'">WALLET</div>
 </div>
 
-<!-- APPLICATION -->
+<!-- APPLICATION POPUP -->
 <div id="applicationPopup">
   <div class="popup-box">
 
     <div id="form">
-      <h3>Apply</h3>
+      <h2>Apply</h2>
       <input id="name" placeholder="Name">
       <input id="surname" placeholder="Surname">
       <input id="number" placeholder="Number">
@@ -114,24 +123,17 @@ button{
       <button onclick="submitApp()">Submit</button>
     </div>
 
-    <div id="waiting" style="display:none;">
-      WAITING FOR APPROVAL<span id="dots">.</span>
+    <div id="waiting">
+      WAITING FOR APPROVAL...
     </div>
 
-  </div>
-</div>
-
-<div id="referencePopup">
-  <div>
-    <h2 id="refText"></h2>
-    <p>Click anywhere to continue</p>
   </div>
 </div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -153,43 +155,73 @@ let user;
 onAuthStateChanged(auth, async (u)=>{
   if(!u){
     location.href="index.html";
-  }else{
+  } else {
     user = u;
 
-    // 🔥 CHECK APPROVAL FROM FIREBASE (optional)
     const snap = await get(ref(db,"users/"+user.uid));
     const data = snap.val() || {};
 
+    // 🔥 SHOW POPUP ONLY IF NOT APPROVED
     if(!data.approved){
       document.getElementById("applicationPopup").style.display="flex";
+
+      // if already applied → show waiting
+      const appSnap = await get(ref(db,"applications/"+user.uid));
+      if(appSnap.exists()){
+        showWaiting();
+      }
     }
   }
 });
 
-/* PLAY BUTTON */
-document.getElementById("playBtn").onclick = async () => {
+/* SUBMIT APPLICATION */
+window.submitApp = async function(){
 
-  if(!user) return;
+  const name = document.getElementById("name").value;
+  const surname = document.getElementById("surname").value;
+  const number = document.getElementById("number").value;
+  const age = document.getElementById("age").value;
+  const referral = document.getElementById("referral").value;
+
+  if(!name || !surname || !number || !age){
+    alert("Fill all fields");
+    return;
+  }
+
+  await set(ref(db,"applications/"+user.uid),{
+    uid:user.uid,
+    name,
+    surname,
+    number,
+    age,
+    referral,
+    status:"pending",
+    timestamp:Date.now()
+  });
+
+  showWaiting();
+};
+
+function showWaiting(){
+  document.getElementById("form").style.display="none";
+  document.getElementById("waiting").style.display="block";
+}
+
+/* PLAY BUTTON */
+document.getElementById("playBtn").onclick = async ()=>{
 
   const snap = await get(ref(db,"wallet/"+user.uid));
   const data = snap.val() || {};
 
-  let lives = data.lives || 0;
-
-  if(lives <= 0){
+  if((data.lives || 0) <= 0){
     alert("NO LIVES");
     return;
   }
 
-  window.location.href = "game.html";
+  location.href="game.html";
 };
 
-/* CLOSE POPUP */
-document.getElementById("applicationPopup").onclick = () => {
-  document.getElementById("applicationPopup").style.display = "none";
-};
-
-  </script>
+</script>
 
 </body>
-</html>
+  </html>
