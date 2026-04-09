@@ -663,7 +663,13 @@ window.goMenu = ()=>{
 };
 
 /* START */
-showSelector();
+onAuthStateChanged(auth, (u)=>{
+  if(!u) location.href="index.html";
+  else{
+    user = u;
+    showSelector(); // 🔥 ONLY HERE
+  }
+});
 </script>
 
 </body>
