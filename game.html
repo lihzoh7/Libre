@@ -153,11 +153,6 @@ const auth = getAuth(app);
 
 let user;
 
-onAuthStateChanged(auth, (u)=>{
-  if(!u) location.href="index.html";
-  else user = u;
-});
-
 /* SAVE SCORE */
 async function saveScore(finalScore){
 
@@ -237,9 +232,10 @@ function gameOpen(){
 ===================== */
 async function showSelector(){
 
-  const snap = await get(ref(db,"wallet/"+user.uid));
-  const data = snap.val() || {};
+  if(!user) return;
 
+const snap = await get(ref(db,"wallet/"+user.uid));
+  const data = snap.val() || {};
   walletLives = data.lives || 0;
 
   if(!gameOpen()){
@@ -288,7 +284,7 @@ async function showSelector(){
     if(count>walletLives) return alert("INSUFFICIENT LIVES");
 
     // 🔥 SUBTRACT FROM FIREBASE
-    await set(ref(db,"wallet/"+user.uid+"/lives"), walletLives - count););
+    await set(ref(db,"wallet/"+user.uid+"/lives"), walletLives - count);
 
     gameLives=count-1;
     document.getElementById("lives").innerText=gameLives;
