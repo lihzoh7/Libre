@@ -69,13 +69,14 @@ body{
   left:50%;
   transform:translate(-50%,-50%);
   background:#111;
-  padding:25px;
-  border-radius:12px;
+  padding:30px;
+  border-radius:16px;
   text-align:center;
   z-index:100;
-  min-width:220px;
-  box-shadow:0 0 20px rgba(0,0,0,0.8);
-}
+  width:300px;
+  box-shadow:0 0 25px rgba(0,0,0,0.9);
+  border:2px solid #0074D9;
+  }
 
 /* ADD THIS */
 .popup button{
@@ -254,13 +255,20 @@ async function showSelector(){
   popup.style.display="block";
 
   popup.innerHTML=`
-    <h3>Lives ♥ = ${walletLives}</h3>
+  <h2 style="margin-bottom:10px;">Select Lives ❤️</h2>
+
+  <div style="font-size:18px;margin-bottom:10px;">
+    Wallet: ${walletLives}
+  </div>
+
+  <div style="display:flex;justify-content:center;align-items:center;gap:15px;margin-bottom:15px;">
     <button onclick="dec()">➖</button>
-    <span id="count">0</span>
+    <span id="count" style="font-size:22px;">0</span>
     <button onclick="inc()">➕</button>
-    <br><br>
-    <button onclick="enter()">ENTER</button>
-  `;
+  </div>
+
+  <button onclick="enter()" style="width:100%;">ENTER GAME</button>
+`;
 
   window.inc=()=>{
     if(count<walletLives && count<5){
