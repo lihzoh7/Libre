@@ -1,213 +1,180 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>SPACE GLASS - Scores / Leaderboard</title>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7026930699288972"
-     crossorigin="anonymous"></script>
+<title>Scores</title>
+
 <style>
-body {
-  margin:0;
-  font-family: Arial, sans-serif;
+body{
   background:#001f3f;
   color:white;
-  display:flex;
-  justify-content:center;
+  font-family:Arial;
+  text-align:center;
 }
-#container {
-  width:500px;
-  margin-top:20px;
-  padding:20px;
-}
-#back {
-  font-size:20px;
-  cursor:pointer;
-  margin-bottom:15px;
-}
-.tabs {
-  display:flex;
-  justify-content:space-around;
-  margin-bottom:15px;
-}
-.tab {
+
+.tab{
+  display:inline-block;
   padding:10px 20px;
-  cursor:pointer;
+  margin:5px;
   background:#003366;
-  border-radius:5px;
+  cursor:pointer;
 }
-.tab.active {
-  background:#0074D9;
-}
-#content {
-  max-height:400px;
-  overflow-y:auto;
-}
-.score-row {
-  display:flex;
-  justify-content:space-between;
-  padding:5px 10px;
+
+.active{ background:#0074D9; }
+
+.score{
+  font-size:20px;
+  padding:10px;
   border-bottom:1px solid #444;
 }
-.score-row:nth-child(odd){
-  background: rgba(255,255,255,0.05);
-}
-.medal {
-  margin-right:5px;
+
+#popup{
+  position:fixed;
+  top:40%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:white;
+  color:green;
+  padding:30px;
+  font-size:24px;
+  display:none;
 }
 </style>
 </head>
 
 <body>
-<div id="container">
-  <div id="back" onclick="window.location.href='main-menu.html'">↩️ Back</div>
-  
-  <div class="tabs">
-    <div class="tab active" id="highScoresTab">HIGH SCORES</div>
-    <div class="tab" id="leaderboardTab">LEADERBOARD</div>
-  </div>
-  
-  <div id="content"></div>
+
+<div>
+  <div id="highTab" class="tab active">HIGH SCORES</div>
+  <div id="leaderTab" class="tab">LEADERBOARD</div>
 </div>
 
+<div id="timer"></div>
+<div id="content"></div>
+
+<div id="popup"></div>
+
 <script type="module">
-import { getAuth, onAuthStateChanged } 
-from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, onValue, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-import { getDatabase, ref, get, onValue } 
-from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+const app = initializeApp({
+  apiKey:"AIzaSy...",
+  databaseURL:"https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+});
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  authDomain: "tose-ccf8f.firebaseapp.com",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tose-ccf8f",
-  storageBucket: "tose-ccf8f.appspot.com",
-  messagingSenderId: "475447495901",
-  appId: "1:475447495901:web:9189276a162a3680afdf34"
-};
-
-const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-onAuthStateChanged(auth, (user)=>{
-  if(!user) location.href="index.html";
-});
+const content = document.getElementById("content");
+const popup = document.getElementById("popup");
 
-const content = document.getElementById('content');
-const highScoresTab = document.getElementById('highScoresTab');
-const leaderboardTab = document.getElementById('leaderboardTab');
+let currentTab="high";
 
-let leaderboardListener = null;
+/* ---------------- TIME SYSTEM ---------------- */
 
-/* SWITCH TAB */
-function switchTab(tab){
-  if(tab==="high"){
-    highScoresTab.classList.add("active");
-    leaderboardTab.classList.remove("active");
-    loadHighScores();
-  }else{
-    leaderboardTab.classList.add("active");
-    highScoresTab.classList.remove("active");
-    loadLeaderboard();
+function getPhase(){
+  const now = new Date();
+  const minutes = now.getMinutes();
+
+  if(minutes < 28) return "game";
+  if(minutes < 30) return "reset";
+  if(minutes < 30.5) return "ready";
+}
+
+function handlePhase(){
+  const phase = getPhase();
+
+  if(phase==="reset"){
+    popup.innerText="RESETTING...";
+    popup.style.display="block";
+
+    set(ref(db,"leaderboard/current"), null); // clear
+  }
+  else if(phase==="ready"){
+    popup.innerText="GETTING READY...";
+    popup.style.display="block";
+  }
+  else{
+    popup.style.display="none";
   }
 }
 
-highScoresTab.onclick = ()=>switchTab("high");
-leaderboardTab.onclick = ()=>switchTab("live");
+setInterval(handlePhase,1000);
 
-/* 🔥 LOAD USER MAP (FAST) */
-async function getUsersMap(){
-  const snap = await get(ref(db,"users"));
-  return snap.val() || {};
-}
+/* ---------------- HIGH SCORES ---------------- */
 
-/* HIGH SCORES */
-async function loadHighScores(){
-  content.innerHTML = "Loading...";
+async function loadHigh(){
+  const snap = await get(ref(db,"highScores"));
+  const data = snap.val() || {};
 
-  const [scoresSnap, users] = await Promise.all([
-    get(ref(db,"highScores")),
-    getUsersMap()
-  ]);
+  let arr=[];
 
-  const allScores = scoresSnap.val() || {};
-  let arr = [];
-
-  for(const uid in allScores){
-    for(const key in allScores[uid]){
-      arr.push({
-        uid,
-        score: allScores[uid][key].score,
-        timestamp: allScores[uid][key].timestamp
-      });
+  for(let uid in data){
+    for(let k in data[uid]){
+      arr.push(data[uid][k]);
     }
   }
 
   arr.sort((a,b)=>b.score-a.score);
-  displayScores(arr.slice(0,20), users);
+
+  arr = arr.slice(0,5);
+
+  content.innerHTML="";
+
+  arr.forEach((s,i)=>{
+    content.innerHTML+=`
+      <div class="score">
+        ${i+1}. ${s.score}
+      </div>
+    `;
+  });
 }
 
-/* LIVE LEADERBOARD */
+/* ---------------- LEADERBOARD ---------------- */
+
 function loadLeaderboard(){
-  content.innerHTML = "Loading...";
+  onValue(ref(db,"leaderboard/current"), snap=>{
+    const data = snap.val()||{};
+    let arr=[];
 
-  if(leaderboardListener) leaderboardListener(); // cleanup
-
-  const lbRef = ref(db,"leaderboard/current");
-
-  leaderboardListener = onValue(lbRef, async snap=>{
-    const data = snap.val() || {};
-    const users = await getUsersMap();
-
-    let arr = [];
-    for(const uid in data){
-      arr.push({
-        uid,
-        score: data[uid].score,
-        timestamp: data[uid].timestamp
-      });
+    for(let uid in data){
+      arr.push(data[uid]);
     }
 
     arr.sort((a,b)=>b.score-a.score);
-    displayScores(arr.slice(0,20), users);
+
+    content.innerHTML="";
+
+    arr.slice(0,20).forEach((s,i)=>{
+      content.innerHTML+=`
+        <div class="score">
+          ${i+1}. ${s.score}
+        </div>
+      `;
+    });
   });
 }
 
-/* DISPLAY */
-function displayScores(arr, users){
-  content.innerHTML = "";
+/* ---------------- SWITCH ---------------- */
 
-  arr.forEach((item,i)=>{
+highTab.onclick=()=>{
+  currentTab="high";
+  highTab.classList.add("active");
+  leaderTab.classList.remove("active");
+  loadHigh();
+};
 
-    const row = document.createElement("div");
-    row.className = "score-row";
+leaderTab.onclick=()=>{
+  currentTab="leader";
+  leaderTab.classList.add("active");
+  highTab.classList.remove("active");
+  loadLeaderboard();
+};
 
-    const user = users[item.uid] || {};
-    const name = user.name || "Player";
-
-    let medal = "";
-    if(i===0) medal="🥇";
-    else if(i===1) medal="🥈";
-    else if(i===2) medal="🥉";
-
-    const date = new Date(item.timestamp).toLocaleString();
-
-    row.innerHTML = `
-      <span>${medal} ${name}</span>
-      <span>${item.score} (${date})</span>
-    `;
-
-    content.appendChild(row);
-  });
-}
-
-/* INIT */
-loadHighScores();
+loadHigh();
 
 </script>
-
 </body>
 </html>
