@@ -72,15 +72,18 @@ body {
 <script type="module">
 import { getAuth, onAuthStateChanged } 
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+import { getDatabase, ref, get, onValue } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   authDomain: "tose-ccf8f.firebaseapp.com",
   databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "tose-ccf8f",
-  storageBucket: "tose-ccf8f.firebasestorage.app",
+  storageBucket: "tose-ccf8f.appspot.com",
   messagingSenderId: "475447495901",
   appId: "1:475447495901:web:9189276a162a3680afdf34"
 };
@@ -88,109 +91,122 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
-  
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = "index.html";
-  }
+
+onAuthStateChanged(auth, (user)=>{
+  if(!user) location.href="index.html";
 });
 
 const content = document.getElementById('content');
 const highScoresTab = document.getElementById('highScoresTab');
 const leaderboardTab = document.getElementById('leaderboardTab');
 
-highScoresTab.addEventListener('click', ()=>{switchTab('high')});
-leaderboardTab.addEventListener('click', ()=>{switchTab('live')});
+let leaderboardListener = null;
 
-let currentTab = 'high';
-
+/* SWITCH TAB */
 function switchTab(tab){
-  currentTab = tab;
-  if(tab==='high'){
-    highScoresTab.classList.add('active');
-    leaderboardTab.classList.remove('active');
+  if(tab==="high"){
+    highScoresTab.classList.add("active");
+    leaderboardTab.classList.remove("active");
     loadHighScores();
-  } else {
-    leaderboardTab.classList.add('active');
-    highScoresTab.classList.remove('active');
+  }else{
+    leaderboardTab.classList.add("active");
+    highScoresTab.classList.remove("active");
     loadLeaderboard();
   }
 }
 
-/* --- Load High Scores --- */
+highScoresTab.onclick = ()=>switchTab("high");
+leaderboardTab.onclick = ()=>switchTab("live");
+
+/* 🔥 LOAD USER MAP (FAST) */
+async function getUsersMap(){
+  const snap = await get(ref(db,"users"));
+  return snap.val() || {};
+}
+
+/* HIGH SCORES */
 async function loadHighScores(){
   content.innerHTML = "Loading...";
-  const snap = await get(ref(db,'highScores'));
-  const allScores = snap.val() || {};
-  
-  // Flatten and sort
-  let scoresArr = [];
+
+  const [scoresSnap, users] = await Promise.all([
+    get(ref(db,"highScores")),
+    getUsersMap()
+  ]);
+
+  const allScores = scoresSnap.val() || {};
+  let arr = [];
+
   for(const uid in allScores){
-    const playerScores = allScores[uid];
-    for(const key in playerScores){
-      scoresArr.push({
+    for(const key in allScores[uid]){
+      arr.push({
         uid,
-        score: playerScores[key].score,
-        timestamp: playerScores[key].timestamp
+        score: allScores[uid][key].score,
+        timestamp: allScores[uid][key].timestamp
       });
     }
   }
-  
-  // Sort descending
-  scoresArr.sort((a,b)=>b.score - a.score);
-  
-  displayScores(scoresArr.slice(0,20));
+
+  arr.sort((a,b)=>b.score-a.score);
+  displayScores(arr.slice(0,20), users);
 }
 
-/* --- Load Live Leaderboard --- */
+/* LIVE LEADERBOARD */
 function loadLeaderboard(){
   content.innerHTML = "Loading...";
-  const lbRef = ref(db,'leaderboard/current');
-  
-  onValue(lbRef, snap=>{
+
+  if(leaderboardListener) leaderboardListener(); // cleanup
+
+  const lbRef = ref(db,"leaderboard/current");
+
+  leaderboardListener = onValue(lbRef, async snap=>{
     const data = snap.val() || {};
+    const users = await getUsersMap();
+
     let arr = [];
     for(const uid in data){
-      arr.push({uid, score:data[uid].score, timestamp:data[uid].timestamp});
+      arr.push({
+        uid,
+        score: data[uid].score,
+        timestamp: data[uid].timestamp
+      });
     }
-    arr.sort((a,b)=>b.score - a.score);
-    displayScores(arr.slice(0,20), true);
+
+    arr.sort((a,b)=>b.score-a.score);
+    displayScores(arr.slice(0,20), users);
   });
 }
 
-/* --- Display Scores --- */
-async function displayScores(arr, isLive=false){
+/* DISPLAY */
+function displayScores(arr, users){
   content.innerHTML = "";
-  
-  for(let i=0;i<arr.length;i++){
-    const row = document.createElement('div');
-    row.className = 'score-row';
-    
-    // Get player info
-    let name = arr[i].uid;
-    try {
-      const snap = await get(ref(db,'users/'+arr[i].uid));
-      if(snap.exists()){
-        const user = snap.val();
-        name = user.name || user.Name || arr[i].uid;
-      }
-    } catch(e){}
-    
+
+  arr.forEach((item,i)=>{
+
+    const row = document.createElement("div");
+    row.className = "score-row";
+
+    const user = users[item.uid] || {};
+    const name = user.name || "Player";
+
     let medal = "";
-    if(i===0) medal = "🥇";
-    else if(i===1) medal = "🥈";
-    else if(i===2) medal = "🥉";
-    
-    const date = new Date(arr[i].timestamp);
-    const dateStr = date.toLocaleString();
-    
-    row.innerHTML = `<span>${medal} ${name}</span><span>${arr[i].score} (${dateStr})</span>`;
+    if(i===0) medal="🥇";
+    else if(i===1) medal="🥈";
+    else if(i===2) medal="🥉";
+
+    const date = new Date(item.timestamp).toLocaleString();
+
+    row.innerHTML = `
+      <span>${medal} ${name}</span>
+      <span>${item.score} (${date})</span>
+    `;
+
     content.appendChild(row);
-  }
+  });
 }
 
-/* Load initial tab */
+/* INIT */
 loadHighScores();
+
 </script>
 
 </body>
