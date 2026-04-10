@@ -155,13 +155,6 @@ let user;
 async function saveScore(finalScore){
 
   const uid = user.uid;
-  set(ref(db,"leaderboard/current/"+uid),{
-  score:score,
-  name:user.name,
-  email:user.email,
-  phone:user.phone,
-  timestamp:Date.now()
-});
   const time = Date.now();
 
   // HIGH SCORES
