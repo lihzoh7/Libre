@@ -74,30 +74,65 @@ let currentTab="high";
 
 /* ---------------- TIME SYSTEM ---------------- */
 
-function getPhase(){
+function getSlotInfo(){
   const now = new Date();
-  const minutes = now.getMinutes();
+  const h = now.getHours();
+  const m = now.getMinutes();
 
-  if(minutes < 28) return "game";
-  if(minutes < 30) return "reset";
-  if(minutes < 30.5) return "ready";
-}
+  const currentMinutes = h*60 + m;
+
+  const morningStart = 6*60;
+  const morningEnd = 17*60+30;
+
+  const nightStart = 18*60;
+  const nightEnd = 5*60+30;
+
+  let phase = "closed";
+
+  if(currentMinutes >= morningStart && currentMinutes <= morningEnd){
+    phase = "game";
+  }
+  else if(currentMinutes >= morningEnd && currentMinutes <= morningEnd+2){
+    phase = "reset";
+  }
+  else if(currentMinutes >= morningEnd+2 && currentMinutes <= morningEnd+2.5){
+    phase = "ready";
+  }
+
+  // SAME for night slot
+  if(currentMinutes >= nightStart || currentMinutes <= nightEnd){
+    phase = "game";
+  }
+
+  return phase;
+  }
+
+let resetDone = false;
 
 function handlePhase(){
-  const phase = getPhase();
+  const phase = getSlotInfo();
 
   if(phase==="reset"){
     popup.innerText="RESETTING...";
     popup.style.display="block";
 
-    set(ref(db,"leaderboard/current"), null); // clear
+    if(!resetDone){
+      resetDone = true;
+
+      // 🔥 CLEAR leaderboard
+      set(ref(db,"leaderboard/current"), null);
+
+      // 🔥 RESET rank tracking
+      set(ref(db,"leaderboard/ranks"), null);
+    }
   }
   else if(phase==="ready"){
     popup.innerText="GETTING READY...";
     popup.style.display="block";
   }
-  else{
+  else if(phase==="game"){
     popup.style.display="none";
+    resetDone = false;
   }
 }
 
