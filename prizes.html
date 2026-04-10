@@ -1,139 +1,59 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>SPACE GLASS - Prizes</title>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7026930699288972"
-     crossorigin="anonymous"></script>
+<title>Prizes</title>
 <style>
-body {
-  margin:0;
-  font-family: Arial, sans-serif;
-  background:navy;
-  color:white;
-  display:flex;
-  justify-content:center;
-}
-#container { width:800px; margin-top:20px; padding:20px; }
-#back { font-size:20px; cursor:pointer; margin-bottom:15px; display:inline-block; }
-#dateRange { margin-bottom:15px; }
-.schedule { display:grid; grid-template-columns:100px repeat(7,1fr); gap:5px; margin-bottom:20px; }
-.schedule div { padding:5px; text-align:center; border:1px solid #fff; }
-.schedule .time { font-weight:bold; cursor:default; }
-.schedule .past { background:#a00; }
-.schedule .ongoing { background:#0a0; }
-.medals { margin-top:20px; }
-.medals div { display:flex; justify-content:space-between; padding:5px 10px; border-bottom:1px solid #444; }
-.medals .medal-name { font-weight:bold; }
+body{background:navy;color:white;text-align:center;}
+.cell{padding:10px;border:1px solid white;}
+.past{background:red;}
+.active{background:green;}
 </style>
 </head>
+
 <body>
 
-<div id="container">
-  <div id="back" onclick="window.location.href='main-menu.html'">↩️ Back</div>
+<h2 id="week"></h2>
+<div id="grid"></div>
 
-  <div id="dateRange"></div>
+<h3>🥇 <span id="g"></span></h3>
+<h3>🥈 <span id="s"></span></h3>
+<h3>🥉 <span id="b"></span></h3>
 
-  <div class="schedule" id="schedule"></div>
-
-  <div class="medals" id="medals">
-    <div>🥇 <span id="goldName">-</span> R<span id="goldAmount">0</span></div>
-    <div>🥈 <span id="silverName">-</span> R<span id="silverAmount">0</span></div>
-    <div>🥉 <span id="bronzeName">-</span> R<span id="bronzeAmount">0</span></div>
-  </div>
-</div>
 <script type="module">
-import { getAuth, onAuthStateChanged } 
-from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-import { getDatabase, ref, onValue } 
-from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  authDomain: "tose-ccf8f.firebaseapp.com",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tose-ccf8f",
-  storageBucket: "tose-ccf8f.appspot.com",
-  messagingSenderId: "475447495901",
-  appId: "1:475447495901:web:9189276a162a3680afdf34"
-};
-
-const app = initializeApp(firebaseConfig);
+const app = initializeApp({ databaseURL:"https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app" });
 const db = getDatabase(app);
-const auth = getAuth(app);
 
-onAuthStateChanged(auth,(user)=>{
-  if(!user) location.href="index.html";
-});
-
-const scheduleEl = document.getElementById("schedule");
-const dateRangeEl = document.getElementById("dateRange");
-
-const days = ["Time","Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-
-/* HEADER */
-days.forEach(d=>{
-  let div=document.createElement("div");
-  div.innerText=d;
-  scheduleEl.appendChild(div);
-});
-
-/* TIME ROWS */
-const times = ["06:00-17:30","18:00-05:30"];
-
-times.forEach((time,rowIndex)=>{
-  let t=document.createElement("div");
-  t.className="time";
-  t.innerText=time;
-  scheduleEl.appendChild(t);
-
-  for(let i=0;i<7;i++){
-    let cell=document.createElement("div");
-    cell.dataset.day=i;
-    cell.dataset.row=rowIndex;
-    scheduleEl.appendChild(cell);
-  }
-});
-
-/* LIVE DATA */
 onValue(ref(db,"admin/prizes"), snap=>{
   const data = snap.val();
   if(!data) return;
 
-  dateRangeEl.innerText = `From ${data.fromDate} to ${data.toDate}`;
+  document.getElementById("week").innerText =
+    data.fromDate+" - "+data.toDate;
 
-  const now = new Date();
-  const today = (now.getDay()+6)%7; // Monday=0
+  let nowDay = (new Date().getDay()+6)%7;
 
-  let currentValue = 0;
+  let current=0;
 
-  document.querySelectorAll("[data-day]").forEach(cell=>{
-    const day = parseInt(cell.dataset.day);
-    const row = parseInt(cell.dataset.row);
+  let html="";
 
-    const value = data.schedule?.[day]?.[row]?.value || 0;
-    cell.innerText = value;
+  for(let d=0;d<7;d++){
+    let val = data.schedule?.[d]?.[0]?.value || 0;
 
-    cell.classList.remove("ongoing","past");
+    let cls="";
+    if(d<nowDay) cls="past";
+    if(d===nowDay) { cls="active"; current=val; }
 
-    // simple active logic
-    if(day === today){
-      cell.classList.add("ongoing");
-      currentValue = value;
-    }else if(day < today){
-      cell.classList.add("past");
-    }
-  });
+    html+=`<div class="cell ${cls}">${val}</div>`;
+  }
 
-  /* 🏆 PRIZE SPLIT */
-  currentValue = parseInt(currentValue) || 0;
+  document.getElementById("grid").innerHTML=html;
 
-  document.getElementById("goldAmount").innerText = Math.round(currentValue*0.65);
-  document.getElementById("silverAmount").innerText = Math.round(currentValue*0.25);
-  document.getElementById("bronzeAmount").innerText = Math.round(currentValue*0.10);
+  document.getElementById("g").innerText = Math.round(current*0.65);
+  document.getElementById("s").innerText = Math.round(current*0.25);
+  document.getElementById("b").innerText = Math.round(current*0.10);
 });
 </script>
 </body>
