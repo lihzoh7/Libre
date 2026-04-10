@@ -14,29 +14,45 @@ body{
 
 .tab{
   display:inline-block;
-  padding:10px 20px;
-  margin:5px;
+  padding:15px 30px;
+  margin:10px;
+  font-size:22px;
   background:#003366;
   cursor:pointer;
 }
 
 .active{ background:#0074D9; }
 
+#content{
+  width:90%;
+  max-width:500px;
+  margin:20px auto;
+}
+
 .score{
-  font-size:20px;
-  padding:10px;
+  font-size:28px;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
   border-bottom:1px solid #444;
+}
+
+#rankBox{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  font-size:20px;
 }
 
 #popup{
   position:fixed;
-  top:40%;
+  top:50%;
   left:50%;
   transform:translate(-50%,-50%);
   background:white;
   color:green;
-  padding:30px;
-  font-size:24px;
+  padding:40px;
+  font-size:28px;
   display:none;
 }
 </style>
@@ -46,13 +62,11 @@ body{
 
 <div>
   <div id="highTab" class="tab active">HIGH SCORES</div>
-  <div id="rankBox">RANK: <span id="rank">N/A</span></div>
   <div id="leaderTab" class="tab">LEADERBOARD</div>
 </div>
 
-<div id="timer"></div>
 <div id="content"></div>
-
+<div id="rankBox">RANK: N/A</div>
 <div id="popup"></div>
 
 <script type="module">
@@ -60,134 +74,94 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebas
 import { getDatabase, ref, get, onValue, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  authDomain: "tose-ccf8f.firebaseapp.com",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tose-ccf8f",
-  storageBucket: "tose-ccf8f.appspot.com",
-  messagingSenderId: "475447495901",
-  appId: "1:475447495901:web:9189276a162a3680afdf34"
-};
+const app = initializeApp({
+  apiKey:"AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  databaseURL:"https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+});
 
 const db = getDatabase(app);
 const auth = getAuth(app);
 
 const content = document.getElementById("content");
 const popup = document.getElementById("popup");
+const rankBox = document.getElementById("rankBox");
 
-let currentTab="high";
+let user = null;
 
-/* ---------------- TIME SYSTEM ---------------- */
+/* ================= TIME SYSTEM ================= */
 
-function getSlotInfo(){
-  const now = new Date();
-  const h = now.getHours();
-  const m = now.getMinutes();
+function getPhase(){
+  let now = new Date();
+  let m = now.getMinutes();
 
-  const currentMinutes = h*60 + m;
-
-  const morningStart = 6*60;
-  const morningEnd = 17*60+30;
-
-  const nightStart = 18*60;
-  const nightEnd = 5*60+30;
-
-  let phase = "closed";
-
-  if(currentMinutes >= morningStart && currentMinutes <= morningEnd){
-    phase = "game";
-  }
-  else if(currentMinutes >= morningEnd && currentMinutes <= morningEnd+2){
-    phase = "reset";
-  }
-  else if(currentMinutes >= morningEnd+2 && currentMinutes <= morningEnd+2.5){
-    phase = "ready";
-  }
-
-  // SAME for night slot
-  if(currentMinutes >= nightStart || currentMinutes <= nightEnd){
-    phase = "game";
-  }
-
-  return phase;
-  }
-
-let resetDone = false;
+  if(m < 28) return "game";
+  if(m < 30) return "reset";
+  return "ready";
+}
 
 function handlePhase(){
-  const phase = getSlotInfo();
+  let phase = getPhase();
 
   if(phase==="reset"){
     popup.innerText="RESETTING...";
     popup.style.display="block";
-
-    if(!resetDone){
-      resetDone = true;
-
-      // 🔥 CLEAR leaderboard
-      set(ref(db,"leaderboard/current"), null);
-
-      // 🔥 RESET rank tracking
-      set(ref(db,"leaderboard/ranks"), null);
-    }
+    set(ref(db,"leaderboard/current"), null);
   }
   else if(phase==="ready"){
     popup.innerText="GETTING READY...";
     popup.style.display="block";
   }
-  else if(phase==="game"){
+  else{
     popup.style.display="none";
-    resetDone = false;
   }
 }
-
 setInterval(handlePhase,1000);
 
-/* ---------------- HIGH SCORES ---------------- */
+/* ================= HIGH SCORES ================= */
 
 async function loadHigh(){
   const snap = await get(ref(db,"highScores"));
-  const data = snap.val() || {};
+  const data = snap.val()||{};
 
   let bestPerUser = {};
 
   for(let uid in data){
     let max = 0;
+    let time = 0;
 
     for(let k in data[uid]){
-      max = Math.max(max, data[uid][k].score);
+      let s = data[uid][k];
+      if(s.score > max){
+        max = s.score;
+        time = s.timestamp;
+      }
     }
 
-    bestPerUser[uid] = max;
+    bestPerUser[uid] = {score:max, timestamp:time};
   }
 
   let arr = Object.values(bestPerUser);
-
-  arr.sort((a,b)=>b-a);
+  arr.sort((a,b)=>b.score-a.score);
   arr = arr.slice(0,5);
 
   content.innerHTML="";
 
-  arr.forEach((score,i)=>{
-    content.innerHTML+=`
-      <div class="score" style="font-size:32px;">
-        ${i+1}. ${score}
+  arr.forEach((s,i)=>{
+    content.innerHTML += `
+      <div class="score">
+        <span>${i+1}. ${s.score}</span>
+        <span>${new Date(s.timestamp).toLocaleString()}</span>
       </div>
     `;
   });
-  }
+}
 
-/* ---------------- LEADERBOARD ---------------- */
+/* ================= LEADERBOARD ================= */
 
 function loadLeaderboard(){
   onValue(ref(db,"leaderboard/current"), snap=>{
-    const data = snap.val()||{};
-    let arr=[];
-
-    for(let uid in data){
-      arr.push(data[uid]);
-    }
+    let data = snap.val()||{};
+    let arr = Object.values(data);
 
     arr.sort((a,b)=>b.score-a.score);
 
@@ -196,48 +170,55 @@ function loadLeaderboard(){
     arr.slice(0,20).forEach((s,i)=>{
       content.innerHTML+=`
         <div class="score">
-          ${i+1}. ${s.score}
+          <span>${i+1}. ${s.name || "Player"}</span>
+          <span>${s.score}</span>
         </div>
       `;
     });
+
+    updateRank(arr);
   });
 }
-function loadPlayerRank(userId){
-  onValue(ref(db,"leaderboard/current"), snap=>{
-    const data = snap.val() || {};
-    let arr=[];
 
-    for(let uid in data){
-      arr.push({uid, score:data[uid].score});
-    }
+/* ================= RANK ================= */
 
-    arr.sort((a,b)=>b.score-a.score);
+function updateRank(arr){
+  if(!user){
+    rankBox.innerText="RANK: N/A";
+    return;
+  }
 
-    let rank = arr.findIndex(x=>x.uid===userId);
+  let index = arr.findIndex(p=>p.email===user.email);
 
-    document.getElementById("rank").innerText =
-      rank >= 0 ? (rank+1) : "N/A";
-  });
-      }
-  
-/* ---------------- SWITCH ---------------- */
+  if(index === -1){
+    rankBox.innerText="RANK: N/A";
+  }else{
+    rankBox.innerText="RANK: " + (index+1);
+  }
+}
+
+/* ================= SWITCH ================= */
 
 highTab.onclick=()=>{
-  currentTab="high";
   highTab.classList.add("active");
   leaderTab.classList.remove("active");
   loadHigh();
 };
 
 leaderTab.onclick=()=>{
-  currentTab="leader";
   leaderTab.classList.add("active");
   highTab.classList.remove("active");
   loadLeaderboard();
 };
 
-loadHigh();
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+onAuthStateChanged(auth,(u)=>{
+  if(!u) location.href="index.html";
+  user=u;
+});
 
+loadHigh();
 </script>
+
 </body>
-</html>
+  </html>
