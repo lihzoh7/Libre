@@ -144,28 +144,33 @@ async function loadHigh(){
   const snap = await get(ref(db,"highScores"));
   const data = snap.val() || {};
 
-  let arr=[];
+  let bestPerUser = {};
 
   for(let uid in data){
+    let max = 0;
+
     for(let k in data[uid]){
-      arr.push(data[uid][k]);
+      max = Math.max(max, data[uid][k].score);
     }
+
+    bestPerUser[uid] = max;
   }
 
-  arr.sort((a,b)=>b.score-a.score);
+  let arr = Object.values(bestPerUser);
 
+  arr.sort((a,b)=>b-a);
   arr = arr.slice(0,5);
 
   content.innerHTML="";
 
-  arr.forEach((s,i)=>{
+  arr.forEach((score,i)=>{
     content.innerHTML+=`
-      <div class="score">
-        ${i+1}. ${s.score}
+      <div class="score" style="font-size:32px;">
+        ${i+1}. ${score}
       </div>
     `;
   });
-}
+  }
 
 /* ---------------- LEADERBOARD ---------------- */
 
