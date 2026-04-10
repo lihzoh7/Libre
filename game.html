@@ -581,15 +581,16 @@ window.exit=()=>endGame();
 /* =====================
    🏁 END
 ===================== */
-function endGame(){
-  popup.style.display="block";
+async function endGame(){
+  await saveScore(score); // 🔥 THIS WAS MISSING
 
+  popup.style.display="block";
   popup.innerHTML=`
     <h2>FINAL SCORE</h2>
     <h1>${score}</h1>
     <button onclick="goMenu()">OK</button>
   `;
-}
+  }
 
 window.goMenu = ()=>{
   location.href="main-menu.html";
