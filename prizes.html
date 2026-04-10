@@ -42,19 +42,21 @@ body {
     <div>🥉 <span id="bronzeName">-</span> R<span id="bronzeAmount">0</span></div>
   </div>
 </div>
-
 <script type="module">
 import { getAuth, onAuthStateChanged } 
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+import { getDatabase, ref, onValue } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   authDomain: "tose-ccf8f.firebaseapp.com",
   databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "tose-ccf8f",
-  storageBucket: "tose-ccf8f.firebasestorage.app",
+  storageBucket: "tose-ccf8f.appspot.com",
   messagingSenderId: "475447495901",
   appId: "1:475447495901:web:9189276a162a3680afdf34"
 };
@@ -63,76 +65,75 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = "index.html";
-  }
+onAuthStateChanged(auth,(user)=>{
+  if(!user) location.href="index.html";
 });
 
-const scheduleEl = document.getElementById('schedule');
-const dateRangeEl = document.getElementById('dateRange');
-const medals = { goldAmount:'goldAmount', silverAmount:'silverAmount', bronzeAmount:'bronzeAmount' };
+const scheduleEl = document.getElementById("schedule");
+const dateRangeEl = document.getElementById("dateRange");
+
 const days = ["Time","Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
-// Render header
+/* HEADER */
 days.forEach(d=>{
-  const div = document.createElement('div'); div.innerText=d; scheduleEl.appendChild(div);
+  let div=document.createElement("div");
+  div.innerText=d;
+  scheduleEl.appendChild(div);
 });
 
-// Render empty schedule (2 rows)
-const gameTimes = ["06:00-17:30","18:00-05:30"];
-gameTimes.forEach(time=>{
-  const timeDiv = document.createElement('div'); timeDiv.className='time'; timeDiv.innerText=time;
-  scheduleEl.appendChild(timeDiv);
+/* TIME ROWS */
+const times = ["06:00-17:30","18:00-05:30"];
+
+times.forEach((time,rowIndex)=>{
+  let t=document.createElement("div");
+  t.className="time";
+  t.innerText=time;
+  scheduleEl.appendChild(t);
+
   for(let i=0;i<7;i++){
-    const cell = document.createElement('div');
-    cell.dataset.day = i;
-    cell.dataset.from = time.split('-')[0];
-    cell.dataset.to = time.split('-')[1];
-    cell.innerText = "-";
+    let cell=document.createElement("div");
+    cell.dataset.day=i;
+    cell.dataset.row=rowIndex;
     scheduleEl.appendChild(cell);
   }
 });
 
-// Listen to admin/prizes
-onValue(ref(db,'admin/prizes'), snap=>{
+/* LIVE DATA */
+onValue(ref(db,"admin/prizes"), snap=>{
   const data = snap.val();
   if(!data) return;
 
   dateRangeEl.innerText = `From ${data.fromDate} to ${data.toDate}`;
 
-  // Fill schedule & detect current game
   const now = new Date();
-  const day = now.getDay()===0?6:now.getDay()-1; // Sunday=6
-  const nowMinutes = now.getHours()*60 + now.getMinutes();
-  let currentCellValue = 0;
+  const today = (now.getDay()+6)%7; // Monday=0
 
-  document.querySelectorAll('.schedule div[data-day]').forEach((cell,index)=>{
-    const cellDay = parseInt(cell.dataset.day);
-    const fromParts = cell.dataset.from.split(':').map(Number);
-    const toParts = cell.dataset.to.split(':').map(Number);
-    const fromMinutes = fromParts[0]*60+fromParts[1];
-    const toMinutes = toParts[0]*60+toParts[1]+(toParts[0]<fromParts[0]?1440:0);
+  let currentValue = 0;
 
-    // Set cell value from admin
-    const rowIndex = index % 2; // row 0 or 1
-    const cellData = data.schedule[cellDay] ? data.schedule[cellDay][rowIndex] : {value:0};
-    cell.innerText = cellData.value;
+  document.querySelectorAll("[data-day]").forEach(cell=>{
+    const day = parseInt(cell.dataset.day);
+    const row = parseInt(cell.dataset.row);
 
-    // Color cell
-    cell.classList.remove('ongoing','past');
-    if(cellDay===day && nowMinutes>=fromMinutes && nowMinutes<=toMinutes){
-      cell.classList.add('ongoing');
-      currentCellValue = parseInt(cellData.value) || 0;
-    } else if(cellDay<=day){
-      cell.classList.add('past');
+    const value = data.schedule?.[day]?.[row]?.value || 0;
+    cell.innerText = value;
+
+    cell.classList.remove("ongoing","past");
+
+    // simple active logic
+    if(day === today){
+      cell.classList.add("ongoing");
+      currentValue = value;
+    }else if(day < today){
+      cell.classList.add("past");
     }
   });
 
-  // Set medals dynamically
-  document.getElementById(medals.goldAmount).innerText = Math.round(currentCellValue*0.65);
-  document.getElementById(medals.silverAmount).innerText = Math.round(currentCellValue*0.25);
-  document.getElementById(medals.bronzeAmount).innerText = Math.round(currentCellValue*0.10);
+  /* 🏆 PRIZE SPLIT */
+  currentValue = parseInt(currentValue) || 0;
+
+  document.getElementById("goldAmount").innerText = Math.round(currentValue*0.65);
+  document.getElementById("silverAmount").innerText = Math.round(currentValue*0.25);
+  document.getElementById("bronzeAmount").innerText = Math.round(currentValue*0.10);
 });
 </script>
 </body>
