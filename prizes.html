@@ -4,7 +4,7 @@
 <title>Prizes</title>
 <style>
 body{background:navy;color:white;text-align:center;}
-.cell{padding:10px;border:1px solid white;}
+.cell{padding:15px;border:1px solid white;}
 .past{background:red;}
 .active{background:green;}
 </style>
@@ -23,7 +23,9 @@ body{background:navy;color:white;text-align:center;}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-const app = initializeApp({ databaseURL:"https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app" });
+const app = initializeApp({
+  databaseURL:"https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+});
 const db = getDatabase(app);
 
 onValue(ref(db,"admin/prizes"), snap=>{
@@ -33,28 +35,32 @@ onValue(ref(db,"admin/prizes"), snap=>{
   document.getElementById("week").innerText =
     data.fromDate+" - "+data.toDate;
 
-  let nowDay = (new Date().getDay()+6)%7;
+  let now = new Date();
+  let today = (now.getDay()+6)%7;
 
-  let current=0;
-
+  let current = 0;
   let html="";
 
-  for(let d=0;d<7;d++){
+  for(let d=0; d<7; d++){
     let val = data.schedule?.[d]?.[0]?.value || 0;
 
     let cls="";
-    if(d<nowDay) cls="past";
-    if(d===nowDay) { cls="active"; current=val; }
+    if(d < today) cls="past";
+    if(d === today){
+      cls="active";
+      current = val;
+    }
 
-    html+=`<div class="cell ${cls}">${val}</div>`;
+    html += `<div class="cell ${cls}">${val}</div>`;
   }
 
-  document.getElementById("grid").innerHTML=html;
+  document.getElementById("grid").innerHTML = html;
 
   document.getElementById("g").innerText = Math.round(current*0.65);
   document.getElementById("s").innerText = Math.round(current*0.25);
   document.getElementById("b").innerText = Math.round(current*0.10);
 });
 </script>
+
 </body>
 </html>
