@@ -165,10 +165,12 @@ async function saveScore(finalScore){
 
   // LIVE LEADERBOARD
   await set(ref(db,"leaderboard/current/"+uid),{
-    score: finalScore,
-    timestamp: time
-  });
-}
+  score: finalScore,
+  name: user.displayName || "Player",
+  email: user.email || "",
+  phone: user.phoneNumber || "",
+  timestamp: time
+});
 
 /* OVERRIDE YOUR END GAME */
 window.endGame = async function(){
