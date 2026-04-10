@@ -196,7 +196,24 @@ function loadLeaderboard(){
     });
   });
 }
+function loadPlayerRank(userId){
+  onValue(ref(db,"leaderboard/current"), snap=>{
+    const data = snap.val() || {};
+    let arr=[];
 
+    for(let uid in data){
+      arr.push({uid, score:data[uid].score});
+    }
+
+    arr.sort((a,b)=>b.score-a.score);
+
+    let rank = arr.findIndex(x=>x.uid===userId);
+
+    document.getElementById("rank").innerText =
+      rank >= 0 ? (rank+1) : "N/A";
+  });
+      }
+  
 /* ---------------- SWITCH ---------------- */
 
 highTab.onclick=()=>{
