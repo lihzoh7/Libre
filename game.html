@@ -153,6 +153,8 @@ let user;
 
 /* SAVE SCORE */
 async function saveScore(finalScore){
+/* SAVE SCORE (FINAL FIX) */
+async function saveScore(finalScore){
 
   const uid = user.uid;
   const time = Date.now();
@@ -167,20 +169,21 @@ async function saveScore(finalScore){
     return; // ignore lower score
   }
 
+  // ✅ SAVE BEST SCORE ONLY
   await set(playerRef,{
     score: finalScore,
-    name: user.displayName || "",
+    name: user.displayName || "Player",
     email: user.email || "",
     phone: user.phoneNumber || "",
     timestamp: time
   });
-}
 
-  // HIGH SCORES
+  // ✅ OPTIONAL: KEEP HISTORY (good for analytics)
   await push(ref(db,"highScores/"+uid),{
     score: finalScore,
     timestamp: time
   });
+  }
 
   // LIVE LEADERBOARD
   await set(ref(db,"leaderboard/current/"+uid),{
