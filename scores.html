@@ -13,29 +13,36 @@ body{
   text-align:center;
 }
 
+/* HEADER */
 #timer{
-  font-size:14px;
+  font-size:42px;
   margin:10px;
+  font-weight:bold;
 }
 
-#grid{
+/* GRID = 3 COLUMNS */
+#content{
   display:grid;
-  grid-template-columns:repeat(25,1fr);
-  gap:4px;
+  grid-template-columns: repeat(3, 1fr);
+  gap:10px;
   padding:10px;
 }
 
-.player{
-  padding:6px;
-  font-size:14px;
-  border-bottom:1px solid #333;
+/* PLAYER CARD */
+.card{
+  background:#002b55;
+  padding:10px;
+  border-radius:10px;
+  font-size:20px;
 }
 
-.gold{color:gold;}
-.silver{color:silver;}
-.bronze{color:#cd7f32;}
-.normal{color:#ccc;}
+/* COLORS */
+.gold{ color:gold; }
+.silver{ color:silver; }
+.bronze{ color:#cd7f32; }
+.normal{ color:#ccc; }
 
+/* POPUP */
 #popup{
   position:fixed;
   top:50%;
@@ -43,25 +50,39 @@ body{
   transform:translate(-50%,-50%);
   background:white;
   color:green;
-  padding:30px;
-  font-size:22px;
+  padding:40px;
+  font-size:30px;
   display:none;
+  border-radius:10px;
+}
+
+/* RANK */
+#rank{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  font-size:20px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="timer"></div>
-<div id="grid"></div>
+<div id="timer">--:--</div>
+
+<div id="content"></div>
+
+<div id="rank">RANK: N/A</div>
+
 <div id="popup"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqJ",
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   authDomain: "tose-ccf8f.firebaseapp.com",
   databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "tose-ccf8f",
@@ -72,106 +93,130 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
 
-const grid = document.getElementById("grid");
-const popup = document.getElementById("popup");
-const timer = document.getElementById("timer");
+let currentUser=null;
 
-/* ⏰ TIME SYSTEM */
-function getSlotTimes(){
-  const now = new Date();
-  let start,end;
+/* AUTH */
+onAuthStateChanged(auth,(u)=>{
+  if(!u) location.href="index.html";
+  currentUser=u;
+});
 
-  let h = now.getHours();
-  let m = now.getMinutes();
+/* ⏰ SLOT SYSTEM */
+function getPhase(){
+  let now=new Date();
+  let h=now.getHours();
+  let m=now.getMinutes();
+  let total=h*60+m;
 
-  let t = h*60+m;
+  let morningStart=6*60;
+  let morningEnd=17*60+30;
 
-  if(t>=360 && t<=1050){ // 06:00 - 17:30
-    start = new Date(now.setHours(6,0,0,0));
-    end = new Date(now.setHours(17,30,0,0));
-  }else if(t>=1080 || t<=330){ // 18:00 - 05:30
-    start = new Date();
-    end = new Date();
+  let nightStart=18*60;
+  let nightEnd=(5*60+30)+1440;
 
-    if(t>=1080){
-      start.setHours(18,0,0,0);
-      end.setDate(end.getDate()+1);
-      end.setHours(5,30,0,0);
-    }else{
-      start.setDate(start.getDate()-1);
-      start.setHours(18,0,0,0);
-      end.setHours(5,30,0,0);
-    }
-  }
+  if(total>=morningStart && total<=morningEnd-2) return "game";
+  if(total>morningEnd-2 && total<=morningEnd) return "reset";
 
-  return {start,end};
+  if(total>=nightStart || total<=5*60+30-2) return "game";
+  if(total>5*60+30-2 && total<=5*60+30) return "reset";
+
+  return "break";
 }
 
+/* ⏱ TIMER */
 function updateTimer(){
-  const {start,end} = getSlotTimes();
-  const now = new Date();
+  let now=new Date();
+  let end=new Date();
 
-  let diff = end - now;
+  if(now.getHours()<17 || (now.getHours()==17 && now.getMinutes()<30)){
+    end.setHours(17,30,0);
+  }else{
+    end.setDate(end.getDate()+1);
+    end.setHours(5,30,0);
+  }
 
-  if(diff<0) diff=0;
+  let diff=end-now;
+  let h=Math.floor(diff/1000/60/60);
+  let m=Math.floor((diff/1000/60)%60);
 
-  let h = Math.floor(diff/1000/60/60);
-  let m = Math.floor((diff/1000/60)%60);
-
-  timer.innerText = `${h}H:${m}M`;
+  document.getElementById("timer").innerText =
+    `${h}H:${m}M`;
 }
 
 setInterval(updateTimer,1000);
 
-/* 🔥 RESET SYSTEM */
-function handlePhase(){
-  const now = new Date();
-  const m = now.getMinutes();
+/* 🔥 PHASE HANDLER */
+const popup=document.getElementById("popup");
 
-  if(m>=28 && m<30){
+setInterval(()=>{
+  let phase=getPhase();
+
+  if(phase==="reset"){
     popup.innerText="RESETTING...";
     popup.style.display="block";
-    set(ref(db,"leaderboard/current"), null);
+    set(ref(db,"leaderboard/current"),null);
   }
-  else if(m>=30 && m<31){
+  else if(phase==="break"){
     popup.innerText="GETTING READY...";
     popup.style.display="block";
   }
   else{
     popup.style.display="none";
   }
-}
+},1000);
 
-setInterval(handlePhase,1000);
+/* 📊 LEADERBOARD */
+const content=document.getElementById("content");
+const rankEl=document.getElementById("rank");
 
-/* 🏆 LEADERBOARD */
 onValue(ref(db,"leaderboard/current"), snap=>{
-  const data = snap.val()||{};
+  const data=snap.val()||{};
   let arr=[];
 
   for(let uid in data){
-    arr.push(data[uid]);
+    arr.push({
+      uid,
+      name:data[uid].name || "Player",
+      score:data[uid].score,
+      time:data[uid].timestamp
+    });
   }
 
   arr.sort((a,b)=>b.score-a.score);
 
-  grid.innerHTML="";
+  content.innerHTML="";
 
   arr.slice(0,75).forEach((p,i)=>{
     let cls="normal";
     if(i===0) cls="gold";
-    else if(i===1) cls="silver";
-    else if(i===2) cls="bronze";
+    if(i===1) cls="silver";
+    if(i===2) cls="bronze";
 
-    grid.innerHTML+=`
-      <div class="player ${cls}">
-        ${i+1}. ${p.name} - ${p.score}
-      </div>
+    let date=new Date(p.time).toLocaleString();
+
+    let div=document.createElement("div");
+    div.className="card "+cls;
+
+    div.innerHTML=`
+      <b>${i+1}. ${p.name}</b><br>
+      ${p.score}<br>
+      <small>${date}</small>
     `;
+
+    content.appendChild(div);
+
+    if(currentUser && currentUser.uid===p.uid){
+      rankEl.innerText="RANK: "+(i+1);
+    }
   });
+
+  if(!arr.find(p=>p.uid===currentUser?.uid)){
+    rankEl.innerText="RANK: N/A";
+  }
 });
 </script>
 
 </body>
-  </html>
+</html>
