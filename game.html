@@ -157,25 +157,6 @@ async function saveScore(finalScore){
   const uid = user.uid;
   const time = Date.now();
 
-  const playerRef = ref(db,"leaderboard/current/"+uid);
-
-  const snap = await get(playerRef);
-  const existing = snap.val();
-
-  // ✅ ONLY SAVE IF HIGHER SCORE
-  if(existing && existing.score >= finalScore){
-    return; // ignore lower score
-  }
-
-  await set(playerRef,{
-    score: finalScore,
-    name: user.displayName || "",
-    email: user.email || "",
-    phone: user.phoneNumber || "",
-    timestamp: time
-  });
-}
-
   // HIGH SCORES
   await push(ref(db,"highScores/"+uid),{
     score: finalScore,
