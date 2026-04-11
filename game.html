@@ -194,18 +194,6 @@ async function saveScore(finalScore){
   timestamp: time
 });
   }
-/* OVERRIDE YOUR END GAME */
-window.endGame = async function(){
-
-  await saveScore(score);
-
-  popup.style.display="block";
-  popup.innerHTML=`
-    <h2>FINAL SCORE</h2>
-    <h1>${score}</h1>
-    <button onclick="goMenu()">OK</button>
-  `;
-};
 
 /* GAME VARIABLES */
 let y=200, velocity=0;
