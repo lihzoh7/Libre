@@ -153,8 +153,6 @@ let user;
 
 /* SAVE SCORE */
 async function saveScore(finalScore){
-/* SAVE SCORE (FINAL FIX) */
-async function saveScore(finalScore){
 
   const uid = user.uid;
   const time = Date.now();
@@ -169,21 +167,20 @@ async function saveScore(finalScore){
     return; // ignore lower score
   }
 
-  // ✅ SAVE BEST SCORE ONLY
   await set(playerRef,{
     score: finalScore,
-    name: user.displayName || "Player",
+    name: user.displayName || "",
     email: user.email || "",
     phone: user.phoneNumber || "",
     timestamp: time
   });
+}
 
-  // ✅ OPTIONAL: KEEP HISTORY (good for analytics)
+  // HIGH SCORES
   await push(ref(db,"highScores/"+uid),{
     score: finalScore,
     timestamp: time
   });
-  }
 
   // LIVE LEADERBOARD
   await set(ref(db,"leaderboard/current/"+uid),{
@@ -194,6 +191,18 @@ async function saveScore(finalScore){
   timestamp: time
 });
   }
+/* OVERRIDE YOUR END GAME */
+window.endGame = async function(){
+
+  await saveScore(score);
+
+  popup.style.display="block";
+  popup.innerHTML=`
+    <h2>FINAL SCORE</h2>
+    <h1>${score}</h1>
+    <button onclick="goMenu()">OK</button>
+  `;
+};
 
 /* GAME VARIABLES */
 let y=200, velocity=0;
