@@ -3,8 +3,9 @@
 <head>
 <title>Prizes</title>
 <style>
-body{background:navy;color:white;text-align:center;}
-.cell{padding:15px;border:1px solid white;}
+body{background:navy;color:white;font-family:Arial;text-align:center;}
+.day{margin:10px 0;}
+.slot{display:flex;justify-content:space-between;border:1px solid white;padding:10px;}
 .past{background:red;}
 .active{background:green;}
 </style>
@@ -13,7 +14,7 @@ body{background:navy;color:white;text-align:center;}
 <body>
 
 <h2 id="week"></h2>
-<div id="grid"></div>
+<div id="list"></div>
 
 <h3>🥇 <span id="g"></span></h3>
 <h3>🥈 <span id="s"></span></h3>
@@ -24,37 +25,45 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebas
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const app = initializeApp({
-  databaseURL:"https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqJ",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
 });
+
 const db = getDatabase(app);
+
+const days=["MON","TUE","WED","THU","FRI","SAT","SUN"];
 
 onValue(ref(db,"admin/prizes"), snap=>{
   const data = snap.val();
   if(!data) return;
 
-  document.getElementById("week").innerText =
-    data.fromDate+" - "+data.toDate;
+  document.getElementById("week").innerText = data.fromDate+" - "+data.toDate;
 
-  let now = new Date();
-  let today = (now.getDay()+6)%7;
-
-  let current = 0;
   let html="";
+  let current=0;
 
-  for(let d=0; d<7; d++){
-    let val = data.schedule?.[d]?.[0]?.value || 0;
+  days.forEach((d,i)=>{
+    html+=`<div class="day"><b>${d}</b>`;
 
-    let cls="";
-    if(d < today) cls="past";
-    if(d === today){
-      cls="active";
-      current = val;
+    for(let s=0;s<2;s++){
+      let val=data.schedule?.[i]?.[s]?.value||0;
+
+      let cls="";
+      let today=(new Date().getDay()+6)%7;
+
+      if(i<today) cls="past";
+      if(i===today) {cls="active"; current=val;}
+
+      html+=`<div class="slot ${cls}">
+        <span>${s===0?"06:00-17:30":"18:00-05:30"}</span>
+        <span>${val}</span>
+      </div>`;
     }
 
-    html += `<div class="cell ${cls}">${val}</div>`;
-  }
+    html+="</div>";
+  });
 
-  document.getElementById("grid").innerHTML = html;
+  document.getElementById("list").innerHTML=html;
 
   document.getElementById("g").innerText = Math.round(current*0.65);
   document.getElementById("s").innerText = Math.round(current*0.25);
@@ -63,4 +72,4 @@ onValue(ref(db,"admin/prizes"), snap=>{
 </script>
 
 </body>
-</html>
+  </html>
