@@ -171,18 +171,34 @@ setInterval(()=>{
 const content=document.getElementById("content");
 const rankEl=document.getElementById("rank");
 
-onValue(ref(db,"leaderboard/current"), snap=>{
+onValue(ref(db,"leaderboard/current"), async snap=>{
   const data=snap.val()||{};
+  
+  // 🔥 LOAD USERS (REAL NAMES)
+  const usersSnap = await get(ref(db,"users"));
+  const users = usersSnap.val() || {};
+
   let arr=[];
 
   for(let uid in data){
     arr.push({
       uid,
-      name:data[uid].name || "Player",
+      name: users[uid]?.name || users[uid]?.fullName || "Player",
       score:data[uid].score,
       time:data[uid].timestamp
     });
   }
+
+  /* 🧠 KEEP ONLY BEST SCORE PER PLAYER */
+  let bestMap={};
+
+  arr.forEach(p=>{
+    if(!bestMap[p.uid] || p.score > bestMap[p.uid].score){
+      bestMap[p.uid]=p;
+    }
+  });
+
+  arr = Object.values(bestMap);
 
   arr.sort((a,b)=>b.score-a.score);
 
