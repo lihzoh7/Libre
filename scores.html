@@ -127,24 +127,53 @@ function getPhase(){
 
 /* ⏱ TIMER */
 function updateTimer(){
-  let now=new Date();
-  let end=new Date();
+  let now = new Date();
 
-  if(now.getHours()<17 || (now.getHours()==17 && now.getMinutes()<30)){
-    end.setHours(17,30,0);
-  }else{
-    end.setDate(end.getDate()+1);
-    end.setHours(5,30,0);
+  let h = now.getHours();
+  let m = now.getMinutes();
+  let total = h*60 + m;
+
+  let end = new Date();
+
+  let morningStart = 6*60;
+  let morningEnd = 17*60+30;
+
+  let nightStart = 18*60;
+  let nightEnd = 5*60+30;
+
+  let diff = 0;
+
+  // ✅ MORNING SLOT (06:00 - 17:30)
+  if(total >= morningStart && total <= morningEnd){
+    end.setHours(17,30,0,0);
+    diff = end - now;
   }
 
-  let diff=end-now;
-  let h=Math.floor(diff/1000/60/60);
-  let m=Math.floor((diff/1000/60)%60);
+  // ✅ NIGHT SLOT (18:00 - 23:59)
+  else if(total >= nightStart){
+    end.setDate(end.getDate()+1);
+    end.setHours(5,30,0,0);
+    diff = end - now;
+  }
+
+  // ✅ NIGHT SLOT CONTINUED (00:00 - 05:30)
+  else if(total <= nightEnd){
+    end.setHours(5,30,0,0);
+    diff = end - now;
+  }
+
+  // ❌ BREAK TIME (17:30 - 18:00)
+  else{
+    document.getElementById("timer").innerText = "00H:00M";
+    return;
+  }
+
+  let hours = Math.floor(diff / 1000 / 60 / 60);
+  let minutes = Math.floor((diff / 1000 / 60) % 60);
 
   document.getElementById("timer").innerText =
-    `${h}H:${m}M`;
-}
-
+    `${hours}H:${minutes}M`;
+  }
 setInterval(updateTimer,1000);
 
 /* 🔥 PHASE HANDLER */
