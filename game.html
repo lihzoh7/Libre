@@ -157,20 +157,34 @@ async function saveScore(finalScore){
   const uid = user.uid;
   const time = Date.now();
 
-  // HIGH SCORES
+  // 🔥 GET REAL USER NAME FROM DATABASE
+  const snap = await get(ref(db, "users/" + uid));
+  const userData = snap.val();
+
+  const realName = userData?.name 
+    ? userData.name + " " + (userData.surname || "")
+    : "Player";
+
+  // 🔥 SAVE ONLY IF HIGHER SCORE
+  const currentSnap = await get(ref(db, "leaderboard/current/" + uid));
+  const currentData = currentSnap.val();
+
+  if(currentData && currentData.score >= finalScore){
+    return; // ❌ don't overwrite if lower score
+  }
+
+  // ✅ SAVE NEW HIGH SCORE
+  await set(ref(db, "leaderboard/current/" + uid), {
+    score: finalScore,
+    name: realName,
+    timestamp: time
+  });
+
+  // OPTIONAL HISTORY
   await push(ref(db,"highScores/"+uid),{
     score: finalScore,
     timestamp: time
   });
-
-  // LIVE LEADERBOARD
-  await set(ref(db,"leaderboard/current/"+uid),{
-  score: finalScore,
-  name: user.displayName || "Player",
-  email: user.email || "",
-  phone: user.phoneNumber || "",
-  timestamp: time
-});
   }
 /* OVERRIDE YOUR END GAME */
 window.endGame = async function(){
