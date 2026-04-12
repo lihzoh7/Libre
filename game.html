@@ -434,21 +434,34 @@ fruits.forEach(f=>{
     game.appendChild(el);
 
     let move=setInterval(()=>{
-      el.style.left=(el.offsetLeft-(3*speedMultiplier))+"px";
 
-      if(hit(el)){
-        score+=f.points;
-        document.getElementById("score").innerText=score;
-        el.remove();
-        clearInterval(move);
-      }
+  if(boostActive){
+    // 🧲 MAGNET EFFECT → move toward player
+    let px = player.offsetLeft;
+    let py = player.offsetTop;
 
-      if(el.offsetLeft<0){
-        el.remove();
-        clearInterval(move);
-      }
+    let dx = px - el.offsetLeft;
+    let dy = py - el.offsetTop;
 
-    },16);
+    el.style.left = (el.offsetLeft + dx * 0.1) + "px";
+    el.style.top  = (el.offsetTop + dy * 0.1) + "px";
+  }else{
+    el.style.left=(el.offsetLeft-(3*speedMultiplier))+"px";
+  }
+
+  if(hit(el)){
+    score+=f.points;
+    document.getElementById("score").innerText=score;
+    el.remove();
+    clearInterval(move);
+  }
+
+  if(el.offsetLeft<0){
+    el.remove();
+    clearInterval(move);
+  }
+
+},16);
 
   },f.interval);
 });
