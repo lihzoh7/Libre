@@ -510,24 +510,35 @@ function spawnBoost(){
 
   },3000);
   }
-function activateBoost(){
+function activateBoost(duration){
   if(boostActive) return;
 
-  boostActive=true;
+  boostActive = true;
+  boostCooldown = true;
 
-  // slow entry effect
-  speedMultiplier = 0.7;
+  boostDuration = duration;
+
+  // 🔥 RESET MISSED
+  missed = 0;
+
+  // 🦅 mode
+  player.innerText="🦅";
+
+  // speed change
+  speedMultiplier = 2;
 
   setTimeout(()=>{
-    speedMultiplier = 3;
-    player.innerText="🦅"; // eagle
-  },500);
-
-  setTimeout(()=>{
-    boostActive=false;
-    speedMultiplier=1;
+    // END BOOST
+    boostActive = false;
     player.innerText="🍸";
-  },7000);
+    speedMultiplier = 1;
+
+    // ⏳ START 20s COOLDOWN AFTER BOOST ENDS
+    setTimeout(()=>{
+      boostCooldown = false;
+    },20000);
+
+  },boostDuration);
   }
 /* 🚀 ROCKET (ARC + ROTATION + WIGGLE) 
    Travel time: ~3.7 Seconds 
