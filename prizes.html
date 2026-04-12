@@ -1,75 +1,145 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <title>Prizes</title>
+
 <style>
-body{background:navy;color:white;font-family:Arial;text-align:center;}
-.day{margin:10px 0;}
-.slot{display:flex;justify-content:space-between;border:1px solid white;padding:10px;}
-.past{background:red;}
-.active{background:green;}
+body{
+  margin:0;
+  background:navy;
+  color:white;
+  font-family:Arial;
+}
+
+/* WEEK */
+#week{
+  text-align:center;
+  font-size:24px;
+  margin:10px;
+}
+
+/* DAY BLOCK */
+.day{
+  margin:10px;
+}
+
+.day h3{
+  text-align:center;
+  margin:5px 0;
+}
+
+/* SLOT */
+.slot{
+  display:flex;
+  justify-content:space-between;
+  padding:12px;
+  margin:5px;
+  border:1px solid white;
+  font-size:18px;
+}
+
+.past{ background:#a00; }
+.current{ background:#0a0; }
+
+/* PRIZES */
+#prizes{
+  margin-top:20px;
+  text-align:center;
+  font-size:22px;
+}
 </style>
 </head>
 
 <body>
 
-<h2 id="week"></h2>
-<div id="list"></div>
+<div id="week"></div>
+<div id="container"></div>
 
-<h3>🥇 <span id="g"></span></h3>
-<h3>🥈 <span id="s"></span></h3>
-<h3>🥉 <span id="b"></span></h3>
+<div id="prizes">
+  🥇 R<span id="g">0</span><br>
+  🥈 R<span id="s">0</span><br>
+  🥉 R<span id="b">0</span>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const app = initializeApp({
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqJ",
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
 });
 
 const db = getDatabase(app);
 
-const days=["MON","TUE","WED","THU","FRI","SAT","SUN"];
+const days=["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
+const times=["06:00-17:30","18:00-05:30"];
 
-onValue(ref(db,"admin/prizes"), snap=>{
-  const data = snap.val();
+function getCurrentSlot(){
+  let now=new Date();
+  let h=now.getHours();
+  let m=now.getMinutes();
+  let total=h*60+m;
+
+  let day=(now.getDay()+6)%7;
+
+  if(total>=6*60 && total<=17*60+30) return {day,row:0};
+  if(total>=18*60 || total<=5*60+30) return {day,row:1};
+
+  return null;
+}
+
+onValue(ref(db,"admin/prizes"),snap=>{
+  const data=snap.val();
   if(!data) return;
 
-  document.getElementById("week").innerText = data.fromDate+" - "+data.toDate;
+  document.getElementById("week").innerText =
+    data.fromDate+" - "+data.toDate;
 
-  let html="";
-  let current=0;
+  const container=document.getElementById("container");
+  container.innerHTML="";
 
-  days.forEach((d,i)=>{
-    html+=`<div class="day"><b>${d}</b>`;
+  let currentVal=0;
+  const nowSlot=getCurrentSlot();
 
-    for(let s=0;s<2;s++){
-      let val=data.schedule?.[i]?.[s]?.value||0;
+  days.forEach((d,dayIndex)=>{
+    let div=document.createElement("div");
+    div.className="day";
+
+    div.innerHTML=`<h3>${d}</h3>`;
+
+    times.forEach((t,rowIndex)=>{
+      let val=data.schedule?.[dayIndex]?.[rowIndex]?.value || 0;
 
       let cls="";
-      let today=(new Date().getDay()+6)%7;
+      if(nowSlot){
+        if(dayIndex===nowSlot.day && rowIndex===nowSlot.row){
+          cls="current";
+          currentVal=val;
+        }else if(dayIndex<nowSlot.day){
+          cls="past";
+        }
+      }
 
-      if(i<today) cls="past";
-      if(i===today) {cls="active"; current=val;}
+      div.innerHTML+=`
+        <div class="slot ${cls}">
+          <span>${t}</span>
+          <span>${val}</span>
+        </div>
+      `;
+    });
 
-      html+=`<div class="slot ${cls}">
-        <span>${s===0?"06:00-17:30":"18:00-05:30"}</span>
-        <span>${val}</span>
-      </div>`;
-    }
-
-    html+="</div>";
+    container.appendChild(div);
   });
 
-  document.getElementById("list").innerHTML=html;
+  currentVal=parseInt(currentVal)||0;
 
-  document.getElementById("g").innerText = Math.round(current*0.65);
-  document.getElementById("s").innerText = Math.round(current*0.25);
-  document.getElementById("b").innerText = Math.round(current*0.10);
+  document.getElementById("g").innerText=Math.round(currentVal*0.65);
+  document.getElementById("s").innerText=Math.round(currentVal*0.25);
+  document.getElementById("b").innerText=Math.round(currentVal*0.10);
 });
 </script>
 
 </body>
-  </html>
+</html>
