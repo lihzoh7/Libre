@@ -456,34 +456,59 @@ fruits.forEach(f=>{
   }
   
 function spawnBoost(){
+
   setInterval(()=>{
     if(!running) return;
 
+    // 🚫 block spawn conditions
+    if(boostActive || boostOnScreen || boostCooldown) return;
+
+    let rand = Math.random();
+
+    let type;
+    if(rand < 0.6){
+      type = "red";   // 60%
+    }else if(rand < 0.9){
+      type = "blue";  // 30%
+    }else{
+      type = "gold";  // 10%
+    }
+
+    let config = {
+      red:  {emoji:"🔴", duration:7000},
+      blue: {emoji:"🔵", duration:14000},
+      gold: {emoji:"🟡", duration:25000}
+    };
+
     let b=document.createElement("div");
-    b.innerText="⚡";
+    b.innerText=config[type].emoji;
     b.className="fruit";
     b.style.left=window.innerWidth+"px";
     b.style.top=Math.random()*300+"px";
 
     game.appendChild(b);
 
+    boostOnScreen = true;
+
     let move=setInterval(()=>{
       b.style.left=(b.offsetLeft-4)+"px";
 
       if(hit(b)){
-        activateBoost();
+        activateBoost(config[type].duration);
         b.remove();
+        boostOnScreen = false;
         clearInterval(move);
       }
 
       if(b.offsetLeft<0){
         b.remove();
+        boostOnScreen = false;
         clearInterval(move);
       }
 
     },16);
 
-  },15000); // every 15s
+  },3000);
   }
 function activateBoost(){
   if(boostActive) return;
