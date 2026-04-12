@@ -339,48 +339,69 @@ function showMiss(){
   setTimeout(()=>m.remove(),800);
 }
 
-/* 🪰 ENEMY (ZIGZAG) 
-   Travel time: 4 Seconds (Responsive)
+/* 🪰 ENEMY (UPSIDE-DOWN SINE + ROTATION + WIGGLE) 
+   Travel time: 4 Seconds
 ===================== */
-function spawnEnemies(){
-  setInterval(()=>{
-    if(!running) return;
+function spawnEnemies() {
+  setInterval(() => {
+    if (!running) return;
 
     let e = document.createElement("div");
     e.className = "enemy";
     e.innerText = "🪰";
     
-    // Start at the far right edge
+    // Start at the far right
     e.style.left = window.innerWidth + "px";
-    e.style.top = "200px";
+    let baseY = 200; // The "center" line of the wave
+    e.style.top = baseY + "px";
+    e.style.position = "absolute";
 
     game.appendChild(e);
 
     let angle = 0;
 
     let move = setInterval(() => {
-      // CALCULATE SPEED: Screen width divided by (Seconds * 62.5 frames per second)
-      // window.innerWidth / 250 = 4 seconds total travel time
       let speed = window.innerWidth / 250; 
       
-      // Horizontal Movement
+      // 1. Horizontal Movement
       e.style.left = (e.offsetLeft - speed) + "px";
       
-      // Vertical Zigzag (Sine Wave)
-      angle += 0.2; 
-      e.style.top = (200 + Math.sin(angle) * 100) + "px";
-if(hit(e)){
-  if(!boostActive){
-    lose();
-  } else {
-    e.remove(); // destroy enemy during boost
-    clearInterval(move);
-  }
-  }
+      // 2. Vertical Movement (Upside-down Sine)
+      // Multiply by -1 to make it go DOWN first
+      angle += 0.15; // Slowed down slightly for smoother rotation
+      let waveOffset = Math.sin(angle) * -100; 
+      e.style.top = (baseY + waveOffset) + "px";
+
+      // 3. Directional Rotation
+      // We calculate the cosine to find the angle of the slope
+      let slope = Math.cos(angle) * -1; 
+      let rotation = slope * 45; // Tilt up to 45 degrees
+
+      // 4. Wing Wiggle (Fast vibration)
+      let wiggle = Math.sin(Date.now() * 0.05) * 5;
+
+      // Apply: scaleX(1) faces left (default for fly) + rotation + wiggle
+      e.style.transform = `rotate(${rotation + wiggle}deg)`;
+
+      // Collision/Cleanup
+      if (hit(e)) {
+        if (!boostActive) {
+          lose();
+        } else {
+          e.remove();
+          clearInterval(move);
+        }
+      }
+
+      if (e.offsetLeft < -50) {
+        e.remove();
+        clearInterval(move);
+      }
     }, 16);
 
-  }, 6000); // New enemy spawns every 6 seconds
+  }, 6000);
 }
+
 
 /* =====================
    🍓 FRUITS
