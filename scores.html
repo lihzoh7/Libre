@@ -14,13 +14,23 @@ body{
 }
 
 /* HEADER */
+#topBar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px;
+}
+
 #timer{
-  font-size:42px;
-  margin:10px;
+  font-size:32px;
   font-weight:bold;
 }
 
-/* GRID = 3 COLUMNS */
+#date{
+  font-size:18px;
+}
+
+/* GRID */
 #content{
   display:grid;
   grid-template-columns: repeat(3, 1fr);
@@ -28,7 +38,6 @@ body{
   padding:10px;
 }
 
-/* PLAYER CARD */
 .card{
   background:#002b55;
   padding:10px;
@@ -67,13 +76,15 @@ body{
 </head>
 
 <body>
-<div id="date"></div>
-<div id="timer">--:--</div>
+
+<div id="topBar">
+  <div id="timer">--:--</div>
+  <div id="date"></div>
+</div>
 
 <div id="content"></div>
 
 <div id="rank">RANK: N/A</div>
-
 <div id="popup"></div>
 
 <script type="module">
@@ -85,10 +96,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   authDomain: "tose-ccf8f.firebaseapp.com",
   databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tose-ccf8f",
-  storageBucket: "tose-ccf8f.appspot.com",
-  messagingSenderId: "475447495901",
-  appId: "1:475447495901:web:9189276a162a3680afdf34"
+  projectId: "tose-ccf8f"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -103,118 +111,103 @@ onAuthStateChanged(auth,(u)=>{
   currentUser=u;
 });
 
-/* ⏰ SLOT SYSTEM */
+/* 🧠 SLOT START (IMPORTANT FIX) */
 function getSlotStart(){
-
   let now = new Date();
   let start = new Date();
 
-  let h = now.getHours();
-  let m = now.getMinutes();
-  let total = h*60+m;
+  let total = now.getHours()*60 + now.getMinutes();
 
   let morningStart = 6*60;
   let morningEnd = 17*60+30;
   let nightStart = 18*60;
 
-  // 🌅 MORNING SLOT
+  // MORNING SLOT
   if(total >= morningStart && total <= morningEnd){
     start.setHours(6,0,0,0);
     return start.getTime();
   }
 
-  // 🌙 NIGHT SLOT (same day)
+  // NIGHT SLOT SAME DAY
   if(total >= nightStart){
     start.setHours(18,0,0,0);
     return start.getTime();
   }
 
-  // 🌙 NIGHT SLOT (after midnight)
+  // NIGHT SLOT AFTER MIDNIGHT
   if(total <= 5*60+30){
-    start.setDate(start.getDate()-1); // go to yesterday
+    start.setDate(start.getDate()-1);
     start.setHours(18,0,0,0);
     return start.getTime();
   }
 
   return null;
 }
+
+/* ⏱ TIMER */
+function updateTimer(){
+  let now = new Date();
+  let total = now.getHours()*60 + now.getMinutes();
+  let end = new Date();
+
+  let morningStart = 6*60;
+  let morningEnd = 17*60+30;
+  let nightStart = 18*60;
+  let nightEnd = 5*60+30;
+
+  let diff = 0;
+
+  if(total >= morningStart && total <= morningEnd){
+    end.setHours(17,30,0,0);
+    diff = end - now;
+  }
+  else if(total >= nightStart){
+    end.setDate(end.getDate()+1);
+    end.setHours(5,30,0,0);
+    diff = end - now;
+  }
+  else if(total <= nightEnd){
+    end.setHours(5,30,0,0);
+    diff = end - now;
+  }
+  else{
+    document.getElementById("timer").innerText = "BREAK";
+    return;
+  }
+
+  let h = Math.floor(diff/1000/60/60);
+  let m = Math.floor((diff/1000/60)%60);
+
+  document.getElementById("timer").innerText = `${h}H:${m}M`;
+}
+setInterval(updateTimer,1000);
+
+/* 📅 DATE */
 function updateDate(){
   let now = new Date();
   document.getElementById("date").innerText =
     now.toLocaleString();
 }
 setInterval(updateDate,1000);
-  
-/* ⏱ TIMER */
-function updateTimer(){
-  let now = new Date();
-
-  let h = now.getHours();
-  let m = now.getMinutes();
-  let total = h*60 + m;
-
-  let end = new Date();
-
-  let morningStart = 6*60;
-  let morningEnd = 17*60+30;
-
-  let nightStart = 18*60;
-  let nightEnd = 5*60+30;
-
-  let diff = 0;
-
-  // ✅ MORNING SLOT (06:00 - 17:30)
-  if(total >= morningStart && total <= morningEnd){
-    end.setHours(17,30,0,0);
-    diff = end - now;
-  }
-
-  // ✅ NIGHT SLOT (18:00 - 23:59)
-  else if(total >= nightStart){
-    end.setDate(end.getDate()+1);
-    end.setHours(5,30,0,0);
-    diff = end - now;
-  }
-
-  // ✅ NIGHT SLOT CONTINUED (00:00 - 05:30)
-  else if(total <= nightEnd){
-    end.setHours(5,30,0,0);
-    diff = end - now;
-  }
-
-  // ❌ BREAK TIME (17:30 - 18:00)
-  else{
-    document.getElementById("timer").innerText = "00H:00M";
-    return;
-  }
-
-  let hours = Math.floor(diff / 1000 / 60 / 60);
-  let minutes = Math.floor((diff / 1000 / 60) % 60);
-
-  document.getElementById("timer").innerText =
-    `${hours}H:${minutes}M`;
-  }
-setInterval(updateTimer,1000);
 
 /* 🔥 PHASE HANDLER */
 const popup=document.getElementById("popup");
 
 setInterval(()=>{
-  let phase=getPhase();
+  let now = new Date();
+  let minutes = now.getMinutes();
 
-  if(phase==="reset"){
+  // only trigger once at exact reset window
+  if(minutes === 29 || minutes === 59){
     popup.innerText="RESETTING...";
     popup.style.display="block";
+
+    // optional cleanup
     set(ref(db,"leaderboard/current"),null);
-  }
-  else if(phase==="break"){
-    popup.innerText="GETTING READY...";
-    popup.style.display="block";
-  }
-  else{
+  } else {
     popup.style.display="none";
   }
-},1000);
+},60000); // check every minute (FIXED)
 
 /* 📊 LEADERBOARD */
 const content=document.getElementById("content");
@@ -226,24 +219,20 @@ onValue(ref(db,"leaderboard/current"), snap=>{
 
   const slotStart = getSlotStart();
 
-for(let uid in data){
+  for(let uid in data){
+    let p = data[uid];
 
-  let player = data[uid];
+    if(!p.timestamp) continue;
 
-  if(!player.timestamp){
-    console.log("Missing timestamp:", player);
-    continue;
-  }
+    // ✅ FILTER OLD SCORES
+    if(slotStart && p.timestamp < slotStart) continue;
 
-  // ✅ allow small delay buffer
-  if(player.timestamp < slotStart - 60000) continue;
-
-  arr.push({
-    uid,
-    name:player.name || "Player",
-    score:player.score,
-    time:player.timestamp
-  });
+    arr.push({
+      uid,
+      name:p.name || "Player",
+      score:p.score,
+      time:p.timestamp
+    });
   }
 
   arr.sort((a,b)=>b.score-a.score);
@@ -281,4 +270,4 @@ for(let uid in data){
 </script>
 
 </body>
-  </html>
+</html>
