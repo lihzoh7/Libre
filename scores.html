@@ -230,8 +230,10 @@ for(let uid in data){
 
   let player = data[uid];
 
-  if(!player.timestamp) continue;
-
+  if(!player.timestamp){
+  console.log("Missing timestamp for:", player);
+  continue;
+  }
   // ❌ IGNORE OLD SLOT SCORES
   if(player.timestamp < slotStart) continue;
 
