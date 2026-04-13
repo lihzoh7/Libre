@@ -41,6 +41,37 @@ button{
   font-size:24px;
   margin:10px;
 }
+
+/* 🔥 BREAK POPUP */
+#breakPopup{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.85);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+}
+
+.popup-box{
+  background:#111;
+  padding:30px;
+  border-radius:16px;
+  text-align:center;
+  border:2px solid red;
+}
+
+.popup-box h2{
+  margin-bottom:15px;
+  color:red;
+}
+
+.food{
+  font-size:60px;
+}
 </style>
 </head>
 
@@ -58,6 +89,14 @@ button{
   </div>
 
   <button onclick="enter()">ENTER GAME</button>
+</div>
+
+<!-- 🔥 BREAK POPUP -->
+<div id="breakPopup">
+  <div class="popup-box">
+    <h2>ON THE BREAK</h2>
+    <div class="food">🍲🍱🥗</div>
+  </div>
 </div>
 
 <script type="module">
@@ -84,6 +123,7 @@ let user;
 let walletLives = 0;
 let count = 0;
 
+/* 🔐 AUTH */
 onAuthStateChanged(auth, async (u)=>{
   if(!u){
     location.href="index.html";
@@ -100,6 +140,7 @@ onAuthStateChanged(auth, async (u)=>{
   document.getElementById("wallet").innerText = walletLives;
 });
 
+/* ➕➖ CONTROLS */
 window.inc = ()=>{
   if(count < walletLives && count < 5){
     count++;
@@ -114,7 +155,32 @@ window.dec = ()=>{
   }
 };
 
+/* ⏰ BREAK CHECK */
+function isBreakTime(){
+  let now = new Date();
+  let h = now.getHours();
+  let m = now.getMinutes();
+
+  // 17:30 → 18:00
+  if(h === 17 && m >= 30) return true;
+  if(h === 18 && m === 0) return true;
+
+  // 05:30 → 06:00
+  if(h === 5 && m >= 30) return true;
+  if(h === 6 && m === 0) return true;
+
+  return false;
+}
+
+/* 🚀 ENTER GAME */
 window.enter = async ()=>{
+
+  // 🔥 BLOCK DURING BREAK
+  if(isBreakTime()){
+    document.getElementById("breakPopup").style.display = "flex";
+    return;
+  }
+
   if(count <= 0){
     alert("SELECT LIVES");
     return;
@@ -125,15 +191,21 @@ window.enter = async ()=>{
     return;
   }
 
-  // 🔥 Deduct from Firebase
   await set(ref(db,"wallet/"+user.uid+"/lives"), walletLives - count);
 
-  // ✅ Save for game
   localStorage.setItem("selectedLives", count);
 
-  // 🚀 Go to game
   location.href = "game.html";
 };
+
+/* 🔄 AUTO BREAK DETECT */
+setInterval(()=>{
+  if(isBreakTime()){
+    document.getElementById("breakPopup").style.display = "flex";
+  } else {
+    document.getElementById("breakPopup").style.display = "none";
+  }
+},1000);
 
 </script>
 
