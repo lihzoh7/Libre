@@ -104,25 +104,39 @@ onAuthStateChanged(auth,(u)=>{
 });
 
 /* ⏰ SLOT SYSTEM */
-function getPhase(){
-  let now=new Date();
-  let h=now.getHours();
-  let m=now.getMinutes();
-  let total=h*60+m;
+function getSlotStart(){
 
-  let morningStart=6*60;
-  let morningEnd=17*60+30;
+  let now = new Date();
+  let start = new Date();
 
-  let nightStart=18*60;
-  let nightEnd=(5*60+30)+1440;
+  let h = now.getHours();
+  let m = now.getMinutes();
+  let total = h*60+m;
 
-  if(total>=morningStart && total<=morningEnd-2) return "game";
-  if(total>morningEnd-2 && total<=morningEnd) return "reset";
+  let morningStart = 6*60;
+  let morningEnd = 17*60+30;
+  let nightStart = 18*60;
 
-  if(total>=nightStart || total<=5*60+30-2) return "game";
-  if(total>5*60+30-2 && total<=5*60+30) return "reset";
+  // 🌅 MORNING SLOT
+  if(total >= morningStart && total <= morningEnd){
+    start.setHours(6,0,0,0);
+    return start.getTime();
+  }
 
-  return "break";
+  // 🌙 NIGHT SLOT (same day)
+  if(total >= nightStart){
+    start.setHours(18,0,0,0);
+    return start.getTime();
+  }
+
+  // 🌙 NIGHT SLOT (after midnight)
+  if(total <= 5*60+30){
+    start.setDate(start.getDate()-1); // go to yesterday
+    start.setHours(18,0,0,0);
+    return start.getTime();
+  }
+
+  return null;
 }
 
 /* ⏱ TIMER */
@@ -179,34 +193,21 @@ setInterval(updateTimer,1000);
 /* 🔥 PHASE HANDLER */
 const popup=document.getElementById("popup");
 
-let hasReset = false;
-
 setInterval(()=>{
-  let phase = getPhase();
+  let phase=getPhase();
 
-  if(phase === "reset"){
-    popup.innerText = "RESETTING...";
-    popup.style.display = "block";
-
-    // ✅ ONLY RESET ONCE
-    if(!hasReset){
-      set(ref(db,"leaderboard/current"), null);
-      hasReset = true;
-    }
+  if(phase==="reset"){
+    popup.innerText="RESETTING...";
+    popup.style.display="block";
+    set(ref(db,"leaderboard/current"),null);
   }
-
-  else if(phase === "break"){
-    popup.innerText = "GETTING READY...";
-    popup.style.display = "block";
+  else if(phase==="break"){
+    popup.innerText="GETTING READY...";
+    popup.style.display="block";
   }
-
   else{
-    popup.style.display = "none";
-
-    // ✅ allow next reset
-    hasReset = false;
+    popup.style.display="none";
   }
-
 },1000);
 
 /* 📊 LEADERBOARD */
@@ -217,13 +218,23 @@ onValue(ref(db,"leaderboard/current"), snap=>{
   const data=snap.val()||{};
   let arr=[];
 
-  for(let uid in data){
-    arr.push({
-      uid,
-      name:data[uid].name || "Player",
-      score:data[uid].score,
-      time:data[uid].timestamp
-    });
+  const slotStart = getSlotStart();
+
+for(let uid in data){
+
+  let player = data[uid];
+
+  if(!player.timestamp) continue;
+
+  // ❌ IGNORE OLD SLOT SCORES
+  if(player.timestamp < slotStart) continue;
+
+  arr.push({
+    uid,
+    name:player.name || "Player",
+    score:player.score,
+    time:player.timestamp
+  });
   }
 
   arr.sort((a,b)=>b.score-a.score);
@@ -261,4 +272,4 @@ onValue(ref(db,"leaderboard/current"), snap=>{
 </script>
 
 </body>
-</html>
+  </html>
