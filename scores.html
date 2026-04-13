@@ -231,11 +231,12 @@ for(let uid in data){
   let player = data[uid];
 
   if(!player.timestamp){
-  console.log("Missing timestamp for:", player);
-  continue;
+    console.log("Missing timestamp:", player);
+    continue;
   }
-  // ❌ IGNORE OLD SLOT SCORES
-  if(player.timestamp < slotStart) continue;
+
+  // ✅ allow small delay buffer
+  if(player.timestamp < slotStart - 60000) continue;
 
   arr.push({
     uid,
