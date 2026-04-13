@@ -13,12 +13,11 @@ body{
   text-align:center;
 }
 
-/* HEADER */
 #topBar{
   display:flex;
   justify-content:space-between;
-  align-items:center;
   padding:10px;
+  font-size:18px;
 }
 
 #timer{
@@ -30,7 +29,6 @@ body{
   font-size:18px;
 }
 
-/* GRID */
 #content{
   display:grid;
   grid-template-columns: repeat(3, 1fr);
@@ -45,32 +43,14 @@ body{
   font-size:20px;
 }
 
-/* COLORS */
 .gold{ color:gold; }
 .silver{ color:silver; }
 .bronze{ color:#cd7f32; }
-.normal{ color:#ccc; }
 
-/* POPUP */
-#popup{
-  position:fixed;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  background:white;
-  color:green;
-  padding:40px;
-  font-size:30px;
-  display:none;
-  border-radius:10px;
-}
-
-/* RANK */
 #rank{
   position:fixed;
   bottom:10px;
   left:10px;
-  font-size:20px;
 }
 </style>
 </head>
@@ -78,194 +58,115 @@ body{
 <body>
 
 <div id="topBar">
-  <div id="timer">--:--</div>
   <div id="date"></div>
+  <div id="timer"></div>
 </div>
 
 <div id="content"></div>
-
 <div id="rank">RANK: N/A</div>
-<div id="popup"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  authDomain: "tose-ccf8f.firebaseapp.com",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tose-ccf8f"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
-
-let currentUser=null;
-
-/* AUTH */
-onAuthStateChanged(auth,(u)=>{
-  if(!u) location.href="index.html";
-  currentUser=u;
+const app = initializeApp({
+  apiKey: "AIzaSy...",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
 });
 
-/* 🧠 SLOT START (IMPORTANT FIX) */
-function getSlotStart(){
-  let now = new Date();
-  let start = new Date();
+const db = getDatabase(app);
 
-  let total = now.getHours()*60 + now.getMinutes();
-
-  let morningStart = 6*60;
-  let morningEnd = 17*60+30;
-  let nightStart = 18*60;
-
-  // MORNING SLOT
-  if(total >= morningStart && total <= morningEnd){
-    start.setHours(6,0,0,0);
-    return start.getTime();
-  }
-
-  // NIGHT SLOT SAME DAY
-  if(total >= nightStart){
-    start.setHours(18,0,0,0);
-    return start.getTime();
-  }
-
-  // NIGHT SLOT AFTER MIDNIGHT
-  if(total <= 5*60+30){
-    start.setDate(start.getDate()-1);
-    start.setHours(18,0,0,0);
-    return start.getTime();
-  }
-
-  return null;
-}
+/* 📅 REAL DATE */
+setInterval(()=>{
+  document.getElementById("date").innerText =
+    new Date().toLocaleString();
+},1000);
 
 /* ⏱ TIMER */
 function updateTimer(){
-  let now = new Date();
-  let total = now.getHours()*60 + now.getMinutes();
-  let end = new Date();
+  let now=new Date();
+  let end=new Date();
 
-  let morningStart = 6*60;
-  let morningEnd = 17*60+30;
-  let nightStart = 18*60;
-  let nightEnd = 5*60+30;
+  let h=now.getHours();
+  let m=now.getMinutes();
+  let total=h*60+m;
 
-  let diff = 0;
-
-  if(total >= morningStart && total <= morningEnd){
+  if(total>=6*60 && total<=17*60+30){
     end.setHours(17,30,0,0);
-    diff = end - now;
-  }
-  else if(total >= nightStart){
+  } else if(total>=18*60){
     end.setDate(end.getDate()+1);
     end.setHours(5,30,0,0);
-    diff = end - now;
-  }
-  else if(total <= nightEnd){
+  } else {
     end.setHours(5,30,0,0);
-    diff = end - now;
-  }
-  else{
-    document.getElementById("timer").innerText = "BREAK";
-    return;
   }
 
-  let h = Math.floor(diff/1000/60/60);
-  let m = Math.floor((diff/1000/60)%60);
+  let diff=end-now;
+  let H=Math.floor(diff/1000/60/60);
+  let M=Math.floor((diff/1000/60)%60);
 
-  document.getElementById("timer").innerText = `${h}H:${m}M`;
+  document.getElementById("timer").innerText=`${H}H:${M}M`;
 }
 setInterval(updateTimer,1000);
 
-/* 📅 DATE */
-function updateDate(){
-  let now = new Date();
-  document.getElementById("date").innerText =
-    now.toLocaleString();
-}
-setInterval(updateDate,1000);
+/* 🔥 RESET SYSTEM */
+let lastResetKey="lastReset";
 
-/* 🔥 PHASE HANDLER */
-const popup=document.getElementById("popup");
+setInterval(async ()=>{
+  let now=new Date();
+  let h=now.getHours();
+  let m=now.getMinutes();
 
-setInterval(()=>{
-  let now = new Date();
-  let minutes = now.getMinutes();
+  if((h===5 && m===30) || (h===17 && m===30)){
 
-  // only trigger once at exact reset window
-  if(minutes === 29 || minutes === 59){
-    popup.innerText="RESETTING...";
-    popup.style.display="block";
+    let lastSnap=await get(ref(db,"system/"+lastResetKey));
+    let last=lastSnap.val();
 
-    // optional cleanup
-    set(ref(db,"leaderboard/current"),null);
-  } else {
-    popup.style.display="none";
+    let nowKey = now.toDateString()+"-"+h+"-"+m;
+
+    if(last !== nowKey){
+
+      // CLEAR leaderboard
+      await set(ref(db,"leaderboard/current"),null);
+
+      // SAVE reset marker
+      await set(ref(db,"system/"+lastResetKey), nowKey);
+
+      console.log("RESET DONE");
+    }
   }
-},60000); // check every minute (FIXED)
+},5000);
 
-/* 📊 LEADERBOARD */
-const content=document.getElementById("content");
-const rankEl=document.getElementById("rank");
-
+/* 📊 LOAD */
 onValue(ref(db,"leaderboard/current"), snap=>{
   const data=snap.val()||{};
   let arr=[];
 
-  const slotStart = getSlotStart();
-
   for(let uid in data){
-    let p = data[uid];
-
-    if(!p.timestamp) continue;
-
-    // ✅ FILTER OLD SCORES
-    if(slotStart && p.timestamp < slotStart) continue;
-
-    arr.push({
-      uid,
-      name:p.name || "Player",
-      score:p.score,
-      time:p.timestamp
-    });
+    arr.push(data[uid]);
   }
 
   arr.sort((a,b)=>b.score-a.score);
 
+  const content=document.getElementById("content");
   content.innerHTML="";
 
   arr.slice(0,75).forEach((p,i)=>{
-    let cls="normal";
+    let cls="";
     if(i===0) cls="gold";
     if(i===1) cls="silver";
     if(i===2) cls="bronze";
-
-    let date=new Date(p.time).toLocaleString();
 
     let div=document.createElement("div");
     div.className="card "+cls;
 
     div.innerHTML=`
-      <b>${i+1}. ${p.name}</b><br>
+      ${i+1}. ${p.name}<br>
       ${p.score}<br>
-      <small>${date}</small>
+      <small>${new Date(p.timestamp).toLocaleString()}</small>
     `;
 
     content.appendChild(div);
-
-    if(currentUser && currentUser.uid===p.uid){
-      rankEl.innerText="RANK: "+(i+1);
-    }
   });
-
-  if(!arr.find(p=>p.uid===currentUser?.uid)){
-    rankEl.innerText="RANK: N/A";
-  }
 });
 </script>
 
