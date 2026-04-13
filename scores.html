@@ -179,21 +179,34 @@ setInterval(updateTimer,1000);
 /* 🔥 PHASE HANDLER */
 const popup=document.getElementById("popup");
 
-setInterval(()=>{
-  let phase=getPhase();
+let hasReset = false;
 
-  if(phase==="reset"){
-    popup.innerText="RESETTING...";
-    popup.style.display="block";
-    set(ref(db,"leaderboard/current"),null);
+setInterval(()=>{
+  let phase = getPhase();
+
+  if(phase === "reset"){
+    popup.innerText = "RESETTING...";
+    popup.style.display = "block";
+
+    // ✅ ONLY RESET ONCE
+    if(!hasReset){
+      set(ref(db,"leaderboard/current"), null);
+      hasReset = true;
+    }
   }
-  else if(phase==="break"){
-    popup.innerText="GETTING READY...";
-    popup.style.display="block";
+
+  else if(phase === "break"){
+    popup.innerText = "GETTING READY...";
+    popup.style.display = "block";
   }
+
   else{
-    popup.style.display="none";
+    popup.style.display = "none";
+
+    // ✅ allow next reset
+    hasReset = false;
   }
+
 },1000);
 
 /* 📊 LEADERBOARD */
