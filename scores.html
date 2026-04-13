@@ -67,7 +67,7 @@ body{
 </head>
 
 <body>
-
+<div id="date"></div>
 <div id="timer">--:--</div>
 
 <div id="content"></div>
@@ -138,7 +138,13 @@ function getSlotStart(){
 
   return null;
 }
-
+function updateDate(){
+  let now = new Date();
+  document.getElementById("date").innerText =
+    now.toLocaleString();
+}
+setInterval(updateDate,1000);
+  
 /* ⏱ TIMER */
 function updateTimer(){
   let now = new Date();
