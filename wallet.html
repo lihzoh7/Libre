@@ -65,6 +65,7 @@ R5 (2♥ + 500 💎)
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
@@ -78,7 +79,18 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    location.href = "admin.html";
+    return;
+  }
 
+  const snap = await get(ref(db, "admins/" + user.uid));
+
+  if (!snap.exists()) {
+    location.href = "admin.html";
+  }
+});
 const gemsEl = document.getElementById("gems");
 const livesEl = document.getElementById("lives");
 
