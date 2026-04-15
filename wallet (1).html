@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>WALLET</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#001f3f;
+  color:white;
+  display:flex;
+  justify-content:center;
+}
+#wallet{
+  width:400px;
+  padding:20px;
+}
+.tiles{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.tile{
+  background:#003366;
+  padding:20px;
+  text-align:center;
+  border-radius:10px;
+}
+.tab{
+  margin-top:10px;
+  background:#001f5c;
+  padding:15px;
+  text-align:center;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div id="wallet">
+<h2>WALLET</h2>
+
+<div class="tiles">
+  <div class="tile">💎 <span id="gems">0</span></div>
+  <div class="tile" id="buyLife">❤️ <span id="lives">0</span></div>
+</div>
+
+<div class="tab" onclick="buy('R1.50','300 gems','https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-150')">
+R1.50 (300 💎)
+</div>
+
+<div class="tab" onclick="buy('R3','900 gems','https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-900')">
+R3 (900 💎)
+</div>
+
+<div class="tab" onclick="buy('R5','2 lives + 500 gems','https://pay.ikhokha.com/i-am-lizo-tose/mpr/spl-500')">
+R5 (2♥ + 500 💎)
+</div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, push, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.appspot.com",
+  messagingSenderId: "475447495901",
+  appId: "1:475447495901:web:9189276a162a3680afdf34"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+const gemsEl = document.getElementById("gems");
+const livesEl = document.getElementById("lives");
+
+const uid = localStorage.getItem("uid");
+if(!uid){
+  alert("User not logged in");
+  throw new Error("No UID");
+  }
+/* LOAD WALLET */
+import { onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+function load(){
+  onValue(ref(db,"wallet/"+uid),(snap)=>{
+    const data = snap.val() || {};
+
+    gemsEl.innerText = data.gems || 0;
+    livesEl.innerText = data.lives || 0;
+  });
+  }
+
+/* BUY */
+window.buy = function(price,item,link){
+
+  // ✅ OPEN FIRST (this fixes your issue)
+  window.open(link, "_blank");
+
+  // THEN do Firebase stuff
+  sendRequest(price,item);
+};
+document.getElementById("buyLife").onclick = async ()=>{
+
+  const snap = await get(ref(db,"wallet/"+uid));
+  const data = snap.val() || {};
+
+  let gems = data.gems || 0;
+  let lives = data.lives || 0;
+
+  if(gems < 100){
+    alert("Not enough gems (300 💎 = 1 ❤️)");
+    return;
+  }
+
+  await set(ref(db,"wallet/"+uid+"/gems"), gems - 300);
+  await set(ref(db,"wallet/"+uid+"/lives"), lives + 1);
+
+  alert("+1 ❤️ purchased!");
+};
+async function sendRequest(price,item){
+
+  const userSnap = await get(ref(db,"users/"+uid));
+  const user = userSnap.val() || {};
+
+  const request = {
+  uid,
+  name: user.name || "",
+  surname: user.surname || "",
+  email: user.email || "",
+  item,
+  price,
+
+  gems: item.includes("300") ? 300 :
+        item.includes("900") ? 900 :
+        item.includes("500") ? 500 : 0,
+
+  lives: item.includes("2 lives") ? 2 : 0,
+
+  status: "pending",
+  timestamp: Date.now()
+};
+
+  await push(ref(db,"walletRequests"), request);
+
+  alert("Payment opened. Wait for approval.");
+}
+
+load();
+</script>
+
+</body>
+</html>
