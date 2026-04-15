@@ -13,7 +13,8 @@ body{
   text-align:center;
 }
 
-#timer{
+/* ✅ SAME AS ADMIN */
+#date, #timer{
   font-size:42px;
   margin:10px;
   font-weight:bold;
@@ -62,7 +63,10 @@ body{
 
 <body>
 
-<div id="timer">--:--</div>
+<!-- ✅ NOW MATCHES ADMIN -->
+<div id="date"></div>
+<div id="timer"></div>
+
 <div id="content"></div>
 <div id="rank">RANK: N/A</div>
 <div id="popup"></div>
@@ -88,9 +92,13 @@ onAuthStateChanged(auth,(u)=>{
   currentUser = u;
 });
 
-/* ⏱ TIMER */
-function updateTimer(){
+/* ✅ FULL DATE + TIMER (MATCH ADMIN EXACTLY) */
+function updateTime(){
   let now = new Date();
+
+  // FULL DATE + TIME
+  document.getElementById("date").innerText =
+    now.toLocaleDateString() + " " + now.toLocaleTimeString();
 
   let end = new Date();
 
@@ -108,9 +116,9 @@ function updateTimer(){
 
   document.getElementById("timer").innerText = `${h}H:${m}M`;
 }
-setInterval(updateTimer,1000);
+setInterval(updateTime,1000);
 
-/* 🔥 HARD RESET SYSTEM */
+/* 🔥 RESET SYSTEM (UNCHANGED BUT CLEAN) */
 async function checkReset(){
   let now = new Date();
   let h = now.getHours();
@@ -135,7 +143,6 @@ async function checkReset(){
 
   if(lastReset === currentKey) return;
 
-  // 🔥 SAVE HISTORY FIRST
   const snap = await get(ref(db,"leaderboard/current"));
   const data = snap.val();
 
@@ -143,9 +150,7 @@ async function checkReset(){
     await set(ref(db,"leaderboard/history/"+Date.now()), data);
   }
 
-  // 🔥 RESET
   await set(ref(db,"leaderboard/current"), null);
-
   await set(ref(db,"admin/lastReset"), currentKey);
 
   document.getElementById("popup").innerText="RESET!";
@@ -209,4 +214,4 @@ onValue(ref(db,"leaderboard/current"), snap=>{
 </script>
 
 </body>
-  </html>
+</html>
