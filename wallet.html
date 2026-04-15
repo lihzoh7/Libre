@@ -79,11 +79,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, (user) => {
   if (!user) {
-    location.href = "admin.html";
-    return;
+    // NOT LOGGED IN → BLOCK ACCESS
+    window.location.href = "login.html";
   }
+});
 
   const snap = await get(ref(db, "admins/" + user.uid));
 
