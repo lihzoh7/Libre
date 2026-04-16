@@ -65,8 +65,7 @@ R5 (2♥ + 500 💎)
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   authDomain: "tose-ccf8f.firebaseapp.com",
@@ -88,7 +87,17 @@ if(!uid){
   alert("User not logged in");
   throw new Error("No UID");
   }
-/* LOAD WALLET */
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    location.href = "index.html";
+    return;
+  }
+
+  const uid = user.uid;
+
+  // use uid here safely
+});
+  /* LOAD WALLET */
 import { onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 function load(){
