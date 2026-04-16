@@ -147,7 +147,7 @@ async function checkReset(){
   const data = snap.val();
 
   if(data){
-    await set(ref(db,"leaderboard/history/"+Date.now()), data);
+    await set(ref(db,"leaderboard/adminHistory/"+Date.now()), data);
   }
 
   await set(ref(db,"leaderboard/current"), null);
