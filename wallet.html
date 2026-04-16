@@ -82,15 +82,16 @@ const auth = getAuth(app);
 const gemsEl = document.getElementById("gems");
 const livesEl = document.getElementById("lives");
 
+let uid; // ✅ ADD THIS AT THE TOP (outside everything)
+
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     location.href = "index.html";
     return;
   }
 
-  const uid = user.uid;
-
-  // use uid here safely
+  uid = user.uid; // ✅ assign it here
+  load();         // ✅ NOW call load AFTER uid exists
 });
   /* LOAD WALLET */
 import { onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
