@@ -93,9 +93,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
      
-     import { signOut } from "firebase/auth";
-await signOut(auth);
-     
 document.getElementById("loginBtn").addEventListener("click", async () => {
   const email = document.getElementById("email").value.trim().toLowerCase();
   const password = document.getElementById("password").value;
