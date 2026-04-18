@@ -79,7 +79,10 @@ import {
   getAuth, 
   signInWithEmailAndPassword 
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { signOut } from "firebase/auth";
 
+await signOut(auth);
+     
 const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   authDomain: "tose-ccf8f.firebaseapp.com",
@@ -92,7 +95,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-
+     
 document.getElementById("loginBtn").addEventListener("click", async () => {
   const email = document.getElementById("email").value.trim().toLowerCase();
   const password = document.getElementById("password").value;
