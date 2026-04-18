@@ -127,7 +127,12 @@ let count = 0;
 onAuthStateChanged(auth, async (u)=>{
   if(!u){
     location.href="index.html";
-    return;
+  } else {
+
+    const adminSnap = await get(ref(db,"admins/"+u.uid));
+    if(adminSnap.exists()){
+      location.href = "admin.html";
+      return;
   }
 
   user = u;
