@@ -155,6 +155,13 @@ onAuthStateChanged(auth, async (u)=>{
   if(!u){
     location.href="index.html";
   } else {
+    const adminSnap = await get(ref(db,"admins/"+u.uid));
+
+    if(adminSnap.exists()){
+      alert("Admin must use admin panel");
+      location.href = "admin.html";
+      return;
+  }
     user = u;
 
     const snap = await get(ref(db,"users/"+user.uid));
