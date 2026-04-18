@@ -63,9 +63,14 @@ let currentUID = null;
 // Ensure user is logged in
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
-    window.location.href = "index.html";
-    return;
-  }
+    window.location.href="index.html";
+  } else {
+
+    const adminSnap = await get(ref(db,"admins/"+u.uid));
+    if(adminSnap.exists()){
+      location.href = "admin.html";
+      return;
+     }
 
   currentUID = user.uid;
   loadProfile();
