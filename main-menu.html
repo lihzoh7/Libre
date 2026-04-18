@@ -161,7 +161,7 @@ onAuthStateChanged(auth, async (u)=>{
     const data = snap.val() || {};
 
     // 🔥 SHOW POPUP ONLY IF NOT APPROVED
-    if(!data.approved){
+    if(data.approved !== true){
       document.getElementById("applicationPopup").style.display="flex";
 
       // if already applied → show waiting
