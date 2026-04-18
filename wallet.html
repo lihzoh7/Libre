@@ -86,8 +86,13 @@ let uid; // ✅ ADD THIS AT THE TOP (outside everything)
 
 onAuthStateChanged(auth, (user) => {
   if (!user) {
-    location.href = "index.html";
-    return;
+    location.href="index.html";
+  } else {
+
+    const adminSnap = await get(ref(db,"admins/"+u.uid));
+    if(adminSnap.exists()){
+      location.href = "admin.html";
+      return;
   }
 
   uid = user.uid; // ✅ assign it here
