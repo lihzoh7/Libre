@@ -1,122 +1,213 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>SPACE GLASS - Login</title>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7026930699288972"
-     crossorigin="anonymous"></script>
-<style>
-body { 
-  background-color: navy; 
-  font-family: Arial, sans-serif; 
-  display:flex; 
-  justify-content:center; 
-  align-items:center; 
-  height:100vh; 
-  margin:0; 
-}
-.container { 
-  text-align:center; 
-  width:300px; 
-}
-h1 { 
-  color:white; 
-  font-size:14px; 
-  margin-bottom:20px; 
-}
-input { 
-  width:100%; 
-  padding:10px; 
-  margin:5px 0; 
-  box-sizing:border-box; 
-  border-radius:4px; 
-  border:none; 
-}
-#loginBtn { 
-  width:100%; 
-  padding:10px; 
-  margin-top:10px; 
-  background-color:green; 
-  color:white; 
-  border:none; 
-  border-radius:4px; 
-  cursor:pointer; 
-}
-.links { 
-  margin-top:10px; 
-  display:flex; 
-  justify-content:space-between; 
-  font-size:8px; 
-  color:white; 
-}
-.links a { 
-  color:white; 
-  text-decoration:none; 
-}
-.links a:hover { 
-  text-decoration:underline; 
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUUSTANDI GAMING</title>
+    <style>
+        body {
+            background-color: #050505;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            overflow-x: hidden;
+        }
+
+        header {
+            width: 100%;
+            background: linear-gradient(90deg, #001f3f, #0074D9, #001f3f);
+            padding: 15px 0;
+            box-shadow: 0 4px 15px rgba(0, 116, 217, 0.3);
+        }
+
+        h1 {
+            margin: 0;
+            letter-spacing: 8px;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            width: 100%;
+        }
+
+        .container {
+            padding: 40px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .welcome {
+            font-size: 1.8rem;
+            color: #00d4ff;
+            margin-bottom: 40px;
+        }
+
+        /* NOTIFICATION SECTION
+           (Type your messages here to show them to players)
+        */
+        .notification {
+            color: #ffcc00;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #cccccc;
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #ffffff;
+            text-decoration: underline;
+            margin-bottom: 15px;
+        }
+
+        .slot-box {
+            background: #111;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            margin-bottom: 30px;
+        }
+
+        .prizes-list {
+            text-align: left;
+            display: inline-block;
+            margin-bottom: 40px;
+            color: #00ff88;
+        }
+
+        .play-section {
+            margin: 50px 0;
+        }
+
+        .play-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff0055;
+            margin-bottom: 10px;
+        }
+
+        .game-tile {
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 300px;
+            border-radius: 20px;
+            border: 3px solid #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .game-tile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.7);
+        }
+
+        .contact-section {
+            margin-top: 80px;
+            padding-bottom: 100px;
+        }
+
+        .contact-grid {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            margin-top: 20px;
+        }
+
+        .contact-item {
+            cursor: pointer;
+            width: 150px;
+        }
+
+        .icon {
+            font-size: 80px; /* Twice the size */
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+
+        .phone-icon {
+            transform: rotate(15deg); /* Leaning to the right */
+        }
+
+        .contact-detail {
+            margin-top: 15px;
+            font-size: 1.2rem;
+            color: #00d4ff;
+            display: none; /* Hidden by default */
+            word-wrap: break-word;
+        }
+    </style>
 </head>
-
 <body>
-<div class="container">
-  <h1>LOG IN</h1>
-  <input id="email" type="email" placeholder="Email Address">
-  <input id="password" type="password" placeholder="Password">
-  <button id="loginBtn">LOG IN</button>
 
-  <div class="links">
-    <a href="signup.html">SIGN UP</a>
-    <a href="forgot-password.html">Forgot password?</a>
-    <a href="queries.html">QUERIES</a>
-  </div>
-</div>
+    <header>
+        <h1>MUUSTANDI GAMING</h1>
+    </header>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { 
-  getAuth, 
-  signInWithEmailAndPassword 
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-     
-const firebaseConfig = {
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  authDomain: "tose-ccf8f.firebaseapp.com",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tose-ccf8f",
-  storageBucket: "tose-ccf8f.appspot.com",
-  messagingSenderId: "475447495901",
-  appId: "1:475447495901:web:9189276a162a3680afdf34"
-};
+    <div class="container">
+        <div class="welcome">WELCOME</div>
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-     
-document.getElementById("loginBtn").addEventListener("click", async () => {
-  const email = document.getElementById("email").value.trim().toLowerCase();
-  const password = document.getElementById("password").value;
+        <div class="notification">
+            </div>
 
-  if (!email || !password) {
-    alert("Enter email and password");
-    return;
-  }
+        <p class="description">
+            Muustandi Gaming Is A Skill Based Gaming Platform Where Gamers Compete To Set The Highest Score And Be The Last One Standing When The Game Slot Ends.
+        </p>
 
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+        <div class="section-title"><b>Our Game Slots</b></div>
+        <div class="slot-box">
+            Each Day We Have Two Game Slots, Players Must Make Sure They Are In The First Three Positions Before The Game Slot Ends To Win Rewards.<br><br>
+            <strong>06:00 - 17:30 (First Slot)</strong><br>
+            <strong>18:00 - 05:30 (Second Slot)</strong>
+        </div>
 
-    // Store both for compatibility
-    localStorage.setItem("currentUserEmail", email);
-    localStorage.setItem("uid", user.uid);
+        <div class="section-title">Prizes</div>
+        <div class="prizes-list">
+            The Prizes Work As Follows:<br>
+            * The Player In First Place Would Take 60% Of The Total Prize Money<br>
+            * The Player In Second Place Would Take 30% Of The Total Prize Money<br>
+            * The Player In Third Place Would Take 10% Of The Total Prize Money<br><br>
+            <span style="color: #888;">(Don't Forget To Check Prizes To See The Prizes For Each Game Slot)</span>
+        </div>
 
-    window.location.href = "main-menu.html";
+        <div class="play-section">
+            <div class="play-title">PLAY</div>
+            <p style="font-size: 1.5rem; letter-spacing: 5px; color: gold;">SLIDE</p>
+            <a href="login.html">
+                <img src="file_0000000033fc71f5ab708c5accfb6a34.png" alt="Play Slide" class="game-tile">
+            </a>
+        </div>
 
-  } catch (err) {
-    alert("Incorrect email or password");
-  }
-});
-</script>
+        <div class="contact-section">
+            <div class="section-title">CONTACT US</div>
+            <div class="contact-grid">
+                
+                <div class="contact-item" onclick="toggleDetail('phone-detail')">
+                    <span class="icon phone-icon">📱</span>
+                    <div id="phone-detail" class="contact-detail">0626474239</div>
+                </div>
 
+                <div class="contact-item" onclick="toggleDetail('email-detail')">
+                    <span class="icon">📧</span>
+                    <div id="email-detail" class="contact-detail">muustandihouse@gmail.com</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleDetail(id) {
+            const detail = document.getElementById(id);
+            if (detail.style.display === "block") {
+                detail.style.display = "none";
+            } else {
+                detail.style.display = "block";
+            }
+        }
+    </script>
 </body>
 </html>
