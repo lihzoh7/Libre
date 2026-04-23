@@ -130,6 +130,11 @@ Score: <span id="score">0</span><br>
 </div>
 
 <script type="module">
+  window.addEventListener("pageshow", (event) => {
+  if (event.persisted) {
+    location.reload();
+  }
+});
 import { get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
