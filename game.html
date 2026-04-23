@@ -694,8 +694,10 @@ onAuthStateChanged(auth, (u)=>{
   user = u;
 
   // ✅ GET SELECTED LIVES FROM SELECTOR PAGE
-  let selected = parseInt(localStorage.getItem("selectedLives")) || 0;
+let selected = parseInt(localStorage.getItem("selectedLives")) || 0;
 
+// ✅ CLEAR AFTER READ
+localStorage.removeItem("selectedLives");
   // 🚫 if user came here without selecting
   if(selected <= 0){
     location.href = "main-menu.html";
