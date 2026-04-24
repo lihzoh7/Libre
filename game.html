@@ -192,17 +192,7 @@ async function saveScore(finalScore){
   });
   }
 /* OVERRIDE YOUR END GAME */
-window.endGame = async function(){
 
-  await saveScore(score);
-
-  popup.style.display="block";
-  popup.innerHTML=`
-    <h2>FINAL SCORE</h2>
-    <h1>${score}</h1>
-    <button onclick="goMenu()">OK</button>
-  `;
-};
 
 /* GAME VARIABLES */
 let y=200, velocity=0;
@@ -251,6 +241,7 @@ function gameOpen(){
    🚀 START GAME
 ===================== */
 function startGame(){
+  popup.style.display = "none";
   running=true;
   update();
   spawnRings();
@@ -644,7 +635,11 @@ function hit(el){
    💔 LIFE SYSTEM
 ===================== */
 function lose(){
+  if(!running) return; // ✅ prevent multiple triggers
   running=false;
+
+  // 🔥 STOP EVERYTHING VISUALLY
+  document.querySelectorAll(".ring,.fruit,.enemy").forEach(el => el.remove());
 
   if(gameLives>0){
     popup.style.display="block";
@@ -675,7 +670,13 @@ window.exit=()=>endGame();
    🏁 END
 ===================== */
 async function endGame(){
-  await saveScore(score); // 🔥 THIS WAS MISSING
+  if(!running) return; // ✅ prevent double execution
+  running = false;
+
+  // 🔥 CLEAN SCREEN
+  document.querySelectorAll(".ring,.fruit,.enemy").forEach(el => el.remove());
+
+  await saveScore(score);
 
   popup.style.display="block";
   popup.innerHTML=`
@@ -684,10 +685,6 @@ async function endGame(){
     <button onclick="goMenu()">OK</button>
   `;
   }
-
-window.goMenu = ()=>{
-  location.href="main-menu.html";
-};
 
 /* START */
 onAuthStateChanged(auth, (u)=>{
