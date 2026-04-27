@@ -17,36 +17,44 @@ body {
 }
 .container { 
   text-align:center; 
-  width:300px; 
+  /* Increased width slightly for better balance */
+  width:350px; 
 }
 h1 { 
   color:white; 
-  font-size:14px; 
+  /* Enlarged from 14px */
+  font-size:28px; 
   margin-bottom:20px; 
 }
 input { 
   width:100%; 
-  padding:10px; 
-  margin:5px 0; 
+  padding:12px; 
+  margin:8px 0; 
   box-sizing:border-box; 
   border-radius:4px; 
-  border:none; 
+  border:none;
+  /* Enlarged text inside the fields */
+  font-size:16px; 
 }
 #loginBtn { 
   width:100%; 
-  padding:10px; 
+  padding:12px; 
   margin-top:10px; 
   background-color:green; 
   color:white; 
   border:none; 
   border-radius:4px; 
-  cursor:pointer; 
+  cursor:pointer;
+  /* Enlarged button text */
+  font-size:18px; 
+  font-weight:bold;
 }
 .links { 
-  margin-top:10px; 
+  margin-top:15px; 
   display:flex; 
   justify-content:space-between; 
-  font-size:8px; 
+  /* Enlarged from 8px to a readable size */
+  font-size:13px; 
   color:white; 
 }
 .links a { 
@@ -106,7 +114,6 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Store both for compatibility
     localStorage.setItem("currentUserEmail", email);
     localStorage.setItem("uid", user.uid);
 
