@@ -93,30 +93,65 @@ onAuthStateChanged(auth,(u)=>{
 });
 
 /* ✅ FULL DATE + TIMER (MATCH ADMIN EXACTLY) */
-function updateTime(){
-  let now = new Date();
+/* ✅ DYNAMIC COUNTDOWN & BREAK SYSTEM */
+function updateTime() {
+  const now = new Date();
+  const dateEl = document.getElementById("date");
+  const timerEl = document.getElementById("timer");
 
-  // FULL DATE + TIME
-  document.getElementById("date").innerText =
-    now.toLocaleDateString() + " " + now.toLocaleTimeString();
+  // Display current Date/Time
+  dateEl.innerText = now.toLocaleDateString() + " " + now.toLocaleTimeString();
 
-  let end = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const currentTimeInMinutes = hours * 60 + minutes;
 
-  if(now.getHours() < 17){
-    end.setHours(17,30,0,0);
-  } else {
-    end.setDate(end.getDate()+1);
-    end.setHours(5,30,0,0);
+  // Define Time Markers in minutes from midnight
+  const m530AM = 5 * 60 + 30; // 330
+  const m600AM = 6 * 60;      // 360
+  const m530PM = 17 * 60 + 30; // 1050
+  const m600PM = 18 * 60;      // 1080
+
+  let targetTime = new Date(now);
+  let isBreak = false;
+
+  // 1. Morning Break (05:30 - 06:00)
+  if (currentTimeInMinutes >= m530AM && currentTimeInMinutes < m600AM) {
+    isBreak = true;
+  } 
+  // 2. Daytime Active (06:00 - 17:30)
+  else if (currentTimeInMinutes >= m600AM && currentTimeInMinutes < m530PM) {
+    targetTime.setHours(17, 30, 0, 0);
+  }
+  // 3. Evening Break (17:30 - 18:00)
+  else if (currentTimeInMinutes >= m530PM && currentTimeInMinutes < m600PM) {
+    isBreak = true;
+  }
+  // 4. Nighttime Active (18:00 - 05:30 next day)
+  else {
+    // If it's after 6PM, the target is 5:30 AM tomorrow
+    if (currentTimeInMinutes >= m600PM) {
+      targetTime.setDate(now.getDate() + 1);
+    }
+    // If it's before 5:30 AM, target is 5:30 AM today
+    targetTime.setHours(5, 30, 0, 0);
   }
 
-  let diff = end - now;
+  // Update UI
+  if (isBreak) {
+    timerEl.innerText = "BREAK TIME";
+    timerEl.style.color = "orange"; // Optional: make it look distinct
+  } else {
+    const diff = targetTime - now;
+    const h = Math.floor(diff / 1000 / 60 / 60);
+    const m = Math.floor((diff / 1000 / 60) % 60);
+    const s = Math.floor((diff / 1000) % 60); // Added seconds for better feel
 
-  let h = Math.floor(diff/1000/60/60);
-  let m = Math.floor((diff/1000/60)%60);
-
-  document.getElementById("timer").innerText = `${h}H:${m}M`;
+    timerEl.innerText = `${h}H:${m}M:${s}S`;
+    timerEl.style.color = "white";
+  }
 }
-setInterval(updateTime,1000);
+
 
 /* 🔥 RESET SYSTEM (UNCHANGED BUT CLEAN) */
 async function checkReset(){
