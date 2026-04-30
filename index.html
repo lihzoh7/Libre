@@ -48,6 +48,11 @@
             margin-bottom: 20px;
         }
 
+        /* Styling for the new Winners Banner */
+        .winners-banner {
+            margin: 20px 0 40px 0;
+        }
+
         .description {
             font-size: 1.1rem;
             line-height: 1.6;
@@ -102,9 +107,8 @@
             box-shadow: 0 0 40px rgba(0, 212, 255, 0.7);
         }
 
-        /* APK DOWNLOAD STYLES */
         .download-container {
-            margin: 40px 0; /* Spacing above and below the link */
+            margin: 40px 0;
         }
 
         .download-link {
@@ -162,6 +166,8 @@
 </head>
 <body>
 
+    <audio id="bg-sound" src="hot.mp3" loop></audio>
+
     <header>
         <h1>MUUSTANDI GAMING</h1>
     </header>
@@ -169,10 +175,11 @@
     <div class="container">
         <div class="welcome">WELCOME</div>
 
-        <div class="notification">Wallet Top Ups Are Open From 06:00 am To 18:00 pm
+        <div class="notification">Wallet Top Ups Are Open From 06:00 am To 18:00 pm</div>
+
         <div class="winners-banner">
-    <img src="winners.png" alt="Recent Winners" class="game-tile">
-</div>
+            <img src="winners.png" alt="Recent Winners" class="game-tile">
+        </div>
 
         <p class="description">
             Muustandi Gaming Is A Skill Based Gaming Platform Where Gamers Compete To Set The Highest Score And Be The Last One Standing When The Game Slot Ends.
@@ -227,6 +234,7 @@
     </div>
 
     <script>
+        // Toggle contact info
         function toggleDetail(id) {
             const detail = document.getElementById(id);
             if (detail.style.display === "block") {
@@ -235,6 +243,14 @@
                 detail.style.display = "block";
             }
         }
+
+        // Script to play hot.mp3 on first interaction
+        document.addEventListener('click', function() {
+            const audio = document.getElementById('bg-sound');
+            audio.play().catch(error => {
+                console.log("Autoplay blocked. Tap anywhere to start sound.");
+            });
+        }, { once: true });
     </script>
 </body>
-            </html>
+</html>
