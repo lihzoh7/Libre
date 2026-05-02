@@ -173,7 +173,7 @@ async function sendRequest(price,item){
   const userSnap = await get(ref(db,"users/"+uid));
   const user = userSnap.val() || {};
 
-  const request = {
+    const request = {
   uid,
   name: user.name || "",
   surname: user.surname || "",
@@ -181,16 +181,20 @@ async function sendRequest(price,item){
   item,
   price,
 
-  gems: item.includes("300") ? 300 :
-        item.includes("900") ? 900 :
-        item.includes("500") ? 500 : 0,
+  // Updated logic to match your new values
+  gems: item.includes("150") ? 150 :
+        item.includes("350") ? 350 :
+        item.includes("400") ? 400 : 0,
 
-  lives: item.includes("2 lives") ? 2 : 0,
+  lives: item.includes("1 life") ? 1 :
+         item.includes("2 lives") ? 2 :
+         item.includes("5 lives") ? 5 : 0,
 
   status: "pending",
   timestamp: Date.now()
 };
 
+  
   await push(ref(db,"walletRequests"), request);
 
   alert("Payment opened. Wait for approval.");
