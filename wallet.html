@@ -71,9 +71,6 @@ h2 {
 <h2>WALLET</h2>
 
 <div class="tiles">
-  <div id="claimBtn" class="tab" style="display:none;" onclick="claimSpin()">
-🎁 CLAIM BONUS SPIN
-  </div>
   <div class="tile">💎 <span id="gems">0</span></div>
   <div class="tile" id="buyLife">❤️ <span id="lives">0</span></div>
 </div>
@@ -97,8 +94,7 @@ R3 (5❤️+400💎) CLICK TO BUY
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-
-  const firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   authDomain: "tose-ccf8f.firebaseapp.com",
   databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
@@ -133,10 +129,6 @@ onAuthStateChanged(auth, async (user) => {
 
   load(); // only runs after everything is valid
 });
- // ✅ CLAIM BUTTON ACTION
-window.claimSpin = function(){
-  window.location.href = "spinwheel.html";
-}; 
   /* LOAD WALLET */
 import { onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
@@ -147,38 +139,7 @@ function load(){
     gemsEl.innerText = data.gems || 0;
     livesEl.innerText = data.lives || 0;
   });
-  // 🔥 CHECK CLAIM STATUS
-  onValue(ref(db,"applications/"+uid),(snap)=>{
-  const app = snap.val();
-
-  const btn = document.getElementById("claimBtn");
-
-  if(!app || !app.spinEnabled){
-    btn.style.display = "none";
-    return;
   }
-
-  const now = Date.now();
-  const lastSpin = app.lastSpin || 0;
-
-  const sevenDays = 7 * 24 * 60 * 60 * 1000;
-
-  if(now - lastSpin >= sevenDays){
-    // ✅ READY
-    btn.style.display = "block";
-    btn.style.background = "green";
-    btn.style.pointerEvents = "auto";
-    btn.innerText = "🎁 CLAIM BONUS SPIN";
-  } else {
-    // ❌ COOLDOWN
-    btn.style.display = "block";
-    btn.style.background = "gray";
-    btn.style.pointerEvents = "none";
-
-    const remaining = Math.ceil((sevenDays - (now - lastSpin)) / (1000*60*60*24));
-    btn.innerText = "⏳ " + remaining + " day(s)";
-  }
-});
 
 /* BUY */
 window.buy = function(price,item,link){
