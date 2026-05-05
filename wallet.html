@@ -97,7 +97,8 @@ R3 (5❤️+400💎) CLICK TO BUY
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-const firebaseConfig = {
+
+  const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   authDomain: "tose-ccf8f.firebaseapp.com",
   databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
@@ -141,6 +142,16 @@ function load(){
 
     gemsEl.innerText = data.gems || 0;
     livesEl.innerText = data.lives || 0;
+  });
+  // 🔥 CHECK CLAIM STATUS
+  onValue(ref(db,"applications/"+uid),(snap)=>{
+    const app = snap.val();
+
+    if(app && app.bonusEligible && !app.bonusUsed){
+      document.getElementById("claimBtn").style.display = "block";
+    } else {
+      document.getElementById("claimBtn").style.display = "none";
+    }
   });
   }
 
