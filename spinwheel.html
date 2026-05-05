@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Spin & Win</title>
+
+<style>
+body{
+  margin:0;
+  background:#1a2a40;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+  overflow:hidden;
+  font-family:Arial;
+}
+
+#wheel{
+  width:90vmin;
+  height:90vmin;
+  border-radius:50%;
+  border:8px solid white;
+  overflow:hidden;
+  transition: transform 10s cubic-bezier(0.1,0,0.1,1);
+}
+
+canvas{
+  width:100%;
+  height:100%;
+}
+
+#spinBtn{
+  margin-top:20px;
+  padding:15px 40px;
+  font-size:20px;
+  background:green;
+  color:white;
+  border:none;
+  border-radius:50px;
+  cursor:pointer;
+}
+
+#spinBtn:disabled{
+  background:#555;
+}
+
+#pointer{
+  position:absolute;
+  top:5vh;
+  width:0;
+  height:0;
+  border-left:20px solid transparent;
+  border-right:20px solid transparent;
+  border-top:40px solid red;
+}
+
+.overlay{
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.8);
+  justify-content:center;
+  align-items:center;
+}
+
+.popup{
+  background:white;
+  padding:30px;
+  border-radius:15px;
+  text-align:center;
+}
+
+.popup button{
+  margin-top:15px;
+  padding:10px 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="pointer"></div>
+
+<div id="wheel">
+  <canvas id="canvas" width="800" height="800"></canvas>
+</div>
+
+<button id="spinBtn">SPIN</button>
+
+<div class="overlay" id="overlay">
+  <div class="popup">
+    <h2>🎉 You Won!</h2>
+    <p id="result"></p>
+    <button onclick="goBack()">Back to Wallet</button>
+  </div>
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+let uid;
+
+/* AUTH CHECK */
+onAuthStateChanged(auth, async (user)=>{
+  if(!user){
+    location.href = "index.html";
+    return;
+  }
+
+  uid = user.uid;
+
+  // 🔒 CHECK IF ALREADY USED
+  const snap = await get(ref(db,"applications/"+uid));
+  const appData = snap.val();
+
+  if(!appData || !appData.bonusEligible || appData.bonusUsed){
+    alert("No bonus available ❌");
+    location.href = "wallet.html";
+    return;
+  }
+});
+
+/* WHEEL SETUP */
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const wheel = document.getElementById("wheel");
+const spinBtn = document.getElementById("spinBtn");
+const overlay = document.getElementById("overlay");
+const resultText = document.getElementById("result");
+
+const slices = [
+  {label:"150 💎", color:"#ff6b6b"},
+  {label:"3 lives", color:"#4ecdc4"},
+  {label:"1 life", color:"#ffe66d"},
+  {label:"500 💎", color:"#ff9ff3"},
+  {label:"700 💎 + 3 lives", color:"#54a0ff"}
+];
+
+const arc = (2*Math.PI)/slices.length;
+let rotation = 0;
+
+/* DRAW */
+function draw(){
+  const cx = canvas.width/2;
+  const cy = canvas.height/2;
+  const r = canvas.width/2;
+
+  slices.forEach((s,i)=>{
+    const angle = i*arc;
+
+    ctx.beginPath();
+    ctx.fillStyle = s.color;
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,angle,angle+arc);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(angle+arc/2);
+    ctx.fillStyle="#000";
+    ctx.textAlign="center";
+    ctx.font="bold 30px Arial";
+    ctx.fillText(s.label, r/1.6, 10);
+    ctx.restore();
+  });
+}
+draw();
+
+/* SPIN */
+spinBtn.onclick = ()=>{
+  spinBtn.disabled = true;
+
+  const extra = Math.floor(Math.random()*360);
+  rotation += (360*10)+extra;
+
+  wheel.style.transform = `rotate(-${rotation}deg)`;
+
+  setTimeout(()=>finishSpin(extra),10000);
+};
+
+/* FINISH */
+async function finishSpin(extra){
+
+  const index = Math.floor(extra / (360/slices.length));
+  const prize = slices[index].label;
+
+  const walletSnap = await get(ref(db,"wallet/"+uid));
+  const data = walletSnap.val() || {};
+
+  let gems = data.gems || 0;
+  let lives = data.lives || 0;
+
+  if(prize.includes("150")) gems+=150;
+  if(prize.includes("500")) gems+=500;
+  if(prize.includes("700")) gems+=700;
+
+  if(prize.includes("1 life")) lives+=1;
+  if(prize.includes("3 lives")) lives+=3;
+
+  await update(ref(db,"wallet/"+uid),{
+    gems,
+    lives
+  });
+
+  // 🔥 LOCK BONUS FOREVER
+  await update(ref(db,"applications/"+uid),{
+    bonusUsed:true
+  });
+
+  resultText.innerHTML = prize;
+  overlay.style.display="flex";
+}
+
+/* BACK */
+window.goBack = function(){
+  location.href = "wallet.html";
+};
+
+</script>
+
+</body>
+</html>
