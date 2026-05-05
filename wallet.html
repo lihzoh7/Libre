@@ -133,6 +133,10 @@ onAuthStateChanged(auth, async (user) => {
 
   load(); // only runs after everything is valid
 });
+ // ✅ CLAIM BUTTON ACTION
+window.claimSpin = function(){
+  window.location.href = "spinwheel.html";
+}; 
   /* LOAD WALLET */
 import { onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
