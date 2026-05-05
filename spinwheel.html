@@ -219,12 +219,18 @@ async function finishSpin(extra){
   await update(ref(db,"wallet/"+uid),{
     gems,
     lives
+    overlay.style.display="flex";
+
+// ⏳ AUTO EXIT AFTER 5s
+setTimeout(()=>{
+  location.href = "wallet.html";
+},5000);
   });
 
   // 🔥 LOCK BONUS FOREVER
   await update(ref(db,"applications/"+uid),{
-    bonusUsed:true
-  });
+  lastSpin: Date.now()
+});
 
   resultText.innerHTML = prize;
   overlay.style.display="flex";
