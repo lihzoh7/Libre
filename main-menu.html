@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SPACE GLASS - Main Menu</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:url('https://images.unsplash.com/photo-1549924231-f129b911e442?auto=format&fit=crop&w=1470&q=80') no-repeat center;
+  background-size:cover;
+  height:100vh;
+  overflow:hidden;
+}
+
+/* NAV */
+#logout{position:absolute;top:10px;left:10px;color:white;cursor:pointer}
+#profile{position:absolute;top:10px;right:10px;color:white;cursor:pointer}
+#messages{position:absolute;top:10px;right:50px;color:white;cursor:pointer}
+
+/* TABS */
+.tabs{
+  position:absolute;
+  bottom:50px;
+  width:100%;
+  display:flex;
+  justify-content:center;
+  gap:20px;
+}
+.tab{
+  width:110px;
+  height:55px;
+  background:rgba(255,255,255,0.25);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:10px;
+  cursor:pointer;
+  color:white;
+  font-weight:bold;
+}
+
+/* POPUP */
+#applicationPopup{
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,0.85);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+}
+
+/* IMPORTANT: allow clicking inside */
+.popup-box{
+  background:white;
+  padding:25px;
+  border-radius:15px;
+  width:90%;
+  max-width:350px;
+  text-align:center;
+}
+
+/* prevent closing when clicking inside */
+.popup-box *{
+  pointer-events:auto;
+}
+
+input{
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  font-size:16px;
+}
+
+button{
+  padding:12px;
+  width:100%;
+  background:#4CAF50;
+  color:white;
+  border:none;
+  cursor:pointer;
+  margin-top:10px;
+  font-size:16px;
+}
+
+/* WAITING STYLE */
+#waiting{
+  display:none;
+  font-weight:bold;
+  color:orange;
+  font-size:18px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="messages" style="font-size:42px;" onclick="location.href='wallet-form.html'">BANK DETAILS</div>
+<div id="profile" onclick="location.href='profile.html'">👤</div>
+
+<div class="tabs">
+  <div class="tab" onclick="location.href='prizes.html'">PRIZES</div>
+  <div class="tab" onclick="location.href='scores.html'">SCORES</div>
+  <div class="tab" id="playBtn">PLAY</div>
+  <div class="tab" onclick="location.href='wallet.html'">WALLET</div>
+</div>
+
+<!-- APPLICATION POPUP -->
+<div id="applicationPopup">
+  <div class="popup-box">
+
+    <div id="form">
+      <h2>Apply</h2>
+      <input id="name" placeholder="Name">
+      <input id="surname" placeholder="Surname">
+      <input id="number" placeholder="Number">
+      <input id="age" placeholder="Age">
+      <input id="referral" placeholder="Referral (optional)">
+      <button onclick="submitApp()">Submit</button>
+    </div>
+
+    <div id="waiting">
+      WAITING FOR APPROVAL...
+      (usually accepted within 3 days)
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.appspot.com",
+  messagingSenderId: "475447495901",
+  appId: "1:475447495901:web:9189276a162a3680afdf34"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+let user;
+
+onAuthStateChanged(auth, async (u)=>{
+  if(!u){
+    location.href="index.html";
+  } else {
+    const adminSnap = await get(ref(db,"admins/"+u.uid));
+
+    if(adminSnap.exists()){
+      alert("Admin must use admin panel");
+      location.href = "admin.html";
+      return;
+  }
+    user = u;
+
+    const snap = await get(ref(db,"users/"+user.uid));
+    const data = snap.val() || {};
+
+    // 🔥 SHOW POPUP ONLY IF NOT APPROVED
+    if(data.approved !== true){
+      document.getElementById("applicationPopup").style.display="flex";
+
+      // if already applied → show waiting
+      const appSnap = await get(ref(db,"applications/"+user.uid));
+      if(appSnap.exists()){
+        showWaiting();
+      }
+    }
+  }
+});
+
+/* SUBMIT APPLICATION */
+window.submitApp = async function(){
+
+  const name = document.getElementById("name").value;
+  const surname = document.getElementById("surname").value;
+  const number = document.getElementById("number").value;
+  const age = document.getElementById("age").value;
+  const referral = document.getElementById("referral").value;
+
+  if(!name || !surname || !number || !age){
+    alert("Fill all fields");
+    return;
+  }
+
+  await set(ref(db,"applications/"+user.uid),{
+    uid:user.uid,
+    name,
+    surname,
+    number,
+    age,
+    referral,
+    status:"pending",
+    timestamp:Date.now()
+  });
+
+  showWaiting();
+};
+
+function showWaiting(){
+  document.getElementById("form").style.display="none";
+  document.getElementById("waiting").style.display="block";
+}
+
+/* PLAY BUTTON */
+document.getElementById("playBtn").onclick = async ()=>{
+
+  const snap = await get(ref(db,"wallet/"+user.uid));
+  const data = snap.val() || {};
+
+  if((data.lives || 0) <= 0){
+    alert("NO LIVES");
+    return;
+  }
+
+  location.href="life-selector.html";
+};
+
+</script>
+
+</body>
+  </html>
