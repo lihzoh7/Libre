@@ -149,15 +149,36 @@ function load(){
   });
   // 🔥 CHECK CLAIM STATUS
   onValue(ref(db,"applications/"+uid),(snap)=>{
-    const app = snap.val();
+  const app = snap.val();
 
-    if(app && app.bonusEligible && !app.bonusUsed){
-      document.getElementById("claimBtn").style.display = "block";
-    } else {
-      document.getElementById("claimBtn").style.display = "none";
-    }
-  });
+  const btn = document.getElementById("claimBtn");
+
+  if(!app || !app.spinEnabled){
+    btn.style.display = "none";
+    return;
   }
+
+  const now = Date.now();
+  const lastSpin = app.lastSpin || 0;
+
+  const sevenDays = 7 * 24 * 60 * 60 * 1000;
+
+  if(now - lastSpin >= sevenDays){
+    // ✅ READY
+    btn.style.display = "block";
+    btn.style.background = "green";
+    btn.style.pointerEvents = "auto";
+    btn.innerText = "🎁 CLAIM BONUS SPIN";
+  } else {
+    // ❌ COOLDOWN
+    btn.style.display = "block";
+    btn.style.background = "gray";
+    btn.style.pointerEvents = "none";
+
+    const remaining = Math.ceil((sevenDays - (now - lastSpin)) / (1000*60*60*24));
+    btn.innerText = "⏳ " + remaining + " day(s)";
+  }
+});
 
 /* BUY */
 window.buy = function(price,item,link){
