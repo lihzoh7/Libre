@@ -190,6 +190,9 @@ window.submitApp = async function(){
   const age = document.getElementById("age").value;
   const referral = document.getElementById("referral").value;
 
+  const validRefs = ["gamer1","gamer2","gamer3","gamer4","gamer5"];
+
+let hasBonus = validRefs.includes(referral.toLowerCase());
   if(!name || !surname || !number || !age){
     alert("Fill all fields");
     return;
