@@ -199,15 +199,17 @@ let hasBonus = validRefs.includes(referral.toLowerCase());
   }
 
   await set(ref(db,"applications/"+user.uid),{
-    uid:user.uid,
-    name,
-    surname,
-    number,
-    age,
-    referral,
-    status:"pending",
-    timestamp:Date.now()
-  });
+  uid:user.uid,
+  name,
+  surname,
+  number,
+  age,
+  referral,
+  bonusEligible: hasBonus, // 🔥 ADD THIS
+  bonusUsed: false,        // 🔥 ADD THIS
+  status:"pending",
+  timestamp:Date.now()
+});
 
   showWaiting();
 };
