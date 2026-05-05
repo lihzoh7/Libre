@@ -131,11 +131,14 @@ onAuthStateChanged(auth, async (user)=>{
   // 🔒 CHECK IF ALREADY USED
   const snap = await get(ref(db,"applications/"+uid));
   const appData = snap.val();
+const now = Date.now();
+const lastSpin = appData.lastSpin || 0;
+const sevenDays = 7 * 24 * 60 * 60 * 1000;
 
-  if(!appData || !appData.bonusEligible || appData.bonusUsed){
-    alert("No bonus available ❌");
-    location.href = "wallet.html";
-    return;
+if(!appData || !appData.spinEnabled || (now - lastSpin < sevenDays)){
+  alert("Spin not available yet ❌");
+  location.href = "wallet.html";
+  return;
   }
 });
 
