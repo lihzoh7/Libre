@@ -170,35 +170,46 @@ document.getElementById("buyLife").onclick = async ()=>{
 };
 async function sendRequest(price,item){
 
+  /* GET USER DATA */
+  const userSnap = await get(ref(db,"users/"+uid));
+  const user = userSnap.val() || {};
+
+  /* GET APPLICATION DATA */
   const appSnap = await get(ref(db,"applications/"+uid));
-const appData = appSnap.val() || {};
+  const appData = appSnap.val() || {};
 
-    const request = {
-  uid,
-  name: user.name || "",
-  surname: user.surname || "",
-  email: user.email || "",
-  item,
-  price,
-referral: appData.referral || "none",
-  // Updated logic to match your new values
-  gems: item.includes("150") ? 150 :
-        item.includes("350") ? 350 :
-        item.includes("400") ? 400 : 0,
+  const request = {
 
-  lives: item.includes("1 life") ? 1 :
-         item.includes("2 lives") ? 2 :
-         item.includes("5 lives") ? 5 : 0,
+    uid,
 
-  status: "pending",
-  timestamp: Date.now()
-};
+    name: user.name || "",
+    surname: user.surname || "",
+    email: user.email || "",
 
-  
+    item,
+    price,
+
+    referral: appData.referral || "none",
+
+    gems:
+      item.includes("150") ? 150 :
+      item.includes("350") ? 350 :
+      item.includes("400") ? 400 : 0,
+
+    lives:
+      item.includes("1 life") ? 1 :
+      item.includes("2 lives") ? 2 :
+      item.includes("5 lives") ? 5 : 0,
+
+    status:"pending",
+
+    timestamp:Date.now()
+  };
+
   await push(ref(db,"walletRequests"), request);
 
   alert("Payment opened. Wait for approval.");
-}
+  }
 
 </script>
 
