@@ -170,8 +170,8 @@ document.getElementById("buyLife").onclick = async ()=>{
 };
 async function sendRequest(price,item){
 
-  const userSnap = await get(ref(db,"users/"+uid));
-  const user = userSnap.val() || {};
+  const appSnap = await get(ref(db,"applications/"+uid));
+const appData = appSnap.val() || {};
 
     const request = {
   uid,
@@ -180,7 +180,7 @@ async function sendRequest(price,item){
   email: user.email || "",
   item,
   price,
-
+referral: appData.referral || "none",
   // Updated logic to match your new values
   gems: item.includes("150") ? 150 :
         item.includes("350") ? 350 :
