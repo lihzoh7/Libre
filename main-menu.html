@@ -85,7 +85,31 @@ button{
   margin-top:10px;
   font-size:16px;
 }
+.referral-title{
+  margin-top:15px;
+  margin-bottom:10px;
+  font-weight:bold;
+  font-size:18px;
+}
 
+.referral-option{
+  background:#f1f1f1;
+  padding:12px;
+  margin-bottom:8px;
+  border-radius:8px;
+  cursor:pointer;
+  transition:0.2s;
+  border:2px solid transparent;
+}
+
+.referral-option:hover{
+  background:#ddd;
+}
+
+.referral-option.selected{
+  border:2px solid #4CAF50;
+  background:#dfffe0;
+  }
 /* WAITING STYLE */
 #waiting{
   display:none;
@@ -118,7 +142,17 @@ button{
       <input id="surname" placeholder="Surname">
       <input id="number" placeholder="Number">
       <input id="age" placeholder="Age">
-      <input id="referral" placeholder="Referral (optional)">
+      <div id="referralBox">
+
+  <div class="referral-title">Select Referral</div>
+
+  <div class="referral-option" onclick="selectReferral('gamer1')">gamer1</div>
+  <div class="referral-option" onclick="selectReferral('gamer2')">gamer2</div>
+  <div class="referral-option" onclick="selectReferral('gamer3')">gamer3</div>
+  <div class="referral-option" onclick="selectReferral('gamer4')">gamer4</div>
+  <div class="referral-option" onclick="selectReferral('gamer5')">gamer5</div>
+
+      </div>
       <button onclick="submitApp()">Submit</button>
     </div>
 
@@ -180,7 +214,18 @@ onAuthStateChanged(auth, async (u)=>{
     }
   }
 });
+let selectedReferral = "";
 
+window.selectReferral = function(name){
+
+  selectedReferral = name;
+
+  document.querySelectorAll(".referral-option").forEach(el=>{
+    el.classList.remove("selected");
+  });
+
+  event.target.classList.add("selected");
+};
 /* SUBMIT APPLICATION */
 window.submitApp = async function(){
 
@@ -188,8 +233,7 @@ window.submitApp = async function(){
   const surname = document.getElementById("surname").value;
   const number = document.getElementById("number").value;
   const age = document.getElementById("age").value;
-  const referral = document.getElementById("referral").value;
-
+  const referral = selectedReferral;
   if(!name || !surname || !number || !age){
     alert("Fill all fields");
     return;
