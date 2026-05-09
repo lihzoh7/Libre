@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPACE GLASS - Login</title>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7026930699288972"
      crossorigin="anonymous"></script>
@@ -17,12 +18,10 @@ body {
 }
 .container { 
   text-align:center; 
-  /* Increased width slightly for better balance */
   width:350px; 
 }
 h1 { 
   color:white; 
-  /* Enlarged from 14px */
   font-size:28px; 
   margin-bottom:20px; 
 }
@@ -33,7 +32,6 @@ input {
   box-sizing:border-box; 
   border-radius:4px; 
   border:none;
-  /* Enlarged text inside the fields */
   font-size:16px; 
 }
 #loginBtn { 
@@ -45,7 +43,6 @@ input {
   border:none; 
   border-radius:4px; 
   cursor:pointer;
-  /* Enlarged button text */
   font-size:18px; 
   font-weight:bold;
 }
@@ -53,15 +50,18 @@ input {
   margin-top:15px; 
   display:flex; 
   justify-content:space-between; 
-  /* Enlarged from 8px to a readable size */
   font-size:13px; 
   color:white; 
 }
-.links a { 
+.footer-link {
+  margin-top: 20px;
+  font-size: 14px;
+}
+.links a, .footer-link a { 
   color:white; 
   text-decoration:none; 
 }
-.links a:hover { 
+.links a:hover, .footer-link a:hover { 
   text-decoration:underline; 
 }
 </style>
@@ -78,6 +78,11 @@ input {
     <a href="signup.html">SIGN UP</a>
     <a href="forgot-password.html">Forgot password?</a>
     <a href="queries.html">QUERIES</a>
+  </div>
+
+  <!-- New ABOUT link centered below -->
+  <div class="footer-link">
+    <a href="about.html">ABOUT</a>
   </div>
 </div>
 
@@ -106,7 +111,8 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
   const password = document.getElementById("password").value;
 
   if (!email || !password) {
-    alert("Enter email and password");
+    // Custom UI message box would be better than alert in a real app
+    console.log("Enter email and password");
     return;
   }
 
@@ -120,10 +126,12 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     window.location.href = "main-menu.html";
 
   } catch (err) {
-    alert("Incorrect email or password");
+    console.error("Incorrect email or password");
   }
 });
 </script>
 
 </body>
 </html>
+
+```
