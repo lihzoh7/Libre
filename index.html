@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPACE GLASS - Sign Up</title>
 
 <style>
 body { 
   background-color: lightblue; 
-  font-family: Arial; 
+  font-family: Arial, sans-serif; 
   display:flex; 
   justify-content:center; 
   align-items:center; 
@@ -27,6 +28,7 @@ body {
   padding:20px; 
   border-radius:8px; 
   position:relative;
+  box-sizing: border-box;
 }
 
 h1 { 
@@ -41,6 +43,7 @@ input {
   margin:5px 0; 
   border:none; 
   border-radius:4px; 
+  box-sizing: border-box;
 }
 
 #submitBtn { 
@@ -49,7 +52,31 @@ input {
   background:green; 
   color:white; 
   border:none; 
+  border-radius:4px;
   cursor:pointer; 
+  font-weight: bold;
+}
+
+/* NEW SIGN IN TAB */
+.signin-tab {
+  margin-top: 20px; /* Skips a line */
+  background-color: #90ee90; /* Light Green */
+  width: 100%;
+  padding: 12px 0;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.signin-tab a {
+  text-decoration: none;
+  color: #004d00; /* Darker green for readability */
+  font-weight: bold;
+  font-size: 14px;
+  display: block; /* Makes the whole tab clickable area larger */
+}
+
+.signin-tab:hover {
+  background-color: #77dd77;
 }
 
 /* POPUP */
@@ -88,12 +115,18 @@ input {
   <input id="surname" placeholder="Surname">
   <input id="email" type="email" placeholder="Email">
   <input id="cellNumber" placeholder="Cell Number">
-<input id="referral" placeholder="Referral Code">
+  <input id="referral" placeholder="Referral Code">
+  
   <h1>SECURITY</h1>
   <input id="password" type="password" placeholder="Password">
   <input id="confirmPassword" type="password" placeholder="Confirm Password">
 
   <button id="submitBtn">SUBMIT</button>
+
+  <!-- New Tab Bar -->
+  <div class="signin-tab">
+    <a href="login.html">Already Have An Account? Sign In</a>
+  </div>
 </div>
 
 <!-- POPUP -->
@@ -127,13 +160,22 @@ const db = getDatabase(app);
 const popup = document.getElementById("popup");
 const main = document.getElementById("main");
 
+// Reference inputs
+const nameInput = document.getElementById("name");
+const surnameInput = document.getElementById("surname");
+const emailInput = document.getElementById("email");
+const cellNumberInput = document.getElementById("cellNumber");
+const referralInput = document.getElementById("referral");
+const passwordInput = document.getElementById("password");
+const confirmPasswordInput = document.getElementById("confirmPassword");
+
 document.getElementById("submitBtn").addEventListener("click", async () => {
 
   const name = nameInput.value.trim();
   const surname = surnameInput.value.trim();
   const email = emailInput.value.trim().toLowerCase();
   const cellNumber = cellNumberInput.value.trim();
-const referral = referralInput.value.trim().toLowerCase();
+  const referral = referralInput.value.trim().toLowerCase();
   const password = passwordInput.value;
   const confirmPassword = confirmPasswordInput.value;
 
@@ -148,56 +190,39 @@ const referral = referralInput.value.trim().toLowerCase();
   if (password !== confirmPassword) {
     return alert("Passwords do not match");
   }
-const validReferrals = [
-  "gamer1",
-  "gamer2",
-  "gamer3",
-  "gamer4",
-  "gamer5"
-];
 
-const bonusLives =
-  validReferrals.includes(referral)
-  ? 3
-  : 0;
+  const validReferrals = ["gamer1", "gamer2", "gamer3", "gamer4", "gamer5"];
+  const bonusLives = validReferrals.includes(referral) ? 3 : 0;
+
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
 
     await set(ref(db, "users/" + cred.user.uid), {
-  uid: cred.user.uid,
-  name,
-  surname,
-  email,
-  cellNumber,
-  referral,
-  createdAt: Date.now()
-});
-  await set(ref(db,"wallet/"+cred.user.uid),{
-  gems:0,
-  lives:bonusLives
-});  
-    // SHOW POPUP + BLUR
+      uid: cred.user.uid,
+      name,
+      surname,
+      email,
+      cellNumber,
+      referral,
+      createdAt: Date.now()
+    });
+
+    await set(ref(db, "wallet/" + cred.user.uid), {
+      gems: 0,
+      lives: bonusLives
+    });  
+
     main.classList.add("blur");
     popup.style.display = "block";
 
-    // AUTO REDIRECT
-    setTimeout(()=>{
-      window.location.href="index.html";
-    },3000);
+    setTimeout(() => {
+      window.location.href = "login.html";
+    }, 3000);
 
   } catch (err) {
     alert(err.message);
   }
 });
-
-// FIX: define inputs
-const nameInput = document.getElementById("name");
-const surnameInput = document.getElementById("surname");
-const emailInput = document.getElementById("email");
-const cellNumberInput = document.getElementById("cellNumber");
-const referralInput = document.getElementById("referral");
-  const passwordInput = document.getElementById("password");
-const confirmPasswordInput = document.getElementById("confirmPassword");
 
 window.goLogin = () => {
   window.location.href = "login.html";
@@ -205,4 +230,4 @@ window.goLogin = () => {
 </script>
 
 </body>
-  </html>
+</html>
