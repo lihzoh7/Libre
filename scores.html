@@ -10,36 +10,52 @@ body{
   background:#001f3f;
   color:white;
   font-family:Arial;
-  text-align:center;
+  overflow-x:hidden;
 }
 
-/* HEADER */
-#date, #timer{
-  font-size:42px;
-  margin:10px;
+#date,#timer{
+  text-align:center;
+  font-size:38px;
+  margin-top:10px;
   font-weight:bold;
 }
 
 #content{
   display:grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns:repeat(3,1fr);
   gap:10px;
   padding:10px;
 }
 
 .card{
   background:#002b55;
-  padding:10px;
   border-radius:10px;
-  font-size:20px;
+  padding:10px;
+  font-size:18px;
 }
 
-.gold{ color:gold; }
-.silver{ color:silver; }
-.bronze{ color:#cd7f32; }
-.normal{ color:#ccc; }
+.gold{color:gold;}
+.silver{color:silver;}
+.bronze{color:#cd7f32;}
+.normal{color:white;}
 
-#popup{
+#rank{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  font-size:20px;
+  font-weight:bold;
+}
+
+#myscore{
+  position:fixed;
+  bottom:10px;
+  right:10px;
+  font-size:20px;
+  font-weight:bold;
+}
+
+#breakPopup{
   position:fixed;
   top:50%;
   left:50%;
@@ -47,21 +63,10 @@ body{
   background:white;
   color:red;
   padding:40px;
-  font-size:40px;
-  font-weight:bold;
+  border-radius:15px;
+  font-size:50px;
   display:none;
-  border-radius:12px;
   z-index:999;
-}
-
-#rank{
-  position:fixed;
-  bottom:10px;
-  left:10px;
-  font-size:20px;
-  background:#0008;
-  padding:10px;
-  border-radius:10px;
 }
 </style>
 </head>
@@ -74,477 +79,383 @@ body{
 <div id="content"></div>
 
 <div id="rank">RANK: N/A</div>
+<div id="myscore">SCORE: 0</div>
 
-<div id="popup">BREAK</div>
+<div id="breakPopup">BREAK</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 
 import {
-  getDatabase,
-  ref,
-  onValue,
-  set,
-  get,
-  update
+getDatabase,
+ref,
+onValue,
+set,
+get,
+update,
+remove
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 import {
-  getAuth,
-  onAuthStateChanged
+getAuth,
+onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-/* FIREBASE */
 const app = initializeApp({
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+apiKey:"AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+databaseURL:"https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
 });
 
-const db = getDatabase(app);
-const auth = getAuth(app);
+const db=getDatabase(app);
+const auth=getAuth(app);
 
-let currentUser = null;
-let resetLock = false;
-let breakMode = false;
+let currentUser=null;
+let breakMode=false;
 
-onAuthStateChanged(auth,(u)=>{
-  if(!u){
-    location.href="index.html";
-    return;
-  }
+/* =========================
+   SOUTH AFRICAN BOT NAMES
+========================= */
 
-  currentUser = u;
-});
-
-/* =========================================
-   SOUTH AFRICAN COMPUTER PLAYERS
-========================================= */
-
-const botNames = [
-
-"Thabo Mokoena",
-"Sipho Dlamini",
-"Lebo Khumalo",
-"Nkosi Zulu",
-"Ayanda Ndlovu",
-"Katlego Molefe",
-"Tshepo Nkuna",
-"Sanele Sithole",
-"Brian Mabaso",
-"Mandla Shabalala",
-"Gift Mthembu",
-"Junior Maseko",
-"Teboho Morake",
-"Sandile Zwane",
-"Bongani Cele",
-"Prince Hadebe",
-"Neo Modise",
-"Samkelo Buthelezi",
-"Khaya Nxumalo",
-"Mfundo Khoza",
-
-"David Mhlongo",
-"Collins Mokoena",
-"Vusi Mbatha",
-"Nathi Gumede",
-"Jabu Madonsela",
-"Sibusiso Maphosa",
-"Zanele Nkosi",
-"Nosipho Mthethwa",
-"Nomsa Maseko",
-"Mbali Khuzwayo",
-
-"Luyanda Mkhize",
-"Noxolo Mokoena",
-"Boitumelo Seabi",
-"Refilwe Motaung",
-"Kagiso Tlhape",
-"Tumelo Ramaphosa",
-"Karabo Mokoena",
-"Lesego Moeketsi",
-"Pretty Dube",
-"Mpho Mahlangu",
-
-"Tshegofatso Moropa",
-"Kamohelo Tsotetsi",
-"Puleng Radebe",
-"Ntokozo Mnguni",
-"Busisiwe Khanyile",
-"Lerato Mofokeng",
-"Nandi Msimang",
-"Siyabonga Nene",
-"Blessing Zondo",
-"Khensani Chauke",
-
-"Phumlani Dube",
-"Andile Mthembu",
-"Yanga Gcabashe",
-"Sphamandla Ntuli",
-"Lindokuhle Ngubane",
-"Thandeka Hlophe",
-"Nomfundo Dlamini",
-"Olwethu Bhengu",
-"Zinhle Buthelezi",
-"Phindile Moyo",
-
-"Tumi Maphumulo",
-"Rhandzu Baloyi",
-"Koketso Nare",
-"Paballo Tau",
-"Keletso Ramathe",
-"Oratile Phiri",
-"Amogelang Molefi",
-"Boipelo Mathebula",
-"Tlotlo Mogale",
-"Onthatile Sebego",
-
-"Lindani Mthethwa",
-"Fortune Zungu",
-"Justice Dube",
-"Doctor Mokoena",
-"Energy Mahlangu",
-"Patience Sithole",
-"Confidence Ndlovu",
-"Success Mbhele",
-"Lucky Ngcobo",
-"Promise Hlatshwayo",
-
-"Nqobile Hadebe",
-"Celumusa Maphanga",
-"Sizwe Makhanya",
-"Mthokozisi Ntombela",
-"Zama Mokoena",
-"Fikile Hlongwane",
-"Khulekani Mavuso",
-"Lwandle Dube",
-"Siya Hlophe",
-"Treasure Dlamini",
-
-"Akani Chauke",
-"Given Mokoena",
-"Blessed Nene",
-"Stanley Khosa",
-"Emmanuel Mabuza",
-"Bandile Nxele",
-"Njabulo Zikalala",
-"Wayne Mthembu",
-"Terrence Mokoena",
-"Aphiwe Nkomo"
-
+const names=[
+"Thabo","Sipho","Lebo","Ayanda","Sanele",
+"Nkosi","Lunga","Musa","Sandile","Themba",
+"Katlego","Bongani","Zanele","Naledi","Nandi",
+"Khaya","Vusi","Sibusiso","Mpho","Aphiwe",
+"Yanga","Luyanda","Simphiwe","Anele","Mandla"
 ];
 
-/* =========================================
-   CREATE BOTS IF EMPTY
-========================================= */
+const surnames=[
+"Dlamini","Nkosi","Zulu","Khumalo","Mokoena",
+"Ndlovu","Mabaso","Buthelezi","Cele","Shabalala",
+"Ngcobo","Mthembu","Mahlangu","Mokoena","Zulu",
+"Khoza","Molefe","Mkhize","Radebe","Ntuli"
+];
+
+/* =========================
+   CREATE BOTS
+========================= */
 
 async function createBots(){
 
-  const snap = await get(ref(db,"leaderboard/bots"));
+const snap=await get(ref(db,"leaderboard/bots"));
 
-  if(snap.exists()) return;
+if(snap.exists()) return;
 
-  let data = {};
+let bots={};
 
-  botNames.forEach((name,i)=>{
+for(let i=1;i<=100;i++){
 
-    data["bot_"+i] = {
-      uid:"bot_"+i,
-      bot:true,
-      name:name,
-      score:Math.floor(Math.random()*5000)+500,
-      timestamp:Date.now()
-    };
+let score=Math.floor(Math.random()*250);
 
-  });
+if(Math.random()<0.15){
+score=Math.floor(Math.random()*1450);
+}
 
-  await set(ref(db,"leaderboard/bots"), data);
+bots["bot"+i]={
+name:
+names[Math.floor(Math.random()*names.length)]
++" "+
+surnames[Math.floor(Math.random()*surnames.length)],
+
+score,
+timestamp:Date.now(),
+bot:true
+};
+}
+
+await set(ref(db,"leaderboard/bots"),bots);
 }
 
 createBots();
 
-/* =========================================
+/* =========================
    RANDOM BOT UPDATES
-========================================= */
+========================= */
 
 function randomBotUpdates(){
 
-  setInterval(async ()=>{
+setInterval(async ()=>{
 
-    if(breakMode) return;
+if(breakMode) return;
 
-    const snap = await get(ref(db,"leaderboard/bots"));
-    const bots = snap.val() || {};
+const snap=await get(ref(db,"leaderboard/bots"));
+const data=snap.val()||{};
 
-    let updates = {};
+let keys=Object.keys(data);
 
-    Object.keys(bots).forEach(uid=>{
+for(let i=0;i<keys.length;i++){
 
-      let chance = Math.random();
+if(Math.random()<0.22){
 
-      /* ONLY SOME PLAYERS UPDATE */
-      if(chance < 0.18){
+let id=keys[i];
+let bot=data[id];
 
-        let current = bots[uid].score || 0;
+let increase=Math.floor(Math.random()*35);
 
-        /* SMALL REALISTIC IMPROVEMENT */
-        let increase = Math.floor(Math.random()*120);
+if(bot.score<200){
+increase=Math.floor(Math.random()*15);
+}
 
-        updates[uid+"/score"] = current + increase;
-        updates[uid+"/timestamp"] = Date.now();
-      }
+if(bot.score>1000){
+increase=Math.floor(Math.random()*6);
+}
 
-    });
+bot.score+=increase;
 
-    if(Object.keys(updates).length > 0){
-      await update(ref(db,"leaderboard/bots"), updates);
-    }
+if(bot.score>1450){
+bot.score=1450;
+}
 
-  },30000);
+await update(ref(db,"leaderboard/bots/"+id),{
+score:bot.score,
+timestamp:Date.now()
+});
+}
+}
 
-  /* BIGGER RANDOM UPDATES */
-  setInterval(async ()=>{
+},30000);
 
-    if(breakMode) return;
+/* 45s */
 
-    const snap = await get(ref(db,"leaderboard/bots"));
-    const bots = snap.val() || {};
+setInterval(async ()=>{
 
-    let updates = {};
+if(breakMode) return;
 
-    Object.keys(bots).forEach(uid=>{
+const snap=await get(ref(db,"leaderboard/bots"));
+const data=snap.val()||{};
 
-      let chance = Math.random();
+let keys=Object.keys(data);
 
-      if(chance < 0.08){
+for(let i=0;i<keys.length;i++){
 
-        let current = bots[uid].score || 0;
+if(Math.random()<0.15){
 
-        let increase = Math.floor(Math.random()*300);
+let id=keys[i];
 
-        updates[uid+"/score"] = current + increase;
-        updates[uid+"/timestamp"] = Date.now();
-      }
+let newName=
+names[Math.floor(Math.random()*names.length)]
++" "+
+surnames[Math.floor(Math.random()*surnames.length)];
 
-    });
+await update(ref(db,"leaderboard/bots/"+id),{
+name:newName,
+score:Math.floor(Math.random()*700),
+timestamp:Date.now()
+});
+}
+}
 
-    if(Object.keys(updates).length > 0){
-      await update(ref(db,"leaderboard/bots"), updates);
-    }
+},45000);
 
-  },45000);
+/* 50s */
 
-  /* RARE HUGE IMPROVEMENTS */
-  setInterval(async ()=>{
+setInterval(async ()=>{
 
-    if(breakMode) return;
+if(breakMode) return;
 
-    const snap = await get(ref(db,"leaderboard/bots"));
-    const bots = snap.val() || {};
+const snap=await get(ref(db,"leaderboard/bots"));
+const data=snap.val()||{};
 
-    let updates = {};
+let keys=Object.keys(data);
 
-    Object.keys(bots).forEach(uid=>{
+for(let i=0;i<keys.length;i++){
 
-      let chance = Math.random();
+if(Math.random()<0.08){
 
-      if(chance < 0.03){
+let id=keys[i];
 
-        let current = bots[uid].score || 0;
+await update(ref(db,"leaderboard/bots/"+id),{
+score:Math.floor(Math.random()*1450),
+timestamp:Date.now()
+});
+}
+}
 
-        let increase = Math.floor(Math.random()*700);
-
-        updates[uid+"/score"] = current + increase;
-        updates[uid+"/timestamp"] = Date.now();
-      }
-
-    });
-
-    if(Object.keys(updates).length > 0){
-      await update(ref(db,"leaderboard/bots"), updates);
-    }
-
-  },50000);
+},50000);
 
 }
 
 randomBotUpdates();
 
-/* =========================================
-   DATE + TIMER
-========================================= */
+/* =========================
+   TIME
+========================= */
 
-function updateTime(){
+function updateClock(){
 
-  let now = new Date();
+let now=new Date();
 
-  document.getElementById("date").innerText =
-    now.toLocaleDateString() + " " +
-    now.toLocaleTimeString();
+document.getElementById("date").innerText=
+now.toLocaleDateString()+" "+
+now.toLocaleTimeString();
 
-  let end = new Date();
+let end=new Date();
 
-  if(now.getHours() < 17){
-    end.setHours(17,30,0,0);
-  }else{
-    end.setDate(end.getDate()+1);
-    end.setHours(5,30,0,0);
-  }
-
-  let diff = end - now;
-
-  let h = Math.floor(diff/1000/60/60);
-  let m = Math.floor((diff/1000/60)%60);
-
-  document.getElementById("timer").innerText =
-    `${h}H:${m}M`;
+if(now.getHours()<17){
+end.setHours(17,30,0,0);
+}else{
+end.setDate(end.getDate()+1);
+end.setHours(5,30,0,0);
 }
 
-setInterval(updateTime,1000);
+let diff=end-now;
 
-/* =========================================
-   BREAK + RESET SYSTEM
-========================================= */
+let h=Math.floor(diff/1000/60/60);
+let m=Math.floor((diff/1000/60)%60);
 
-async function checkReset(){
-
-  let now = new Date();
-
-  let h = now.getHours();
-  let m = now.getMinutes();
-
-  let isReset =
-    (h === 5 && m === 30) ||
-    (h === 17 && m === 30);
-
-  if(!isReset){
-    resetLock = false;
-    return;
-  }
-
-  if(resetLock) return;
-
-  resetLock = true;
-
-  breakMode = true;
-
-  document.getElementById("popup").style.display="block";
-
-  /* CLEAR PLAYER SCORES */
-  await set(ref(db,"leaderboard/current"), null);
-
-  /* RESET BOT SCORES */
-  const botSnap = await get(ref(db,"leaderboard/bots"));
-  const bots = botSnap.val() || {};
-
-  let updates = {};
-
-  Object.keys(bots).forEach(uid=>{
-
-    updates[uid+"/score"] =
-      Math.floor(Math.random()*5000)+500;
-
-    updates[uid+"/timestamp"] = Date.now();
-  });
-
-  await update(ref(db,"leaderboard/bots"), updates);
-
-  /* 30 MINUTE BREAK */
-  setTimeout(()=>{
-
-    breakMode = false;
-
-    document.getElementById("popup").style.display="none";
-
-  },1800000); // 30 mins
+document.getElementById("timer").innerText=
+`${h}H : ${m}M`;
 }
 
-setInterval(checkReset,1000);
+setInterval(updateClock,1000);
 
-/* =========================================
-   LOAD LEADERBOARD
-========================================= */
+/* =========================
+   BREAK SYSTEM
+========================= */
 
-const content = document.getElementById("content");
-const rankEl = document.getElementById("rank");
+async function checkBreak(){
 
-function loadBoard(){
+let now=new Date();
 
-  onValue(ref(db,"leaderboard"), snap=>{
+let h=now.getHours();
+let m=now.getMinutes();
 
-    const data = snap.val() || {};
+let breakTime=
+(h===5 && m>=30 && m<60) ||
+(h===17 && m>=30);
 
-    let arr = [];
+if(breakTime){
 
-    /* REAL PLAYERS */
-    const players = data.current || {};
+breakMode=true;
 
-    for(let uid in players){
+document.getElementById("breakPopup").style.display="block";
 
-      arr.push({
-        uid,
-        name:players[uid].name || "Player",
-        score:players[uid].score || 0,
-        time:players[uid].timestamp || 0
-      });
-    }
+await set(ref(db,"leaderboard/break"),true);
 
-    /* COMPUTER PLAYERS */
-    const bots = data.bots || {};
+}else{
 
-    for(let uid in bots){
+document.getElementById("breakPopup").style.display="none";
 
-      arr.push({
-        uid,
-        name:bots[uid].name,
-        score:bots[uid].score,
-        time:bots[uid].timestamp
-      });
-    }
+const snap=await get(ref(db,"leaderboard/break"));
 
-    /* SORT */
-    arr.sort((a,b)=>b.score-a.score);
+if(snap.val()===true){
 
-    content.innerHTML="";
+breakMode=false;
 
-    arr.slice(0,100).forEach((p,i)=>{
+await set(ref(db,"leaderboard/current"),null);
+await remove(ref(db,"leaderboard/bots"));
 
-      let cls="normal";
+await createBots();
 
-      if(i===0) cls="gold";
-      if(i===1) cls="silver";
-      if(i===2) cls="bronze";
-
-      let date =
-        new Date(p.time).toLocaleString();
-
-      let div = document.createElement("div");
-
-      div.className = "card "+cls;
-
-      div.innerHTML = `
-        <b>${i+1}. ${p.name}</b><br>
-        SCORE: ${p.score}<br>
-        <small>${date}</small>
-      `;
-
-      content.appendChild(div);
-
-      if(currentUser && currentUser.uid===p.uid){
-        rankEl.innerText="RANK: "+(i+1);
-      }
-
-    });
-
-    if(!arr.find(x=>x.uid===currentUser?.uid)){
-      rankEl.innerText="RANK: N/A";
-    }
-
-  });
-
+await set(ref(db,"leaderboard/break"),false);
+}
+}
 }
 
-loadBoard();
+setInterval(checkBreak,1000);
 
+/* =========================
+   AUTH
+========================= */
+
+onAuthStateChanged(auth,(u)=>{
+
+if(!u){
+location.href="index.html";
+return;
+}
+
+currentUser=u;
+
+});
+
+/* =========================
+   LEADERBOARD DISPLAY
+========================= */
+
+const content=document.getElementById("content");
+
+onValue(ref(db),snap=>{
+
+const root=snap.val()||{};
+
+const players=root.leaderboard?.current||{};
+const bots=root.leaderboard?.bots||{};
+
+let arr=[];
+
+/* REAL PLAYERS */
+
+for(let uid in players){
+
+arr.push({
+uid,
+name:players[uid].name||"Player",
+score:players[uid].score||0,
+timestamp:players[uid].timestamp||0,
+bot:false
+});
+}
+
+/* BOTS */
+
+for(let uid in bots){
+
+arr.push({
+uid,
+name:bots[uid].name,
+score:bots[uid].score,
+timestamp:bots[uid].timestamp,
+bot:true
+});
+}
+
+arr.sort((a,b)=>b.score-a.score);
+
+content.innerHTML="";
+
+arr.slice(0,65).forEach((p,i)=>{
+
+let cls="normal";
+
+if(i===0) cls="gold";
+if(i===1) cls="silver";
+if(i===2) cls="bronze";
+
+let div=document.createElement("div");
+
+div.className="card "+cls;
+
+div.innerHTML=`
+<b>${i+1}. ${p.name}</b><br>
+Score: ${p.score}<br>
+<small>${new Date(p.timestamp).toLocaleString()}</small>
+`;
+
+content.appendChild(div);
+});
+
+/* USER RANK */
+
+if(currentUser){
+
+let myIndex=arr.findIndex(x=>x.uid===currentUser.uid);
+
+if(myIndex!==-1){
+
+document.getElementById("rank").innerText=
+"RANK: "+(myIndex+1);
+
+document.getElementById("myscore").innerText=
+"SCORE: "+arr[myIndex].score;
+
+}else{
+
+document.getElementById("rank").innerText="RANK: N/A";
+}
+}
+
+});
 </script>
 
 </body>
