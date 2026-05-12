@@ -13,7 +13,7 @@ body{
   text-align:center;
 }
 
-#date, #timer{
+#date,#timer{
   font-size:42px;
   margin:10px;
   font-weight:bold;
@@ -33,29 +33,16 @@ body{
   font-size:18px;
 }
 
-.gold{ color:gold; }
-.silver{ color:silver; }
-.bronze{ color:#cd7f32; }
-.normal{ color:#ccc; }
+.gold{color:gold;}
+.silver{color:silver;}
+.bronze{color:#cd7f32;}
+.normal{color:#ccc;}
 
 #rank{
   position:fixed;
   bottom:10px;
   left:10px;
   font-size:20px;
-}
-
-#popup{
-  position:fixed;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  background:white;
-  color:green;
-  padding:40px;
-  font-size:30px;
-  display:none;
-  border-radius:10px;
 }
 </style>
 </head>
@@ -64,17 +51,16 @@ body{
 
 <div id="date"></div>
 <div id="timer"></div>
-
 <div id="content"></div>
 <div id="rank">RANK: N/A</div>
-<div id="popup"></div>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-/* FIREBASE */
+/* ================= FIREBASE ================= */
 const app = initializeApp({
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
@@ -83,156 +69,142 @@ const app = initializeApp({
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-let currentUser = null;
-
-/* =========================
-   🇿🇦 SOUTH AFRICAN BOT SYSTEM
-========================= */
-
+/* ================= SA NAMES ================= */
 const firstNames = [
-"Thabo","Sipho","Lethabo","Pieter","Johan","Mandla","Kagiso","Sanele","Bongani","Nandi",
-"Zanele","Lerato","Tshepo","Karabo","Andile","Ayanda","Nomsa","Themba","Vusi","Dineo"
+"Thabo","Sipho","Lerato","Naledi","Kagiso","Bongani","Palesa","Mpho","Sanele","Zanele",
+"Junior","Vusi","Ayanda","Nandi","Tshepo","Boitumelo","Neo","Lungelo","Siyanda","Refilwe"
 ];
 
 const surnames = [
-"Nkosi","Mkhize","Dlamini","Botha","Van Wyk","Naidoo","Zulu","Mokoena","Khumalo","Sithole",
-"Van der Merwe","Nkuna","Baloyi","Ncube","Mahlangu","Motloung","Pillay","Govender","Maseko","Ngwenya"
+"Nkosi","Mahlangu","Dlamini","Mokoena","Khumalo","Zuma","Ndlovu","Sithole","Mthembu","Maseko",
+"Modise","Shabalala","Ngwenya","Baloyi","Mabaso","Zulu","Morake","Moyo","Ramaphosa","Nkuna"
 ];
 
-/* CREATE 99 BOTS */
+/* ================= BOT SYSTEM ================= */
 let bots = [];
+let currentUser = null;
 
-function createBots(){
-  bots = [];
-  for(let i=0;i<99;i++){
-    let name =
-      firstNames[Math.floor(Math.random()*firstNames.length)] + " " +
-      surnames[Math.floor(Math.random()*surnames.length)];
+function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
+function makeBots(){
+  for(let i=0;i<100;i++){
     bots.push({
-      id: "bot"+i,
-      name,
-      score: Math.floor(Math.random()*1300),
-      isBot:true
+      uid:"bot-"+i,
+      name: rand(firstNames)+" "+rand(surnames),
+      score: Math.floor(Math.random()*250)
     });
   }
 }
+makeBots();
 
-/* RANDOM BOT SCORE UPDATES (ARCade FEEL) */
-function updateBots(){
+/* ================= SCORE UPDATE SYSTEM ================= */
+const increments = [7,10,15,2,0,5];
+
+function updateBots(percent){
   bots.forEach(b=>{
-    let change = Math.floor(Math.random()*60 - 25); // -25 to +35
-    b.score += change;
-    if(b.score < 0) b.score = 0;
-    if(b.score > 1300) b.score = 1300;
+    if(Math.random() < percent){
+      let inc = increments[Math.floor(Math.random()*increments.length)];
+      b.score += inc;
+
+      if(b.score > 1300) b.score = 1300;
+    }
   });
 }
 
-/* =========================
-   TIMER
-========================= */
+/* every 2 min → 40% */
+setInterval(()=>updateBots(0.4), 160000);
+
+/* every 7 min → 60% */
+setInterval(()=>updateBots(0.6), 420000);
+
+/* ================= TIME ================= */
 function updateTime(){
-  let now = new Date();
-
+  let now=new Date();
   document.getElementById("date").innerText =
-    now.toLocaleDateString() + " " + now.toLocaleTimeString();
+    now.toLocaleDateString()+" "+now.toLocaleTimeString();
 
-  let end = new Date();
-
-  if(now.getHours() < 17){
+  let end=new Date();
+  if(now.getHours()<17){
     end.setHours(17,30,0,0);
-  } else {
+  }else{
     end.setDate(end.getDate()+1);
     end.setHours(5,30,0,0);
   }
 
-  let diff = end - now;
+  let diff=end-now;
+  let h=Math.floor(diff/3600000);
+  let m=Math.floor((diff%3600000)/60000);
 
-  let h = Math.floor(diff/1000/60/60);
-  let m = Math.floor((diff/1000/60)%60);
-
-  document.getElementById("timer").innerText = `${h}H:${m}M`;
+  document.getElementById("timer").innerText=`${h}H:${m}M`;
 }
 setInterval(updateTime,1000);
 
-/* =========================
-   LOAD USER
-========================= */
-onAuthStateChanged(auth, async (u)=>{
-  if(!u) location.href="index.html";
-  currentUser = u;
+/* ================= LEADERBOARD ================= */
+const content=document.getElementById("content");
+const rankEl=document.getElementById("rank");
 
-  createBots();
-  startLoop();
+function getAllPlayers(firebaseUsers){
+  let list=[...bots];
+
+  for(let uid in firebaseUsers){
+    list.push({
+      uid,
+      name: firebaseUsers[uid].name || "Player",
+      score: firebaseUsers[uid].score || 0,
+      time: firebaseUsers[uid].timestamp || Date.now()
+    });
+  }
+
+  return list;
+}
+
+onAuthStateChanged(auth,(u)=>{
+  if(!u) location.href="index.html";
+  currentUser=u;
 });
 
-/* =========================
-   GET USER SCORE
-========================= */
-async function getUserScore(){
-  if(!currentUser) return 0;
+/* Firebase real players */
+onValue(ref(db,"leaderboard/current"), snap=>{
+  const data=snap.val()||{};
 
-  const snap = await get(ref(db,"leaderboard/current/"+currentUser.uid));
-  const data = snap.val();
+  let players=getAllPlayers(data);
+  players.sort((a,b)=>b.score-a.score);
 
-  return data?.score || 0;
-}
+  content.innerHTML="";
 
-/* =========================
-   MAIN LOOP
-========================= */
-async function startLoop(){
+  let top65 = players.slice(0,65);
 
-  setInterval(async ()=>{
+  top65.forEach((p,i)=>{
+    let cls="normal";
+    if(i===0) cls="gold";
+    if(i===1) cls="silver";
+    if(i===2) cls="bronze";
 
-    updateBots();
+    let div=document.createElement("div");
+    div.className="card "+cls;
 
-    let userScore = await getUserScore();
+    div.innerHTML=`
+      <b>${i+1}. ${p.name}</b><br>
+      ${p.score}
+    `;
 
-    let userName = "YOU";
+    content.appendChild(div);
 
-    /* USER OBJECT */
-    let user = {
-      id: currentUser.uid,
-      name: userName,
-      score: userScore,
-      isBot:false
-    };
+    if(currentUser && p.uid===currentUser.uid){
+      rankEl.innerText="RANK: "+(i+1);
+    }
+  });
 
-    /* MERGE */
-    let all = [...bots, user];
-
-    /* SORT */
-    all.sort((a,b)=>b.score - a.score);
-
-    /* RENDER TOP 65 */
-    const content = document.getElementById("content");
-    content.innerHTML="";
-
-    all.slice(0,65).forEach((p,i)=>{
-
-      let cls="normal";
-      if(i===0) cls="gold";
-      if(i===1) cls="silver";
-      if(i===2) cls="bronze";
-
-      let div = document.createElement("div");
-      div.className="card "+cls;
-
-      div.innerHTML = `
-        <b>${i+1}. ${p.name}</b><br>
-        ${p.score}
-      `;
-
-      content.appendChild(div);
-
-      if(p.id === currentUser.uid){
-        document.getElementById("rank").innerText = "RANK: " + (i+1);
-      }
-    });
-
-  },2000);
-}
+  /* FIND USER RANK EVEN IF NOT IN TOP 65 */
+  if(currentUser){
+    let fullRank = players.findIndex(p=>p.uid===currentUser.uid)+1;
+    if(fullRank>0){
+      rankEl.innerText="RANK: "+fullRank;
+    }else{
+      rankEl.innerText="RANK: N/A";
+    }
+  }
+});
 
 </script>
 
