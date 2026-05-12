@@ -30,13 +30,20 @@ body{
   background:#002b55;
   padding:10px;
   border-radius:10px;
-  font-size:20px;
+  font-size:18px;
 }
 
 .gold{ color:gold; }
 .silver{ color:silver; }
 .bronze{ color:#cd7f32; }
 .normal{ color:#ccc; }
+
+#rank{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  font-size:20px;
+}
 
 #popup{
   position:fixed;
@@ -49,13 +56,6 @@ body{
   font-size:30px;
   display:none;
   border-radius:10px;
-}
-
-#rank{
-  position:fixed;
-  bottom:10px;
-  left:10px;
-  font-size:20px;
 }
 </style>
 </head>
@@ -71,7 +71,7 @@ body{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 /* FIREBASE */
@@ -86,52 +86,50 @@ const auth = getAuth(app);
 let currentUser = null;
 
 /* =========================
-   🇿🇦 SOUTH AFRICAN NAMES
+   🇿🇦 SOUTH AFRICAN BOT SYSTEM
 ========================= */
+
 const firstNames = [
-  "Thabo","Sipho","Lerato","Naledi","Kagiso","Sibusiso","Bongani",
-  "Zanele","Mandla","Ayanda","Nandi","Tshiamo","Lukhanyo","Palesa",
-  "Refilwe","Tshepo","Nokuthula","Vuyo","Simphiwe","Boitumelo"
+"Thabo","Sipho","Lethabo","Pieter","Johan","Mandla","Kagiso","Sanele","Bongani","Nandi",
+"Zanele","Lerato","Tshepo","Karabo","Andile","Ayanda","Nomsa","Themba","Vusi","Dineo"
 ];
 
-const lastNames = [
-  "Mokoena","Dlamini","Nkosi","Naidoo","van Wyk","Botha","Mabaso",
-  "Khumalo","Mthembu","van der Merwe","Sithole","Ndlovu","Pretorius",
-  "Ramaphosa","Maseko","Zuma","Bhengu","Hendricks","Jacobs","Pillay"
+const surnames = [
+"Nkosi","Mkhize","Dlamini","Botha","Van Wyk","Naidoo","Zulu","Mokoena","Khumalo","Sithole",
+"Van der Merwe","Nkuna","Baloyi","Ncube","Mahlangu","Motloung","Pillay","Govender","Maseko","Ngwenya"
 ];
 
-/* =========================
-   🤖 BOT GENERATOR
-========================= */
-function createBots(count){
-  let bots = [];
+/* CREATE 99 BOTS */
+let bots = [];
 
-  for(let i=0;i<count;i++){
+function createBots(){
+  bots = [];
+  for(let i=0;i<99;i++){
     let name =
       firstNames[Math.floor(Math.random()*firstNames.length)] + " " +
-      lastNames[Math.floor(Math.random()*lastNames.length)];
-
-    // 🎯 realistic arcade score (weighted randomness)
-    let base = Math.random();
-    let score;
-
-    if(base < 0.2) score = Math.floor(Math.random()*300);        // low
-    else if(base < 0.7) score = 300 + Math.floor(Math.random()*600); // mid
-    else score = 900 + Math.floor(Math.random()*400);           // high
+      surnames[Math.floor(Math.random()*surnames.length)];
 
     bots.push({
-      uid:"bot_"+i,
+      id: "bot"+i,
       name,
-      score,
-      time:Date.now() - Math.floor(Math.random()*100000000)
+      score: Math.floor(Math.random()*1300),
+      isBot:true
     });
   }
+}
 
-  return bots;
+/* RANDOM BOT SCORE UPDATES (ARCade FEEL) */
+function updateBots(){
+  bots.forEach(b=>{
+    let change = Math.floor(Math.random()*60 - 25); // -25 to +35
+    b.score += change;
+    if(b.score < 0) b.score = 0;
+    if(b.score > 1300) b.score = 1300;
+  });
 }
 
 /* =========================
-   DATE + TIMER
+   TIMER
 ========================= */
 function updateTime(){
   let now = new Date();
@@ -149,6 +147,7 @@ function updateTime(){
   }
 
   let diff = end - now;
+
   let h = Math.floor(diff/1000/60/60);
   let m = Math.floor((diff/1000/60)%60);
 
@@ -157,71 +156,83 @@ function updateTime(){
 setInterval(updateTime,1000);
 
 /* =========================
-   AUTH
+   LOAD USER
 ========================= */
-onAuthStateChanged(auth,(u)=>{
+onAuthStateChanged(auth, async (u)=>{
   if(!u) location.href="index.html";
   currentUser = u;
+
+  createBots();
+  startLoop();
 });
 
 /* =========================
-   LEADERBOARD LOGIC
+   GET USER SCORE
 ========================= */
-const content = document.getElementById("content");
-const rankEl = document.getElementById("rank");
+async function getUserScore(){
+  if(!currentUser) return 0;
 
-onValue(ref(db,"leaderboard/current"), snap=>{
-  let data = snap.val() || {};
-  let realPlayers = [];
+  const snap = await get(ref(db,"leaderboard/current/"+currentUser.uid));
+  const data = snap.val();
 
-  /* REAL PLAYERS */
-  for(let uid in data){
-    realPlayers.push({
-      uid,
-      name: data[uid].name || "Player",
-      score: data[uid].score || 0,
-      time: data[uid].timestamp
+  return data?.score || 0;
+}
+
+/* =========================
+   MAIN LOOP
+========================= */
+async function startLoop(){
+
+  setInterval(async ()=>{
+
+    updateBots();
+
+    let userScore = await getUserScore();
+
+    let userName = "YOU";
+
+    /* USER OBJECT */
+    let user = {
+      id: currentUser.uid,
+      name: userName,
+      score: userScore,
+      isBot:false
+    };
+
+    /* MERGE */
+    let all = [...bots, user];
+
+    /* SORT */
+    all.sort((a,b)=>b.score - a.score);
+
+    /* RENDER TOP 65 */
+    const content = document.getElementById("content");
+    content.innerHTML="";
+
+    all.slice(0,65).forEach((p,i)=>{
+
+      let cls="normal";
+      if(i===0) cls="gold";
+      if(i===1) cls="silver";
+      if(i===2) cls="bronze";
+
+      let div = document.createElement("div");
+      div.className="card "+cls;
+
+      div.innerHTML = `
+        <b>${i+1}. ${p.name}</b><br>
+        ${p.score}
+      `;
+
+      content.appendChild(div);
+
+      if(p.id === currentUser.uid){
+        document.getElementById("rank").innerText = "RANK: " + (i+1);
+      }
     });
-  }
 
-  /* SORT REAL PLAYERS */
-  realPlayers.sort((a,b)=>b.score-a.score);
-
-  /* LIMIT REAL TO FIT 100 TOTAL */
-  let botsNeeded = Math.max(0, 100 - realPlayers.length);
-  let bots = createBots(botsNeeded);
-
-  /* COMBINE */
-  let all = [...realPlayers, ...bots];
-
-  /* SORT ALL */
-  all.sort((a,b)=>b.score - a.score);
-
-  /* FIND USER RANK */
-  let userRank = all.findIndex(p => p.uid === currentUser?.uid) + 1;
-  rankEl.innerText = "RANK: " + (userRank || "N/A");
-
-  /* DISPLAY TOP 65 */
-  content.innerHTML = "";
-
-  all.slice(0,65).forEach((p,i)=>{
-    let cls = "normal";
-    if(i===0) cls="gold";
-    if(i===1) cls="silver";
-    if(i===2) cls="bronze";
-
-    let div = document.createElement("div");
-    div.className = "card " + cls;
-
-    div.innerHTML = `
-      <b>${i+1}. ${p.name}</b><br>
-      ${p.score}<br>
-    `;
-
-    content.appendChild(div);
-  });
-
-});
+  },2000);
+}
 
 </script>
 
