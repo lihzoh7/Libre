@@ -13,7 +13,7 @@ body{
   text-align:center;
 }
 
-/* ✅ SAME AS ADMIN */
+/* HEADER */
 #date, #timer{
   font-size:42px;
   margin:10px;
@@ -45,11 +45,13 @@ body{
   left:50%;
   transform:translate(-50%,-50%);
   background:white;
-  color:green;
+  color:red;
   padding:40px;
-  font-size:30px;
+  font-size:40px;
+  font-weight:bold;
   display:none;
-  border-radius:10px;
+  border-radius:12px;
+  z-index:999;
 }
 
 #rank{
@@ -57,25 +59,42 @@ body{
   bottom:10px;
   left:10px;
   font-size:20px;
+  background:#0008;
+  padding:10px;
+  border-radius:10px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ✅ NOW MATCHES ADMIN -->
 <div id="date"></div>
 <div id="timer"></div>
 
 <div id="content"></div>
+
 <div id="rank">RANK: N/A</div>
-<div id="popup"></div>
+
+<div id="popup">BREAK</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
+import {
+  getDatabase,
+  ref,
+  onValue,
+  set,
+  get,
+  update
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+/* FIREBASE */
 const app = initializeApp({
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
@@ -86,25 +105,287 @@ const auth = getAuth(app);
 
 let currentUser = null;
 let resetLock = false;
+let breakMode = false;
 
 onAuthStateChanged(auth,(u)=>{
-  if(!u) location.href="index.html";
+  if(!u){
+    location.href="index.html";
+    return;
+  }
+
   currentUser = u;
 });
 
-/* ✅ FULL DATE + TIMER (MATCH ADMIN EXACTLY) */
+/* =========================================
+   SOUTH AFRICAN COMPUTER PLAYERS
+========================================= */
+
+const botNames = [
+
+"Thabo Mokoena",
+"Sipho Dlamini",
+"Lebo Khumalo",
+"Nkosi Zulu",
+"Ayanda Ndlovu",
+"Katlego Molefe",
+"Tshepo Nkuna",
+"Sanele Sithole",
+"Brian Mabaso",
+"Mandla Shabalala",
+"Gift Mthembu",
+"Junior Maseko",
+"Teboho Morake",
+"Sandile Zwane",
+"Bongani Cele",
+"Prince Hadebe",
+"Neo Modise",
+"Samkelo Buthelezi",
+"Khaya Nxumalo",
+"Mfundo Khoza",
+
+"David Mhlongo",
+"Collins Mokoena",
+"Vusi Mbatha",
+"Nathi Gumede",
+"Jabu Madonsela",
+"Sibusiso Maphosa",
+"Zanele Nkosi",
+"Nosipho Mthethwa",
+"Nomsa Maseko",
+"Mbali Khuzwayo",
+
+"Luyanda Mkhize",
+"Noxolo Mokoena",
+"Boitumelo Seabi",
+"Refilwe Motaung",
+"Kagiso Tlhape",
+"Tumelo Ramaphosa",
+"Karabo Mokoena",
+"Lesego Moeketsi",
+"Pretty Dube",
+"Mpho Mahlangu",
+
+"Tshegofatso Moropa",
+"Kamohelo Tsotetsi",
+"Puleng Radebe",
+"Ntokozo Mnguni",
+"Busisiwe Khanyile",
+"Lerato Mofokeng",
+"Nandi Msimang",
+"Siyabonga Nene",
+"Blessing Zondo",
+"Khensani Chauke",
+
+"Phumlani Dube",
+"Andile Mthembu",
+"Yanga Gcabashe",
+"Sphamandla Ntuli",
+"Lindokuhle Ngubane",
+"Thandeka Hlophe",
+"Nomfundo Dlamini",
+"Olwethu Bhengu",
+"Zinhle Buthelezi",
+"Phindile Moyo",
+
+"Tumi Maphumulo",
+"Rhandzu Baloyi",
+"Koketso Nare",
+"Paballo Tau",
+"Keletso Ramathe",
+"Oratile Phiri",
+"Amogelang Molefi",
+"Boipelo Mathebula",
+"Tlotlo Mogale",
+"Onthatile Sebego",
+
+"Lindani Mthethwa",
+"Fortune Zungu",
+"Justice Dube",
+"Doctor Mokoena",
+"Energy Mahlangu",
+"Patience Sithole",
+"Confidence Ndlovu",
+"Success Mbhele",
+"Lucky Ngcobo",
+"Promise Hlatshwayo",
+
+"Nqobile Hadebe",
+"Celumusa Maphanga",
+"Sizwe Makhanya",
+"Mthokozisi Ntombela",
+"Zama Mokoena",
+"Fikile Hlongwane",
+"Khulekani Mavuso",
+"Lwandle Dube",
+"Siya Hlophe",
+"Treasure Dlamini",
+
+"Akani Chauke",
+"Given Mokoena",
+"Blessed Nene",
+"Stanley Khosa",
+"Emmanuel Mabuza",
+"Bandile Nxele",
+"Njabulo Zikalala",
+"Wayne Mthembu",
+"Terrence Mokoena",
+"Aphiwe Nkomo"
+
+];
+
+/* =========================================
+   CREATE BOTS IF EMPTY
+========================================= */
+
+async function createBots(){
+
+  const snap = await get(ref(db,"leaderboard/bots"));
+
+  if(snap.exists()) return;
+
+  let data = {};
+
+  botNames.forEach((name,i)=>{
+
+    data["bot_"+i] = {
+      uid:"bot_"+i,
+      bot:true,
+      name:name,
+      score:Math.floor(Math.random()*5000)+500,
+      timestamp:Date.now()
+    };
+
+  });
+
+  await set(ref(db,"leaderboard/bots"), data);
+}
+
+createBots();
+
+/* =========================================
+   RANDOM BOT UPDATES
+========================================= */
+
+function randomBotUpdates(){
+
+  setInterval(async ()=>{
+
+    if(breakMode) return;
+
+    const snap = await get(ref(db,"leaderboard/bots"));
+    const bots = snap.val() || {};
+
+    let updates = {};
+
+    Object.keys(bots).forEach(uid=>{
+
+      let chance = Math.random();
+
+      /* ONLY SOME PLAYERS UPDATE */
+      if(chance < 0.18){
+
+        let current = bots[uid].score || 0;
+
+        /* SMALL REALISTIC IMPROVEMENT */
+        let increase = Math.floor(Math.random()*120);
+
+        updates[uid+"/score"] = current + increase;
+        updates[uid+"/timestamp"] = Date.now();
+      }
+
+    });
+
+    if(Object.keys(updates).length > 0){
+      await update(ref(db,"leaderboard/bots"), updates);
+    }
+
+  },30000);
+
+  /* BIGGER RANDOM UPDATES */
+  setInterval(async ()=>{
+
+    if(breakMode) return;
+
+    const snap = await get(ref(db,"leaderboard/bots"));
+    const bots = snap.val() || {};
+
+    let updates = {};
+
+    Object.keys(bots).forEach(uid=>{
+
+      let chance = Math.random();
+
+      if(chance < 0.08){
+
+        let current = bots[uid].score || 0;
+
+        let increase = Math.floor(Math.random()*300);
+
+        updates[uid+"/score"] = current + increase;
+        updates[uid+"/timestamp"] = Date.now();
+      }
+
+    });
+
+    if(Object.keys(updates).length > 0){
+      await update(ref(db,"leaderboard/bots"), updates);
+    }
+
+  },45000);
+
+  /* RARE HUGE IMPROVEMENTS */
+  setInterval(async ()=>{
+
+    if(breakMode) return;
+
+    const snap = await get(ref(db,"leaderboard/bots"));
+    const bots = snap.val() || {};
+
+    let updates = {};
+
+    Object.keys(bots).forEach(uid=>{
+
+      let chance = Math.random();
+
+      if(chance < 0.03){
+
+        let current = bots[uid].score || 0;
+
+        let increase = Math.floor(Math.random()*700);
+
+        updates[uid+"/score"] = current + increase;
+        updates[uid+"/timestamp"] = Date.now();
+      }
+
+    });
+
+    if(Object.keys(updates).length > 0){
+      await update(ref(db,"leaderboard/bots"), updates);
+    }
+
+  },50000);
+
+}
+
+randomBotUpdates();
+
+/* =========================================
+   DATE + TIMER
+========================================= */
+
 function updateTime(){
+
   let now = new Date();
 
-  // FULL DATE + TIME
   document.getElementById("date").innerText =
-    now.toLocaleDateString() + " " + now.toLocaleTimeString();
+    now.toLocaleDateString() + " " +
+    now.toLocaleTimeString();
 
   let end = new Date();
 
   if(now.getHours() < 17){
     end.setHours(17,30,0,0);
-  } else {
+  }else{
     end.setDate(end.getDate()+1);
     end.setHours(5,30,0,0);
   }
@@ -114,105 +395,157 @@ function updateTime(){
   let h = Math.floor(diff/1000/60/60);
   let m = Math.floor((diff/1000/60)%60);
 
-  document.getElementById("timer").innerText = `${h}H:${m}M`;
+  document.getElementById("timer").innerText =
+    `${h}H:${m}M`;
 }
+
 setInterval(updateTime,1000);
 
+/* =========================================
+   BREAK + RESET SYSTEM
+========================================= */
 
-/* 🔥 RESET SYSTEM (UNCHANGED BUT CLEAN) */
 async function checkReset(){
+
   let now = new Date();
+
   let h = now.getHours();
   let m = now.getMinutes();
 
-  let isResetTime =
+  let isReset =
     (h === 5 && m === 30) ||
     (h === 17 && m === 30);
 
-  if(!isResetTime){
+  if(!isReset){
     resetLock = false;
     return;
   }
 
   if(resetLock) return;
+
   resetLock = true;
 
-  const lastResetSnap = await get(ref(db,"admin/lastReset"));
-  const lastReset = lastResetSnap.val();
+  breakMode = true;
 
-  const currentKey = `${h}:${m}`;
-
-  if(lastReset === currentKey) return;
-
-  const snap = await get(ref(db,"leaderboard/current"));
-  const data = snap.val();
-
-  if(data){
-    await set(ref(db,"leaderboard/adminHistory/"+Date.now()), data);
-  }
-
-  await set(ref(db,"leaderboard/current"), null);
-  await set(ref(db,"admin/lastReset"), currentKey);
-
-  document.getElementById("popup").innerText="RESET!";
   document.getElementById("popup").style.display="block";
 
-  setTimeout(()=>{
-    document.getElementById("popup").style.display="none";
-  },2000);
-}
-setInterval(checkReset,1000);
+  /* CLEAR PLAYER SCORES */
+  await set(ref(db,"leaderboard/current"), null);
 
-/* 📊 LEADERBOARD */
-const content=document.getElementById("content");
-const rankEl=document.getElementById("rank");
+  /* RESET BOT SCORES */
+  const botSnap = await get(ref(db,"leaderboard/bots"));
+  const bots = botSnap.val() || {};
 
-onValue(ref(db,"leaderboard/current"), snap=>{
-  const data=snap.val()||{};
-  let arr=[];
+  let updates = {};
 
-  for(let uid in data){
-    arr.push({
-      uid,
-      name:data[uid].name || "Player",
-      score:data[uid].score,
-      time:data[uid].timestamp
-    });
-  }
+  Object.keys(bots).forEach(uid=>{
 
-  arr.sort((a,b)=>b.score-a.score);
+    updates[uid+"/score"] =
+      Math.floor(Math.random()*5000)+500;
 
-  content.innerHTML="";
-
-  arr.slice(0,75).forEach((p,i)=>{
-    let cls="normal";
-    if(i===0) cls="gold";
-    if(i===1) cls="silver";
-    if(i===2) cls="bronze";
-
-    let date=new Date(p.time).toLocaleString();
-
-    let div=document.createElement("div");
-    div.className="card "+cls;
-
-    div.innerHTML=`
-      <b>${i+1}. ${p.name}</b><br>
-      ${p.score}<br>
-      <small>${date}</small>
-    `;
-
-    content.appendChild(div);
-
-    if(currentUser && currentUser.uid===p.uid){
-      rankEl.innerText="RANK: "+(i+1);
-    }
+    updates[uid+"/timestamp"] = Date.now();
   });
 
-  if(!arr.find(p=>p.uid===currentUser?.uid)){
-    rankEl.innerText="RANK: N/A";
-  }
-});
+  await update(ref(db,"leaderboard/bots"), updates);
+
+  /* 30 MINUTE BREAK */
+  setTimeout(()=>{
+
+    breakMode = false;
+
+    document.getElementById("popup").style.display="none";
+
+  },1800000); // 30 mins
+}
+
+setInterval(checkReset,1000);
+
+/* =========================================
+   LOAD LEADERBOARD
+========================================= */
+
+const content = document.getElementById("content");
+const rankEl = document.getElementById("rank");
+
+function loadBoard(){
+
+  onValue(ref(db,"leaderboard"), snap=>{
+
+    const data = snap.val() || {};
+
+    let arr = [];
+
+    /* REAL PLAYERS */
+    const players = data.current || {};
+
+    for(let uid in players){
+
+      arr.push({
+        uid,
+        name:players[uid].name || "Player",
+        score:players[uid].score || 0,
+        time:players[uid].timestamp || 0
+      });
+    }
+
+    /* COMPUTER PLAYERS */
+    const bots = data.bots || {};
+
+    for(let uid in bots){
+
+      arr.push({
+        uid,
+        name:bots[uid].name,
+        score:bots[uid].score,
+        time:bots[uid].timestamp
+      });
+    }
+
+    /* SORT */
+    arr.sort((a,b)=>b.score-a.score);
+
+    content.innerHTML="";
+
+    arr.slice(0,100).forEach((p,i)=>{
+
+      let cls="normal";
+
+      if(i===0) cls="gold";
+      if(i===1) cls="silver";
+      if(i===2) cls="bronze";
+
+      let date =
+        new Date(p.time).toLocaleString();
+
+      let div = document.createElement("div");
+
+      div.className = "card "+cls;
+
+      div.innerHTML = `
+        <b>${i+1}. ${p.name}</b><br>
+        SCORE: ${p.score}<br>
+        <small>${date}</small>
+      `;
+
+      content.appendChild(div);
+
+      if(currentUser && currentUser.uid===p.uid){
+        rankEl.innerText="RANK: "+(i+1);
+      }
+
+    });
+
+    if(!arr.find(x=>x.uid===currentUser?.uid)){
+      rankEl.innerText="RANK: N/A";
+    }
+
+  });
+
+}
+
+loadBoard();
+
 </script>
 
 </body>
-</html>
+  </html>
