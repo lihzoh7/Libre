@@ -11,10 +11,9 @@ body{
   color:white;
   font-family:Arial;
   text-align:center;
-  overflow-x:hidden;
 }
 
-#date,#timer{
+#date, #timer{
   font-size:42px;
   margin:10px;
   font-weight:bold;
@@ -22,7 +21,7 @@ body{
 
 #content{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap:10px;
   padding:10px;
 }
@@ -34,10 +33,10 @@ body{
   font-size:20px;
 }
 
-.gold{color:gold;}
-.silver{color:silver;}
-.bronze{color:#cd7f32;}
-.normal{color:#ccc;}
+.gold{ color:gold; }
+.silver{ color:silver; }
+.bronze{ color:#cd7f32; }
+.normal{ color:#ccc; }
 
 #popup{
   position:fixed;
@@ -45,29 +44,18 @@ body{
   left:50%;
   transform:translate(-50%,-50%);
   background:white;
-  color:red;
+  color:green;
   padding:40px;
-  font-size:45px;
+  font-size:30px;
   display:none;
-  border-radius:12px;
-  z-index:999;
-  font-weight:bold;
+  border-radius:10px;
 }
 
 #rank{
   position:fixed;
   bottom:10px;
   left:10px;
-  font-size:22px;
-  font-weight:bold;
-}
-
-#myScore{
-  position:fixed;
-  bottom:10px;
-  right:10px;
-  font-size:22px;
-  font-weight:bold;
+  font-size:20px;
 }
 </style>
 </head>
@@ -78,388 +66,163 @@ body{
 <div id="timer"></div>
 
 <div id="content"></div>
-
 <div id="rank">RANK: N/A</div>
-<div id="myScore">SCORE: 0</div>
-
-<div id="popup">BREAK</div>
+<div id="popup"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-
-import {
-  getDatabase,
-  ref,
-  onValue,
-  set,
-  get,
-  update
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
-import {
-  getAuth,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 /* FIREBASE */
 const app = initializeApp({
-  apiKey:"AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  databaseURL:"https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
 });
 
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-const content = document.getElementById("content");
-const rankEl = document.getElementById("rank");
-const scoreEl = document.getElementById("myScore");
-const popup = document.getElementById("popup");
-
 let currentUser = null;
-let breakMode = false;
-
-/* AUTH */
-onAuthStateChanged(auth,(u)=>{
-  if(!u){
-    location.href="index.html";
-    return;
-  }
-
-  currentUser = u;
-});
 
 /* =========================
-   SOUTH AFRICAN BOT NAMES
+   🇿🇦 SOUTH AFRICAN NAMES
 ========================= */
-
 const firstNames = [
-"Thabo","Sipho","Sizwe","Lwazi","Musa","Andile","Bongani","Sibusiso",
-"Themba","Nkosinathi","Ayanda","Lungelo","Sandile","Aphiwe","Khaya",
-"Tumelo","Neo","Katlego","Kagiso","Tshepo","Mpho","Lethabo",
-"Zanele","Nosipho","Nomvula","Naledi","Boitumelo","Amahle",
-"Mbali","Nokuthula","Asanda","Thandeka","Nandi","Lerato",
-"Keletso","Palesa","Karabo","Tebogo","Refilwe","Zinhle"
+  "Thabo","Sipho","Lerato","Naledi","Kagiso","Sibusiso","Bongani",
+  "Zanele","Mandla","Ayanda","Nandi","Tshiamo","Lukhanyo","Palesa",
+  "Refilwe","Tshepo","Nokuthula","Vuyo","Simphiwe","Boitumelo"
 ];
 
-const surnames = [
-"Dlamini","Nkosi","Zulu","Khumalo","Mokoena","Ndlovu","Sithole",
-"Mthembu","Mabaso","Cele","Ngubane","Mahlangu","Mofokeng",
-"Masuku","Baloyi","Molefe","Pitso","Madonsela","Mokoena",
-"Radebe","Mkhize","Maseko","Tshabalala","Mabena","Mahlalela",
-"Vilakazi","Mtshali","Maphosa","Khoza","Mthethwa"
+const lastNames = [
+  "Mokoena","Dlamini","Nkosi","Naidoo","van Wyk","Botha","Mabaso",
+  "Khumalo","Mthembu","van der Merwe","Sithole","Ndlovu","Pretorius",
+  "Ramaphosa","Maseko","Zuma","Bhengu","Hendricks","Jacobs","Pillay"
 ];
 
 /* =========================
-   GENERATE BOT PLAYERS
+   🤖 BOT GENERATOR
 ========================= */
+function createBots(count){
+  let bots = [];
 
-async function createBots(){
+  for(let i=0;i<count;i++){
+    let name =
+      firstNames[Math.floor(Math.random()*firstNames.length)] + " " +
+      lastNames[Math.floor(Math.random()*lastNames.length)];
 
-  const snap = await get(ref(db,"leaderboard/bots"));
+    // 🎯 realistic arcade score (weighted randomness)
+    let base = Math.random();
+    let score;
 
-  if(snap.exists()) return;
+    if(base < 0.2) score = Math.floor(Math.random()*300);        // low
+    else if(base < 0.7) score = 300 + Math.floor(Math.random()*600); // mid
+    else score = 900 + Math.floor(Math.random()*400);           // high
 
-  let bots = {};
-
-  for(let i=1;i<=100;i++){
-
-    let first =
-      firstNames[Math.floor(Math.random()*firstNames.length)];
-
-    let last =
-      surnames[Math.floor(Math.random()*surnames.length)];
-
-    let score = Math.floor(Math.random()*150);
-
-    if(Math.random() < 0.15){
-      score = Math.floor(Math.random()*500)+300;
-    }
-
-    if(Math.random() < 0.05){
-      score = Math.floor(Math.random()*400)+1000;
-    }
-
-    bots["bot"+i] = {
-      uid:"bot"+i,
-      bot:true,
-      name:first + " " + last,
-      score:score,
-      timestamp:Date.now()
-    };
-  }
-
-  await set(ref(db,"leaderboard/bots"),bots);
-}
-
-createBots();
-
-/* =========================
-   BOT SCORE CHANGES
-========================= */
-
-async function updateBots(){
-
-  if(breakMode) return;
-
-  const snap = await get(ref(db,"leaderboard/bots"));
-
-  const bots = snap.val() || {};
-
-  for(let uid in bots){
-
-    if(Math.random() < 0.35){
-
-      let current = bots[uid].score || 0;
-
-      let increase = Math.floor(Math.random()*35);
-
-      if(current < 300){
-        increase += Math.floor(Math.random()*15);
-      }
-
-      if(current > 900){
-        increase = Math.floor(Math.random()*10);
-      }
-
-      current += increase;
-
-      if(current > 1450){
-        current = 1450;
-      }
-
-      await update(ref(db,"leaderboard/bots/"+uid),{
-        score:current,
-        timestamp:Date.now()
-      });
-    }
-  }
-}
-
-/* RANDOM UPDATE TIMES */
-setInterval(updateBots,30000);
-setInterval(updateBots,45000);
-setInterval(updateBots,50000);
-
-/* =========================
-   BREAK SYSTEM
-========================= */
-
-function inBreak(){
-
-  let now = new Date();
-
-  let h = now.getHours();
-  let m = now.getMinutes();
-
-  if(
-    (h === 5 && m >= 30 && m < 60) ||
-    (h === 17 && m >= 30 && m < 60)
-  ){
-    return true;
-  }
-
-  return false;
-}
-
-async function checkBreak(){
-
-  const isBreak = inBreak();
-
-  if(isBreak){
-
-    breakMode = true;
-
-    popup.style.display = "block";
-
-    await set(ref(db,"leaderboard/current"),null);
-
-    return;
-  }
-
-  if(breakMode){
-
-    breakMode = false;
-
-    popup.style.display = "none";
-
-    await replaceBots();
-  }
-}
-
-setInterval(checkBreak,1000);
-
-/* =========================
-   REPLACE 30% OF BOTS
-========================= */
-
-async function replaceBots(){
-
-  const snap = await get(ref(db,"leaderboard/bots"));
-
-  const bots = snap.val() || {};
-
-  const keys = Object.keys(bots);
-
-  let replaceCount = Math.floor(keys.length * 0.3);
-
-  for(let i=0;i<replaceCount;i++){
-
-    let key =
-      keys[Math.floor(Math.random()*keys.length)];
-
-    let first =
-      firstNames[Math.floor(Math.random()*firstNames.length)];
-
-    let last =
-      surnames[Math.floor(Math.random()*surnames.length)];
-
-    let score = Math.floor(Math.random()*250);
-
-    await update(ref(db,"leaderboard/bots/"+key),{
-      name:first + " " + last,
-      score:score,
-      timestamp:Date.now()
+    bots.push({
+      uid:"bot_"+i,
+      name,
+      score,
+      time:Date.now() - Math.floor(Math.random()*100000000)
     });
   }
+
+  return bots;
 }
 
 /* =========================
    DATE + TIMER
 ========================= */
-
 function updateTime(){
-
   let now = new Date();
 
   document.getElementById("date").innerText =
-    now.toLocaleDateString() + " " +
-    now.toLocaleTimeString();
+    now.toLocaleDateString() + " " + now.toLocaleTimeString();
 
   let end = new Date();
 
   if(now.getHours() < 17){
     end.setHours(17,30,0,0);
-  }else{
+  } else {
     end.setDate(end.getDate()+1);
     end.setHours(5,30,0,0);
   }
 
   let diff = end - now;
-
   let h = Math.floor(diff/1000/60/60);
   let m = Math.floor((diff/1000/60)%60);
 
-  document.getElementById("timer").innerText =
-    `${h}H:${m}M`;
+  document.getElementById("timer").innerText = `${h}H:${m}M`;
 }
-
 setInterval(updateTime,1000);
-updateTime();
 
 /* =========================
-   LIVE LEADERBOARD
+   AUTH
 ========================= */
+onAuthStateChanged(auth,(u)=>{
+  if(!u) location.href="index.html";
+  currentUser = u;
+});
 
-function loadLeaderboard(){
+/* =========================
+   LEADERBOARD LOGIC
+========================= */
+const content = document.getElementById("content");
+const rankEl = document.getElementById("rank");
 
-  onValue(ref(db), async ()=>{
+onValue(ref(db,"leaderboard/current"), snap=>{
+  let data = snap.val() || {};
+  let realPlayers = [];
 
-    const playerSnap =
-      await get(ref(db,"leaderboard/current"));
-
-    const botSnap =
-      await get(ref(db,"leaderboard/bots"));
-
-    const players = playerSnap.val() || {};
-    const bots = botSnap.val() || {};
-
-    let arr = [];
-
-    /* REAL PLAYERS */
-    for(let uid in players){
-
-      arr.push({
-        uid,
-        name:players[uid].name || "Player",
-        score:players[uid].score || 0,
-        timestamp:players[uid].timestamp || Date.now(),
-        bot:false
-      });
-    }
-
-    /* BOT PLAYERS */
-    for(let uid in bots){
-
-      arr.push({
-        uid,
-        name:bots[uid].name,
-        score:bots[uid].score,
-        timestamp:bots[uid].timestamp,
-        bot:true
-      });
-    }
-
-    /* SORT */
-    arr.sort((a,b)=>{
-
-      if(b.score === a.score){
-        return a.timestamp - b.timestamp;
-      }
-
-      return b.score - a.score;
+  /* REAL PLAYERS */
+  for(let uid in data){
+    realPlayers.push({
+      uid,
+      name: data[uid].name || "Player",
+      score: data[uid].score || 0,
+      time: data[uid].timestamp
     });
+  }
 
-    /* SHOW ONLY 65 */
-    let top = arr.slice(0,65);
+  /* SORT REAL PLAYERS */
+  realPlayers.sort((a,b)=>b.score-a.score);
 
-    content.innerHTML = "";
+  /* LIMIT REAL TO FIT 100 TOTAL */
+  let botsNeeded = Math.max(0, 100 - realPlayers.length);
+  let bots = createBots(botsNeeded);
 
-    top.forEach((p,i)=>{
+  /* COMBINE */
+  let all = [...realPlayers, ...bots];
 
-      let cls = "normal";
+  /* SORT ALL */
+  all.sort((a,b)=>b.score - a.score);
 
-      if(i===0) cls="gold";
-      if(i===1) cls="silver";
-      if(i===2) cls="bronze";
+  /* FIND USER RANK */
+  let userRank = all.findIndex(p => p.uid === currentUser?.uid) + 1;
+  rankEl.innerText = "RANK: " + (userRank || "N/A");
 
-      let div = document.createElement("div");
+  /* DISPLAY TOP 65 */
+  content.innerHTML = "";
 
-      div.className = "card " + cls;
+  all.slice(0,65).forEach((p,i)=>{
+    let cls = "normal";
+    if(i===0) cls="gold";
+    if(i===1) cls="silver";
+    if(i===2) cls="bronze";
 
-      div.innerHTML = `
-        <b>${i+1}. ${p.name}</b><br>
-        SCORE: ${p.score}<br>
-        <small>${new Date(p.timestamp).toLocaleString()}</small>
-      `;
+    let div = document.createElement("div");
+    div.className = "card " + cls;
 
-      content.appendChild(div);
-    });
+    div.innerHTML = `
+      <b>${i+1}. ${p.name}</b><br>
+      ${p.score}<br>
+    `;
 
-    /* PLAYER RANK */
-    if(currentUser){
-
-      let found = arr.findIndex(
-        p => p.uid === currentUser.uid
-      );
-
-      if(found >= 0){
-
-        rankEl.innerText =
-          "RANK: " + (found+1);
-
-        scoreEl.innerText =
-          "SCORE: " + arr[found].score;
-
-      }else{
-
-        rankEl.innerText = "RANK: N/A";
-        scoreEl.innerText = "SCORE: 0";
-      }
-    }
+    content.appendChild(div);
   });
-}
 
-loadLeaderboard();
+});
+
 </script>
 
 </body>
