@@ -14,14 +14,14 @@ body{
 }
 
 #date,#timer{
-  font-size:42px;
+  font-size:32px;
   margin:10px;
   font-weight:bold;
 }
 
 #content{
   display:grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns:repeat(3,1fr);
   gap:10px;
   padding:10px;
 }
@@ -42,7 +42,24 @@ body{
   position:fixed;
   bottom:10px;
   left:10px;
-  font-size:20px;
+  font-size:22px;
+  background:#000;
+  padding:10px;
+  border-radius:10px;
+}
+
+#popup{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:white;
+  color:green;
+  padding:40px;
+  font-size:30px;
+  display:none;
+  border-radius:10px;
+  z-index:999;
 }
 </style>
 </head>
@@ -51,16 +68,31 @@ body{
 
 <div id="date"></div>
 <div id="timer"></div>
+
 <div id="content"></div>
+
 <div id="rank">RANK: N/A</div>
+
+<div id="popup"></div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-/* ================= FIREBASE ================= */
+import {
+  getDatabase,
+  ref,
+  onValue,
+  set,
+  get,
+  update
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
 const app = initializeApp({
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
@@ -69,141 +101,416 @@ const app = initializeApp({
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-/* ================= SA NAMES ================= */
-const firstNames = [
-"Thabo","Sipho","Lerato","Naledi","Kagiso","Bongani","Palesa","Mpho","Sanele","Zanele",
-"Junior","Vusi","Ayanda","Nandi","Tshepo","Boitumelo","Neo","Lungelo","Siyanda","Refilwe"
+const content = document.getElementById("content");
+const rankEl = document.getElementById("rank");
+
+let currentUser = null;
+let resetLock = false;
+
+/* ===================================================
+   SOUTH AFRICAN BOT PLAYERS
+=================================================== */
+
+const names = [
+"Thabo","Sipho","Anele","Ayanda","Lwazi","Sibusiso",
+"Nokuthula","Naledi","Zanele","Bongani","Khaya","Lerato",
+"Neo","Mpho","Themba","Andile","Sanele","Linda",
+"Zola","Nandi","Aphiwe","Kagiso","Tumelo","Mandla",
+"Tshepo","Vusi","Lebo","Palesa","Ntokozo","Amahle",
+"Sandile","Simphiwe","Siyabonga","Nhlanhla","Musa",
+"Karabo","Mbali","Noxolo","Asanda","Bulelani",
+"Jabulani","Minenhle","Yandiswa","Okuhle","Lindokuhle",
+"Anathi","Melusi","Busisiwe","Ntombi","Zinhle"
 ];
 
 const surnames = [
-"Nkosi","Mahlangu","Dlamini","Mokoena","Khumalo","Zuma","Ndlovu","Sithole","Mthembu","Maseko",
-"Modise","Shabalala","Ngwenya","Baloyi","Mabaso","Zulu","Morake","Moyo","Ramaphosa","Nkuna"
+"Dlamini","Nkosi","Zulu","Mokoena","Khumalo","Ndlovu",
+"Sithole","Mabaso","Naidoo","Pillay","Mthembu","Mahlangu",
+"Khoza","Cele","Molefe","Baloyi","Mabena","Mokoena",
+"Mtshali","Maseko","Nxumalo","Mokoena","Sibiya","Shabalala",
+"Vilakazi","Mokoena","Mkhize","Gumede","Moyo","Radebe",
+"Madondo","Twala","Mbatha","Ngcobo","Maphosa","Mahlalela",
+"Mathebula","Mokoena","Hlongwane","Sambo","Mofokeng",
+"Rasmeni","Mabunda","Mabizela","Nene","Luthuli"
 ];
 
-/* ================= BOT SYSTEM ================= */
-let bots = [];
-let currentUser = null;
+/* ===================================================
+   AUTH
+=================================================== */
 
-function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+onAuthStateChanged(auth, async (u)=>{
 
-function makeBots(){
-  for(let i=0;i<100;i++){
-    bots.push({
-      uid:"bot-"+i,
-      name: rand(firstNames)+" "+rand(surnames),
-      score: Math.floor(Math.random()*250)
+  if(!u){
+    location.href="index.html";
+    return;
+  }
+
+  currentUser = u;
+
+  await createBots();
+
+  ensureRealPlayerExists();
+
+});
+
+/* ===================================================
+   CREATE 99 BOT PLAYERS
+=================================================== */
+
+async function createBots(){
+
+  const snap = await get(ref(db,"leaderboard/bots"));
+
+  if(snap.exists()) return;
+
+  let bots = {};
+
+  for(let i=1;i<=99;i++){
+
+    let name =
+      names[Math.floor(Math.random()*names.length)]
+      + " " +
+      surnames[Math.floor(Math.random()*surnames.length)];
+
+    bots["bot_"+i] = {
+      name:name,
+      score:Math.floor(Math.random()*251),
+      bot:true,
+      timestamp:Date.now()
+    };
+  }
+
+  await set(ref(db,"leaderboard/bots"), bots);
+}
+
+/* ===================================================
+   ENSURE REAL USER EXISTS
+=================================================== */
+
+async function ensureRealPlayerExists(){
+
+  const uid = currentUser.uid;
+
+  const userSnap = await get(ref(db,"leaderboard/current/"+uid));
+
+  if(!userSnap.exists()){
+
+    let userName = currentUser.email || "Player";
+
+    await set(ref(db,"leaderboard/current/"+uid),{
+      name:userName,
+      score:0,
+      timestamp:Date.now(),
+      bot:false
     });
   }
 }
-makeBots();
 
-/* ================= SCORE UPDATE SYSTEM ================= */
-const increments = [7,10,15,2,0,5];
+/* ===================================================
+   TIME SYSTEM
+=================================================== */
 
-function updateBots(percent){
-  bots.forEach(b=>{
-    if(Math.random() < percent){
-      let inc = increments[Math.floor(Math.random()*increments.length)];
-      b.score += inc;
-
-      if(b.score > 1300) b.score = 1300;
-    }
-  });
-}
-
-/* every 2 min → 40% */
-setInterval(()=>updateBots(0.4), 160000);
-
-/* every 7 min → 60% */
-setInterval(()=>updateBots(0.6), 420000);
-
-/* ================= TIME ================= */
 function updateTime(){
-  let now=new Date();
-  document.getElementById("date").innerText =
-    now.toLocaleDateString()+" "+now.toLocaleTimeString();
 
-  let end=new Date();
-  if(now.getHours()<17){
+  let now = new Date();
+
+  document.getElementById("date").innerText =
+    now.toLocaleDateString() + " " +
+    now.toLocaleTimeString();
+
+  let end = new Date();
+
+  if(now.getHours() < 17){
     end.setHours(17,30,0,0);
   }else{
     end.setDate(end.getDate()+1);
     end.setHours(5,30,0,0);
   }
 
-  let diff=end-now;
-  let h=Math.floor(diff/3600000);
-  let m=Math.floor((diff%3600000)/60000);
+  let diff = end-now;
 
-  document.getElementById("timer").innerText=`${h}H:${m}M`;
+  let h = Math.floor(diff/1000/60/60);
+  let m = Math.floor((diff/1000/60)%60);
+
+  document.getElementById("timer").innerText =
+    `${h}H : ${m}M`;
 }
+
 setInterval(updateTime,1000);
+updateTime();
 
-/* ================= LEADERBOARD ================= */
-const content=document.getElementById("content");
-const rankEl=document.getElementById("rank");
+/* ===================================================
+   RESET SYSTEM
+=================================================== */
 
-function getAllPlayers(firebaseUsers){
-  let list=[...bots];
+async function checkReset(){
 
-  for(let uid in firebaseUsers){
-    list.push({
+  let now = new Date();
+
+  let h = now.getHours();
+  let m = now.getMinutes();
+
+  let isResetTime =
+    (h===5 && m===30) ||
+    (h===17 && m===30);
+
+  if(!isResetTime){
+    resetLock=false;
+    return;
+  }
+
+  if(resetLock) return;
+
+  resetLock=true;
+
+  const lastResetSnap =
+    await get(ref(db,"admin/lastReset"));
+
+  const lastReset = lastResetSnap.val();
+
+  const currentKey = `${h}:${m}`;
+
+  if(lastReset===currentKey) return;
+
+  /* SAVE HISTORY */
+
+  const currentSnap =
+    await get(ref(db,"leaderboard/current"));
+
+  if(currentSnap.exists()){
+
+    await set(
+      ref(db,"leaderboard/history/"+Date.now()),
+      currentSnap.val()
+    );
+  }
+
+  /* RESET REAL PLAYERS */
+
+  await set(ref(db,"leaderboard/current"), null);
+
+  /* RESET BOTS */
+
+  const botsSnap =
+    await get(ref(db,"leaderboard/bots"));
+
+  let bots = botsSnap.val() || {};
+
+  for(let id in bots){
+
+    bots[id].score =
+      Math.floor(Math.random()*251);
+
+    bots[id].timestamp = Date.now();
+  }
+
+  await set(ref(db,"leaderboard/bots"), bots);
+
+  await set(ref(db,"admin/lastReset"), currentKey);
+
+  document.getElementById("popup").style.display="block";
+  document.getElementById("popup").innerText="LEADERBOARD RESET";
+
+  setTimeout(()=>{
+    document.getElementById("popup").style.display="none";
+  },3000);
+
+  ensureRealPlayerExists();
+}
+
+setInterval(checkReset,1000);
+
+/* ===================================================
+   BOT SCORE ENGINE
+=================================================== */
+
+/*
+40% of bots change every 2 minutes
+60% of bots change every 7 minutes
+
+Points:
+7  = 20%
+10 = 30%
+45 = 25%
+20 = 5%
+5  = 20%
+*/
+
+function randomPoints(){
+
+  let r = Math.random();
+
+  if(r < 0.20) return 7;
+  if(r < 0.50) return 10;
+  if(r < 0.75) return 45;
+  if(r < 0.80) return 20;
+
+  return 5;
+}
+
+/* 40% UPDATE */
+
+setInterval(async ()=>{
+
+  const snap = await get(ref(db,"leaderboard/bots"));
+
+  let bots = snap.val() || {};
+
+  let keys = Object.keys(bots);
+
+  let amount = Math.floor(keys.length * 0.40);
+
+  for(let i=0;i<amount;i++){
+
+    let id =
+      keys[Math.floor(Math.random()*keys.length)];
+
+    let add = randomPoints();
+
+    bots[id].score += add;
+
+    if(bots[id].score > 5000){
+      bots[id].score = 5000;
+    }
+
+    bots[id].timestamp = Date.now();
+  }
+
+  await update(ref(db,"leaderboard/bots"), bots);
+
+},120000);
+
+/* 60% UPDATE */
+
+setInterval(async ()=>{
+
+  const snap = await get(ref(db,"leaderboard/bots"));
+
+  let bots = snap.val() || {};
+
+  let keys = Object.keys(bots);
+
+  let amount = Math.floor(keys.length * 0.60);
+
+  for(let i=0;i<amount;i++){
+
+    let id =
+      keys[Math.floor(Math.random()*keys.length)];
+
+    let add = randomPoints();
+
+    bots[id].score += add;
+
+    if(bots[id].score > 5000){
+      bots[id].score = 5000;
+    }
+
+    bots[id].timestamp = Date.now();
+  }
+
+  await update(ref(db,"leaderboard/bots"), bots);
+
+},420000);
+
+/* ===================================================
+   LIVE LEADERBOARD
+=================================================== */
+
+function renderLeaderboard(realPlayers,bots){
+
+  let arr = [];
+
+  /* REAL PLAYERS */
+
+  for(let uid in realPlayers){
+
+    arr.push({
       uid,
-      name: firebaseUsers[uid].name || "Player",
-      score: firebaseUsers[uid].score || 0,
-      time: firebaseUsers[uid].timestamp || Date.now()
+      name:realPlayers[uid].name || "Player",
+      score:realPlayers[uid].score || 0,
+      timestamp:realPlayers[uid].timestamp || Date.now(),
+      bot:false
     });
   }
 
-  return list;
-}
+  /* BOT PLAYERS */
 
-onAuthStateChanged(auth,(u)=>{
-  if(!u) location.href="index.html";
-  currentUser=u;
-});
+  for(let uid in bots){
 
-/* Firebase real players */
-onValue(ref(db,"leaderboard/current"), snap=>{
-  const data=snap.val()||{};
+    arr.push({
+      uid,
+      name:bots[uid].name,
+      score:bots[uid].score,
+      timestamp:bots[uid].timestamp,
+      bot:true
+    });
+  }
 
-  let players=getAllPlayers(data);
-  players.sort((a,b)=>b.score-a.score);
+  /* SORT */
+
+  arr.sort((a,b)=>b.score-a.score);
+
+  /* SHOW ONLY 65 */
 
   content.innerHTML="";
 
-  let top65 = players.slice(0,65);
+  arr.slice(0,65).forEach((p,i)=>{
 
-  top65.forEach((p,i)=>{
     let cls="normal";
+
     if(i===0) cls="gold";
     if(i===1) cls="silver";
     if(i===2) cls="bronze";
 
     let div=document.createElement("div");
+
     div.className="card "+cls;
 
     div.innerHTML=`
-      <b>${i+1}. ${p.name}</b><br>
-      ${p.score}
+      <b>#${i+1} ${p.name}</b><br>
+      ${p.score} PTS
     `;
 
     content.appendChild(div);
-
-    if(currentUser && p.uid===currentUser.uid){
-      rankEl.innerText="RANK: "+(i+1);
-    }
   });
 
-  /* FIND USER RANK EVEN IF NOT IN TOP 65 */
-  if(currentUser){
-    let fullRank = players.findIndex(p=>p.uid===currentUser.uid)+1;
-    if(fullRank>0){
-      rankEl.innerText="RANK: "+fullRank;
-    }else{
-      rankEl.innerText="RANK: N/A";
-    }
+  /* USER RANK */
+
+  let rank =
+    arr.findIndex(p=>p.uid===currentUser?.uid);
+
+  if(rank >= 0){
+
+    rankEl.innerText =
+      `RANK: ${rank+1} / ${arr.length}`;
+
+  }else{
+
+    rankEl.innerText = "RANK: N/A";
   }
+}
+
+/* ===================================================
+   REALTIME LISTENERS
+=================================================== */
+
+let realData = {};
+let botData = {};
+
+onValue(ref(db,"leaderboard/current"),snap=>{
+
+  realData = snap.val() || {};
+
+  renderLeaderboard(realData,botData);
+
+});
+
+onValue(ref(db,"leaderboard/bots"),snap=>{
+
+  botData = snap.val() || {};
+
+  renderLeaderboard(realData,botData);
+
 });
 
 </script>
