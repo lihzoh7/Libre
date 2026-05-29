@@ -338,18 +338,6 @@ function freezeLeaderboard(){
 
 }
 
-/* RESET SYSTEM */
-
-async function checkReset(){
-
-  let resetSnap =
-    await get(ref(db,"admin/resetTrigger"));
-
-  let resetValue = resetSnap.val();
-
-  if(!resetValue) return;
-
-}
 
 /* OPTIONAL POPUP RESET */
 
@@ -412,13 +400,6 @@ async function doReset(){
 
 }
 
-/* ADMIN RESET LISTENER */
-
-onValue(ref(db,"admin/resetTrigger"), ()=>{
-
-  doReset();
-
-});
 
 /* LEADERBOARD */
 
