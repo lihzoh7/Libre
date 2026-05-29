@@ -5,19 +5,26 @@
 <title>Leaderboard</title>
 
 <style>
+
 body{
   margin:0;
   background:#001f3f;
   color:white;
   font-family:Arial;
   text-align:center;
+  overflow-x:hidden;
 }
 
-#date,#timer{
-  font-size:32px;
+/* DATE + TIMER */
+
+#date,
+#timer{
+  font-size:42px;
   margin:10px;
   font-weight:bold;
 }
+
+/* LEADERBOARD GRID */
 
 #content{
   display:grid;
@@ -30,23 +37,27 @@ body{
   background:#002b55;
   padding:10px;
   border-radius:10px;
-  font-size:18px;
+  font-size:20px;
+  word-break:break-word;
 }
 
-.gold{color:gold;}
-.silver{color:silver;}
-.bronze{color:#cd7f32;}
-.normal{color:#ccc;}
-
-#rank{
-  position:fixed;
-  bottom:10px;
-  left:10px;
-  font-size:22px;
-  background:#000;
-  padding:10px;
-  border-radius:10px;
+.gold{
+  color:gold;
 }
+
+.silver{
+  color:silver;
+}
+
+.bronze{
+  color:#cd7f32;
+}
+
+.normal{
+  color:#ccc;
+}
+
+/* POPUP */
 
 #popup{
   position:fixed;
@@ -61,6 +72,100 @@ body{
   border-radius:10px;
   z-index:999;
 }
+
+/* PLAYER RANK */
+
+#rank{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  font-size:20px;
+  z-index:1000;
+}
+
+/* WINNER OVERLAY */
+
+#winnerOverlay{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.70);
+  display:none;
+  overflow-y:auto;
+  z-index:5000;
+  padding-top:100px;
+  box-sizing:border-box;
+}
+
+#winnerTitle{
+  text-align:center;
+  font-size:60px;
+  font-weight:bold;
+  color:white;
+  opacity:0.18;
+}
+
+#winnerDate{
+  text-align:center;
+  font-size:22px;
+  color:white;
+  margin-top:10px;
+  margin-bottom:40px;
+  opacity:0.18;
+}
+
+#winnerBoard{
+  width:95%;
+  margin:auto;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  padding-bottom:40px;
+}
+
+.winnerCard{
+  background:#002b55;
+  padding:10px;
+  border-radius:10px;
+  font-size:20px;
+}
+
+/* MOBILE */
+
+@media(max-width:900px){
+
+  #content,
+  #winnerBoard{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+}
+
+@media(max-width:600px){
+
+  #date,
+  #timer{
+    font-size:28px;
+  }
+
+  #content,
+  #winnerBoard{
+    grid-template-columns:1fr;
+  }
+
+  .card,
+  .winnerCard{
+    font-size:18px;
+  }
+
+  #winnerTitle{
+    font-size:45px;
+  }
+
+}
+
 </style>
 </head>
 
@@ -71,449 +176,348 @@ body{
 
 <div id="content"></div>
 
-<div id="rank">RANK: N/A</div>
+<div id="rank">
+  RANK: N/A
+</div>
 
 <div id="popup"></div>
 
+<!-- WINNER OVERLAY -->
+
+<div id="winnerOverlay">
+
+  <div id="winnerTitle">
+    WINNERS
+  </div>
+
+  <div id="winnerDate"></div>
+
+  <div id="winnerBoard"></div>
+
+</div>
+
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 
 import {
   getDatabase,
   ref,
   onValue,
   set,
-  get,
-  update
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+  get
+}
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 import {
   getAuth,
   onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+}
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+/* FIREBASE */
 
 const app = initializeApp({
+
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+
+  databaseURL:
+  "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+
 });
 
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-const content = document.getElementById("content");
-const rankEl = document.getElementById("rank");
-
 let currentUser = null;
+
+/* RESET LOCK */
+
 let resetLock = false;
 
-/* ===================================================
-   SOUTH AFRICAN BOT PLAYERS
-=================================================== */
+/* FREEZE SYSTEM */
 
-const names = [
-"Thabo","Sipho","Anele","Ayanda","Lwazi","Sibusiso",
-"Nokuthula","Naledi","Zanele","Bongani","Khaya","Lerato",
-"Neo","Mpho","Themba","Andile","Sanele","Linda",
-"Zola","Nandi","Aphiwe","Kagiso","Tumelo","Mandla",
-"Tshepo","Vusi","Lebo","Palesa","Ntokozo","Amahle",
-"Sandile","Simphiwe","Siyabonga","Nhlanhla","Musa",
-"Karabo","Mbali","Noxolo","Asanda","Bulelani",
-"Jabulani","Minenhle","Yandiswa","Okuhle","Lindokuhle",
-"Anathi","Melusi","Busisiwe","Ntombi","Zinhle"
-];
+let frozen = false;
 
-const surnames = [
-"Dlamini","Nkosi","Zulu","Mokoena","Khumalo","Ndlovu",
-"Sithole","Mabaso","Naidoo","Pillay","Mthembu","Mahlangu",
-"Khoza","Cele","Molefe","Baloyi","Mabena","Mokoena",
-"Mtshali","Maseko","Nxumalo","Mokoena","Sibiya","Shabalala",
-"Vilakazi","Mokoena","Mkhize","Gumede","Moyo","Radebe",
-"Madondo","Twala","Mbatha","Ngcobo","Maphosa","Mahlalela",
-"Mathebula","Mokoena","Hlongwane","Sambo","Mofokeng",
-"Rasmeni","Mabunda","Mabizela","Nene","Luthuli"
-];
+/* 30 MINUTE START */
 
-/* ===================================================
-   AUTH
-=================================================== */
+let countdownStart = Date.now();
 
-onAuthStateChanged(auth, async (u)=>{
+/* AUTH */
+
+onAuthStateChanged(auth,(u)=>{
 
   if(!u){
-    location.href="index.html";
+
+    location.href = "index.html";
+
     return;
   }
 
   currentUser = u;
 
-  await createBots();
-
-  ensureRealPlayerExists();
-
 });
 
-/* ===================================================
-   CREATE 99 BOT PLAYERS
-=================================================== */
-
-async function createBots(){
-
-  const snap = await get(ref(db,"leaderboard/bots"));
-
-  if(snap.exists()) return;
-
-  let bots = {};
-
-  for(let i=1;i<=99;i++){
-
-    let name =
-      names[Math.floor(Math.random()*names.length)]
-      + " " +
-      surnames[Math.floor(Math.random()*surnames.length)];
-
-    bots["bot_"+i] = {
-      name:name,
-      score:Math.floor(Math.random()*251),
-      bot:true,
-      timestamp:Date.now()
-    };
-  }
-
-  await set(ref(db,"leaderboard/bots"), bots);
-}
-
-/* ===================================================
-   ENSURE REAL USER EXISTS
-=================================================== */
-
-async function ensureRealPlayerExists(){
-
-  const uid = currentUser.uid;
-
-  const userSnap = await get(ref(db,"leaderboard/current/"+uid));
-
-  if(!userSnap.exists()){
-
-    let userName = currentUser.email || "Player";
-
-    await set(ref(db,"leaderboard/current/"+uid),{
-      name:userName,
-      score:0,
-      timestamp:Date.now(),
-      bot:false
-    });
-  }
-}
-
-/* ===================================================
-   TIME SYSTEM
-=================================================== */
+/* DATE + COUNTDOWN */
 
 function updateTime(){
 
   let now = new Date();
 
   document.getElementById("date").innerText =
+
     now.toLocaleDateString() + " " +
+
     now.toLocaleTimeString();
 
-  let end = new Date();
+  /* STOP TIMER IF FROZEN */
 
-  if(now.getHours() < 17){
-    end.setHours(17,30,0,0);
-  }else{
-    end.setDate(end.getDate()+1);
-    end.setHours(5,30,0,0);
-  }
+  if(frozen){
 
-  let diff = end-now;
+    document.getElementById("timer").innerText =
+      "COMPETITION ENDED";
 
-  let h = Math.floor(diff/1000/60/60);
-  let m = Math.floor((diff/1000/60)%60);
-
-  document.getElementById("timer").innerText =
-    `${h}H : ${m}M`;
-}
-
-setInterval(updateTime,1000);
-updateTime();
-
-/* ===================================================
-   RESET SYSTEM
-=================================================== */
-
-async function checkReset(){
-
-  let now = new Date();
-
-  let h = now.getHours();
-  let m = now.getMinutes();
-
-  let isResetTime =
-    (h===5 && m===30) ||
-    (h===17 && m===30);
-
-  if(!isResetTime){
-    resetLock=false;
     return;
   }
 
+  /* 30 MINUTES */
+
+  let duration = 30 * 60 * 1000;
+
+  let diff = duration - (Date.now() - countdownStart);
+
+  /* FREEZE */
+
+  if(diff <= 0){
+
+    freezeLeaderboard();
+
+    return;
+  }
+
+  let m = Math.floor(diff / 1000 / 60);
+
+  let s = Math.floor((diff / 1000) % 60);
+
+  document.getElementById("timer").innerText =
+
+    `${m}M:${s}S`;
+
+}
+
+setInterval(updateTime,1000);
+
+/* FREEZE LEADERBOARD */
+
+function freezeLeaderboard(){
+
+  if(frozen) return;
+
+  frozen = true;
+
+  const overlay =
+    document.getElementById("winnerOverlay");
+
+  const board =
+    document.getElementById("winnerBoard");
+
+  /* SHOW OVERLAY */
+
+  overlay.style.display = "block";
+
+  /* DATE */
+
+  document.getElementById("winnerDate").innerText =
+
+    new Date().toLocaleString();
+
+  /* COPY LEADERBOARD */
+
+  board.innerHTML = content.innerHTML;
+
+}
+
+/* RESET SYSTEM */
+
+async function checkReset(){
+
+  let resetSnap =
+    await get(ref(db,"admin/resetTrigger"));
+
+  let resetValue = resetSnap.val();
+
+  if(!resetValue) return;
+
+}
+
+/* OPTIONAL POPUP RESET */
+
+async function doReset(){
+
   if(resetLock) return;
 
-  resetLock=true;
-
-  const lastResetSnap =
-    await get(ref(db,"admin/lastReset"));
-
-  const lastReset = lastResetSnap.val();
-
-  const currentKey = `${h}:${m}`;
-
-  if(lastReset===currentKey) return;
+  resetLock = true;
 
   /* SAVE HISTORY */
 
-  const currentSnap =
+  const snap =
     await get(ref(db,"leaderboard/current"));
 
-  if(currentSnap.exists()){
+  const data = snap.val();
+
+  if(data){
 
     await set(
-      ref(db,"leaderboard/history/"+Date.now()),
-      currentSnap.val()
+
+      ref(db,"leaderboard/adminHistory/" + Date.now()),
+
+      data
+
     );
+
   }
 
-  /* RESET REAL PLAYERS */
+  /* CLEAR CURRENT */
 
   await set(ref(db,"leaderboard/current"), null);
 
-  /* RESET BOTS */
+  /* RESET TIMER */
 
-  const botsSnap =
-    await get(ref(db,"leaderboard/bots"));
+  frozen = false;
 
-  let bots = botsSnap.val() || {};
+  countdownStart = Date.now();
 
-  for(let id in bots){
+  /* HIDE WINNER SCREEN */
 
-    bots[id].score =
-      Math.floor(Math.random()*251);
+  document.getElementById("winnerOverlay").style.display =
+    "none";
 
-    bots[id].timestamp = Date.now();
-  }
+  /* RESET POPUP */
 
-  await set(ref(db,"leaderboard/bots"), bots);
+  document.getElementById("popup").innerText =
+    "RESET!";
 
-  await set(ref(db,"admin/lastReset"), currentKey);
-
-  document.getElementById("popup").style.display="block";
-  document.getElementById("popup").innerText="LEADERBOARD RESET";
+  document.getElementById("popup").style.display =
+    "block";
 
   setTimeout(()=>{
-    document.getElementById("popup").style.display="none";
-  },3000);
 
-  ensureRealPlayerExists();
+    document.getElementById("popup").style.display =
+      "none";
+
+    resetLock = false;
+
+  },2000);
+
 }
 
-setInterval(checkReset,1000);
+/* ADMIN RESET LISTENER */
 
-/* ===================================================
-   BOT SCORE ENGINE
-=================================================== */
+onValue(ref(db,"admin/resetTrigger"), ()=>{
 
-/*
-40% of bots change every 2 minutes
-60% of bots change every 7 minutes
+  doReset();
 
-Points:
-7  = 20%
-10 = 30%
-45 = 25%
-20 = 5%
-5  = 20%
-*/
+});
 
-function randomPoints(){
+/* LEADERBOARD */
 
-  let r = Math.random();
+const content =
+  document.getElementById("content");
 
-  if(r < 0.20) return 7;
-  if(r < 0.50) return 10;
-  if(r < 0.75) return 45;
-  if(r < 0.80) return 20;
+const rankEl =
+  document.getElementById("rank");
 
-  return 5;
-}
+/* LIVE LEADERBOARD */
 
-/* 40% UPDATE */
+onValue(ref(db,"leaderboard/current"), snap=>{
 
-setInterval(async ()=>{
+  /* STOP LIVE CHANGES IF FROZEN */
 
-  const snap = await get(ref(db,"leaderboard/bots"));
+  if(frozen) return;
 
-  let bots = snap.val() || {};
-
-  let keys = Object.keys(bots);
-
-  let amount = Math.floor(keys.length * 0.40);
-
-  for(let i=0;i<amount;i++){
-
-    let id =
-      keys[Math.floor(Math.random()*keys.length)];
-
-    let add = randomPoints();
-
-    bots[id].score += add;
-
-    if(bots[id].score > 5000){
-      bots[id].score = 5000;
-    }
-
-    bots[id].timestamp = Date.now();
-  }
-
-  await update(ref(db,"leaderboard/bots"), bots);
-
-},120000);
-
-/* 60% UPDATE */
-
-setInterval(async ()=>{
-
-  const snap = await get(ref(db,"leaderboard/bots"));
-
-  let bots = snap.val() || {};
-
-  let keys = Object.keys(bots);
-
-  let amount = Math.floor(keys.length * 0.60);
-
-  for(let i=0;i<amount;i++){
-
-    let id =
-      keys[Math.floor(Math.random()*keys.length)];
-
-    let add = randomPoints();
-
-    bots[id].score += add;
-
-    if(bots[id].score > 5000){
-      bots[id].score = 5000;
-    }
-
-    bots[id].timestamp = Date.now();
-  }
-
-  await update(ref(db,"leaderboard/bots"), bots);
-
-},420000);
-
-/* ===================================================
-   LIVE LEADERBOARD
-=================================================== */
-
-function renderLeaderboard(realPlayers,bots){
+  const data = snap.val() || {};
 
   let arr = [];
 
-  /* REAL PLAYERS */
-
-  for(let uid in realPlayers){
+  for(let uid in data){
 
     arr.push({
+
       uid,
-      name:realPlayers[uid].name || "Player",
-      score:realPlayers[uid].score || 0,
-      timestamp:realPlayers[uid].timestamp || Date.now(),
-      bot:false
+
+      name:data[uid].name || "Player",
+
+      score:data[uid].score || 0,
+
+      time:data[uid].timestamp || Date.now()
+
     });
-  }
 
-  /* BOT PLAYERS */
-
-  for(let uid in bots){
-
-    arr.push({
-      uid,
-      name:bots[uid].name,
-      score:bots[uid].score,
-      timestamp:bots[uid].timestamp,
-      bot:true
-    });
   }
 
   /* SORT */
 
   arr.sort((a,b)=>b.score-a.score);
 
-  /* SHOW ONLY 65 */
+  content.innerHTML = "";
 
-  content.innerHTML="";
+  /* TOP 75 */
 
-  arr.slice(0,65).forEach((p,i)=>{
+  arr.slice(0,75).forEach((p,i)=>{
 
-    let cls="normal";
+    let cls = "normal";
 
-    if(i===0) cls="gold";
-    if(i===1) cls="silver";
-    if(i===2) cls="bronze";
+    if(i===0) cls = "gold";
 
-    let div=document.createElement("div");
+    if(i===1) cls = "silver";
 
-    div.className="card "+cls;
+    if(i===2) cls = "bronze";
 
-    div.innerHTML=`
-      <b>#${i+1} ${p.name}</b><br>
-      ${p.score} PTS
+    let date =
+      new Date(p.time).toLocaleString();
+
+    let div =
+      document.createElement("div");
+
+    div.className =
+      "card " + cls;
+
+    div.innerHTML = `
+
+      <b>${i+1}. ${p.name}</b><br>
+
+      ${p.score}<br>
+
+      <small>${date}</small>
+
     `;
 
     content.appendChild(div);
+
+    /* PLAYER RANK */
+
+    if(currentUser &&
+       currentUser.uid === p.uid){
+
+      rankEl.innerText =
+        "RANK: " + (i+1);
+
+    }
+
   });
 
-  /* USER RANK */
+  /* PLAYER NOT FOUND */
 
-  let rank =
-    arr.findIndex(p=>p.uid===currentUser?.uid);
-
-  if(rank >= 0){
-
-    rankEl.innerText =
-      `RANK: ${rank+1} / ${arr.length}`;
-
-  }else{
+  if(!arr.find(p=>p.uid===currentUser?.uid)){
 
     rankEl.innerText = "RANK: N/A";
+
   }
-}
-
-/* ===================================================
-   REALTIME LISTENERS
-=================================================== */
-
-let realData = {};
-let botData = {};
-
-onValue(ref(db,"leaderboard/current"),snap=>{
-
-  realData = snap.val() || {};
-
-  renderLeaderboard(realData,botData);
-
-});
-
-onValue(ref(db,"leaderboard/bots"),snap=>{
-
-  botData = snap.val() || {};
-
-  renderLeaderboard(realData,botData);
 
 });
 
 </script>
 
 </body>
-</html>
+  </html>
