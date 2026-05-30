@@ -5,26 +5,31 @@
 <title>Leaderboard</title>
 
 <style>
-
 body{
   margin:0;
   background:#001f3f;
   color:white;
   font-family:Arial;
   text-align:center;
-  overflow-x:hidden;
 }
 
-/* DATE + TIMER */
+#date{
+  font-size:32px;
+  font-weight:bold;
+  margin-top:10px;
+}
 
-#date,
 #timer{
   font-size:42px;
-  margin:10px;
   font-weight:bold;
+  margin:10px;
 }
 
-/* LEADERBOARD GRID */
+#status{
+  font-size:24px;
+  margin-bottom:10px;
+  color:gold;
+}
 
 #content{
   display:grid;
@@ -38,26 +43,19 @@ body{
   padding:10px;
   border-radius:10px;
   font-size:20px;
-  word-break:break-word;
 }
 
-.gold{
-  color:gold;
-}
+.gold{color:gold;}
+.silver{color:silver;}
+.bronze{color:#cd7f32;}
+.normal{color:#ccc;}
 
-.silver{
-  color:silver;
+#rank{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  font-size:20px;
 }
-
-.bronze{
-  color:#cd7f32;
-}
-
-.normal{
-  color:#ccc;
-}
-
-/* POPUP */
 
 #popup{
   position:fixed;
@@ -66,106 +64,12 @@ body{
   transform:translate(-50%,-50%);
   background:white;
   color:green;
-  padding:40px;
-  font-size:30px;
-  display:none;
+  padding:30px;
   border-radius:10px;
+  display:none;
+  font-size:26px;
   z-index:999;
 }
-
-/* PLAYER RANK */
-
-#rank{
-  position:fixed;
-  bottom:10px;
-  left:10px;
-  font-size:20px;
-  z-index:1000;
-}
-
-/* WINNER OVERLAY */
-
-#winnerOverlay{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.70);
-  display:none;
-  overflow-y:auto;
-  z-index:5000;
-  padding-top:100px;
-  box-sizing:border-box;
-}
-
-#winnerTitle{
-  text-align:center;
-  font-size:60px;
-  font-weight:bold;
-  color:white;
-  opacity:0.18;
-}
-
-#winnerDate{
-  text-align:center;
-  font-size:22px;
-  color:white;
-  margin-top:10px;
-  margin-bottom:40px;
-  opacity:0.18;
-}
-
-#winnerBoard{
-  width:95%;
-  margin:auto;
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  padding-bottom:40px;
-}
-
-.winnerCard{
-  background:#002b55;
-  padding:10px;
-  border-radius:10px;
-  font-size:20px;
-}
-
-/* MOBILE */
-
-@media(max-width:900px){
-
-  #content,
-  #winnerBoard{
-    grid-template-columns:repeat(2,1fr);
-  }
-
-}
-
-@media(max-width:600px){
-
-  #date,
-  #timer{
-    font-size:28px;
-  }
-
-  #content,
-  #winnerBoard{
-    grid-template-columns:1fr;
-  }
-
-  .card,
-  .winnerCard{
-    font-size:18px;
-  }
-
-  #winnerTitle{
-    font-size:45px;
-  }
-
-}
-
 </style>
 </head>
 
@@ -173,28 +77,15 @@ body{
 
 <div id="date"></div>
 <div id="timer"></div>
+<div id="status">LOADING...</div>
 
 <div id="content"></div>
 
 <div id="rank">
-  RANK: N/A
+RANK: N/A
 </div>
 
 <div id="popup"></div>
-
-<!-- WINNER OVERLAY -->
-
-<div id="winnerOverlay">
-
-  <div id="winnerTitle">
-    WINNERS
-  </div>
-
-  <div id="winnerDate"></div>
-
-  <div id="winnerBoard"></div>
-
-</div>
 
 <script type="module">
 
@@ -202,301 +93,574 @@ import { initializeApp }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 
 import {
-  getDatabase,
-  ref,
-  onValue,
-  set,
-  get
+getDatabase,
+ref,
+get,
+set,
+onValue
 }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 import {
-  getAuth,
-  onAuthStateChanged
+getAuth,
+onAuthStateChanged
 }
 from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-/* FIREBASE */
-
 const app = initializeApp({
-
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-
-  databaseURL:
-  "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
-
+ apiKey:"AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+ databaseURL:"https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
 });
 
 const db = getDatabase(app);
 const auth = getAuth(app);
 
+const content = document.getElementById("content");
+const rankEl = document.getElementById("rank");
+const timerEl = document.getElementById("timer");
+const dateEl = document.getElementById("date");
+const statusEl = document.getElementById("status");
+const popup = document.getElementById("popup");
+
 let currentUser = null;
 
-/* RESET LOCK */
-
-let resetLock = false;
-
-/* FREEZE SYSTEM */
-
-let frozen = false;
-
-/* 30 MINUTE START */
-
-let countdownStart = Date.now();
-
-/* AUTH */
+let freezeLock = false;
+let clearLock = false;
 
 onAuthStateChanged(auth,(u)=>{
 
-  if(!u){
+ if(!u){
+   location.href="index.html";
+   return;
+ }
 
-    location.href = "index.html";
-
-    return;
-  }
-
-  currentUser = u;
+ currentUser = u;
 
 });
 
-/* DATE + COUNTDOWN */
+/* ==========================
+   ROUND TIMES
+========================== */
 
-function updateTime(){
+const rounds = [
 
-  let now = new Date();
+ {start:8,end:8.5},
+ {start:9,end:9.5},
+ {start:10,end:10.5},
+ {start:11,end:11.5},
+ {start:12,end:12.5}
 
-  document.getElementById("date").innerText =
+];
 
-    now.toLocaleDateString() + " " +
+/* ==========================
+   DATE DISPLAY
+========================== */
 
-    now.toLocaleTimeString();
+function updateDate(){
 
-  /* STOP TIMER IF FROZEN */
+ const now = new Date();
 
-  if(frozen){
-
-    document.getElementById("timer").innerText =
-      "COMPETITION ENDED";
-
-    return;
-  }
-
-  /* 30 MINUTES */
-
-  let duration = 30 * 60 * 1000;
-
-  let diff = duration - (Date.now() - countdownStart);
-
-  /* FREEZE */
-
-  if(diff <= 0){
-
-    freezeLeaderboard();
-
-    return;
-  }
-
-  let m = Math.floor(diff / 1000 / 60);
-
-  let s = Math.floor((diff / 1000) % 60);
-
-  document.getElementById("timer").innerText =
-
-    `${m}M:${s}S`;
+ dateEl.innerText =
+ now.toLocaleDateString() +
+ " " +
+ now.toLocaleTimeString();
 
 }
 
-setInterval(updateTime,1000);
+setInterval(updateDate,1000);
 
-/* FREEZE LEADERBOARD */
+/* ==========================
+   FIND CURRENT STATE
+========================== */
 
-function freezeLeaderboard(){
+function getState(){
 
-  if(frozen) return;
+ const now = new Date();
 
-  frozen = true;
+ const h = now.getHours();
+ const m = now.getMinutes();
 
-  const overlay =
-    document.getElementById("winnerOverlay");
+ const current =
+ h + (m/60);
 
-  const board =
-    document.getElementById("winnerBoard");
+ if(current >= 8 && current < 8.5){
 
-  /* SHOW OVERLAY */
+   return {
+     mode:"active",
+     endsAt:new Date(
+       now.getFullYear(),
+       now.getMonth(),
+       now.getDate(),
+       8,
+       30,
+       0
+     )
+   };
 
-  overlay.style.display = "block";
+ }
 
-  /* DATE */
+ if(current >= 8.5 && current < 9){
 
-  document.getElementById("winnerDate").innerText =
+   return {
+     mode:"frozen",
+     opensAt:new Date(
+       now.getFullYear(),
+       now.getMonth(),
+       now.getDate(),
+       9,
+       0,
+       0
+     )
+   };
 
-    new Date().toLocaleString();
+ }
 
-  /* COPY LEADERBOARD */
+ if(current >= 9 && current < 9.5){
 
-  board.innerHTML = content.innerHTML;
+   return {
+     mode:"active",
+     endsAt:new Date(
+       now.getFullYear(),
+       now.getMonth(),
+       now.getDate(),
+       9,
+       30,
+       0
+     )
+   };
+
+ }
+
+ if(current >= 9.5 && current < 10){
+
+   return {
+     mode:"frozen",
+     opensAt:new Date(
+       now.getFullYear(),
+       now.getMonth(),
+       now.getDate(),
+       10,
+       0,
+       0
+     )
+   };
+
+ }
+
+ if(current >= 10 && current < 10.5){
+
+   return {
+     mode:"active",
+     endsAt:new Date(
+       now.getFullYear(),
+       now.getMonth(),
+       now.getDate(),
+       10,
+       30,
+       0
+     )
+   };
+
+ }
+
+ if(current >= 10.5 && current < 11){
+
+   return {
+     mode:"frozen",
+     opensAt:new Date(
+       now.getFullYear(),
+       now.getMonth(),
+       now.getDate(),
+       11,
+       0,
+       0
+     )
+   };
+
+ }
+
+ if(current >= 11 && current < 11.5){
+
+   return {
+     mode:"active",
+     endsAt:new Date(
+       now.getFullYear(),
+       now.getMonth(),
+       now.getDate(),
+       11,
+       30,
+       0
+     )
+   };
+
+ }
+
+ if(current >= 11.5 && current < 12){
+
+   return {
+     mode:"frozen",
+     opensAt:new Date(
+       now.getFullYear(),
+       now.getMonth(),
+       now.getDate(),
+       12,
+       0,
+       0
+     )
+   };
+
+ }
+
+ if(current >= 12 && current < 12.5){
+
+   return {
+     mode:"active",
+     endsAt:new Date(
+       now.getFullYear(),
+       now.getMonth(),
+       now.getDate(),
+       12,
+       30,
+       0
+     )
+   };
+
+ }
+
+ return {
+   mode:"night"
+ };
+
+}
+/* ==========================
+   COUNTDOWN DISPLAY
+========================== */
+
+function updateTimer(){
+
+ const state = getState();
+ const now = new Date();
+
+ if(state.mode === "active"){
+
+   const diff = state.endsAt - now;
+
+   const h = Math.floor(diff/1000/60/60);
+   const m = Math.floor((diff/1000/60)%60);
+   const s = Math.floor((diff/1000)%60);
+
+   statusEl.innerText = "ROUND ACTIVE";
+
+   timerEl.innerText =
+   String(h).padStart(2,"0")+":"+
+   String(m).padStart(2,"0")+":"+
+   String(s).padStart(2,"0");
+
+ }
+
+ else if(state.mode === "frozen"){
+
+   const diff = state.opensAt - now;
+
+   const h = Math.floor(diff/1000/60/60);
+   const m = Math.floor((diff/1000/60)%60);
+   const s = Math.floor((diff/1000)%60);
+
+   statusEl.innerText = "LEADERBOARD FROZEN";
+
+   timerEl.innerText =
+   String(h).padStart(2,"0")+":"+
+   String(m).padStart(2,"0")+":"+
+   String(s).padStart(2,"0");
+
+ }
+
+ else{
+
+   statusEl.innerText =
+   "NEXT ROUND OPENS AT 08:00";
+
+   timerEl.innerText = "--:--:--";
+
+ }
 
 }
 
+setInterval(updateTimer,1000);
 
-/* OPTIONAL POPUP RESET */
+/* ==========================
+   WINNER CAPTURE
+========================== */
 
-async function doReset(){
+async function captureWinner(){
 
-  if(resetLock) return;
+ const snap =
+ await get(ref(db,"leaderboard/current"));
 
-  resetLock = true;
+ const data = snap.val();
 
-  /* SAVE HISTORY */
+ if(!data) return;
 
-  const snap =
-    await get(ref(db,"leaderboard/current"));
+ let arr = [];
 
-  const data = snap.val();
+ for(let uid in data){
 
-  if(data){
+   arr.push({
+     uid,
+     name:data[uid].name || "",
+     surname:data[uid].surname || "",
+     score:data[uid].score || 0,
+     timestamp:data[uid].timestamp || Date.now()
+   });
 
-    await set(
+ }
 
-      ref(db,"leaderboard/adminHistory/" + Date.now()),
+ arr.sort((a,b)=>b.score-a.score);
 
-      data
+ if(arr.length===0) return;
 
-    );
+ const winner = arr[0];
 
-  }
+ const winnerKey = Date.now();
 
-  /* CLEAR CURRENT */
+ await set(
+   ref(db,"winners/"+winnerKey),
+   {
+     uid:winner.uid,
+     name:winner.name,
+     surname:winner.surname,
+     score:winner.score,
+     timestamp:winnerKey
+   }
+ );
 
-  await set(ref(db,"leaderboard/current"), null);
+ popup.innerText =
+ "WINNER SAVED";
 
-  /* RESET TIMER */
+ popup.style.display="block";
 
-  frozen = false;
-
-  countdownStart = Date.now();
-
-  /* HIDE WINNER SCREEN */
-
-  document.getElementById("winnerOverlay").style.display =
-    "none";
-
-  /* RESET POPUP */
-
-  document.getElementById("popup").innerText =
-    "RESET!";
-
-  document.getElementById("popup").style.display =
-    "block";
-
-  setTimeout(()=>{
-
-    document.getElementById("popup").style.display =
-      "none";
-
-    resetLock = false;
-
-  },2000);
+ setTimeout(()=>{
+   popup.style.display="none";
+ },2000);
 
 }
 
+/* ==========================
+   FREEZE / UNFREEZE
+========================== */
 
-/* LEADERBOARD */
+async function updateFreezeState(){
 
-const content =
-  document.getElementById("content");
+ const now = new Date();
 
-const rankEl =
-  document.getElementById("rank");
+ const h = now.getHours();
+ const m = now.getMinutes();
 
-/* LIVE LEADERBOARD */
+ const state = getState();
 
-onValue(ref(db,"leaderboard/current"), snap=>{
+ if(state.mode === "active"){
 
-  /* STOP LIVE CHANGES IF FROZEN */
+   await set(
+     ref(db,"leaderboard/status/frozen"),
+     false
+   );
 
-  if(frozen) return;
+ }
 
-  const data = snap.val() || {};
+ else{
 
-  let arr = [];
+   await set(
+     ref(db,"leaderboard/status/frozen"),
+     true
+   );
 
-  for(let uid in data){
+ }
 
-    arr.push({
+}
 
-      uid,
+setInterval(updateFreezeState,5000);
 
-      name:data[uid].name || "Player",
+/* ==========================
+   ROUND END CHECK
+========================== */
 
-      score:data[uid].score || 0,
+async function checkRoundEnd(){
 
-      time:data[uid].timestamp || Date.now()
+ const now = new Date();
 
-    });
+ const h = now.getHours();
+ const m = now.getMinutes();
 
-  }
+ const key = h + ":" + m;
 
-  /* SORT */
+ const lastSnap =
+ await get(ref(db,"leaderboard/lastWinner"));
 
-  arr.sort((a,b)=>b.score-a.score);
+ const lastWinner = lastSnap.val();
 
-  content.innerHTML = "";
+ const captureTimes = [
+   "8:30",
+   "9:30",
+   "10:30",
+   "11:30",
+   "12:30"
+ ];
 
-  /* TOP 75 */
+ if(
+   captureTimes.includes(key)
+   &&
+   lastWinner !== key
+ ){
 
-  arr.slice(0,75).forEach((p,i)=>{
+   await captureWinner();
 
-    let cls = "normal";
+   await set(
+     ref(db,"leaderboard/lastWinner"),
+     key
+   );
 
-    if(i===0) cls = "gold";
+ }
 
-    if(i===1) cls = "silver";
+}
 
-    if(i===2) cls = "bronze";
+setInterval(checkRoundEnd,1000);
 
-    let date =
-      new Date(p.time).toLocaleString();
+/* ==========================
+   CLEAR BOARD AT :55
+========================== */
 
-    let div =
-      document.createElement("div");
+async function checkClear(){
 
-    div.className =
-      "card " + cls;
+ const now = new Date();
 
-    div.innerHTML = `
+ const h = now.getHours();
+ const m = now.getMinutes();
 
-      <b>${i+1}. ${p.name}</b><br>
+ const key = h + ":" + m;
 
-      ${p.score}<br>
+ const clearTimes = [
+   "8:55",
+   "9:55",
+   "10:55",
+   "11:55",
+   "7:55"
+ ];
 
-      <small>${date}</small>
+ const lastSnap =
+ await get(ref(db,"leaderboard/lastClear"));
 
-    `;
+ const lastClear = lastSnap.val();
 
-    content.appendChild(div);
+ if(
+   clearTimes.includes(key)
+   &&
+   lastClear !== key
+ ){
 
-    /* PLAYER RANK */
+   await set(
+     ref(db,"leaderboard/current"),
+     null
+   );
 
-    if(currentUser &&
-       currentUser.uid === p.uid){
+   await set(
+     ref(db,"leaderboard/lastClear"),
+     key
+   );
 
-      rankEl.innerText =
-        "RANK: " + (i+1);
+   popup.innerText =
+   "LEADERBOARD CLEARED";
 
-    }
+   popup.style.display="block";
 
-  });
+   setTimeout(()=>{
+     popup.style.display="none";
+   },2000);
 
-  /* PLAYER NOT FOUND */
+ }
 
-  if(!arr.find(p=>p.uid===currentUser?.uid)){
+}
 
-    rankEl.innerText = "RANK: N/A";
+setInterval(checkClear,1000);
 
-  }
+/* ==========================
+   LEADERBOARD DISPLAY
+========================== */
+
+onValue(
+ ref(db,"leaderboard/current"),
+ snap=>{
+
+ const data = snap.val() || {};
+
+ let arr=[];
+
+ for(let uid in data){
+
+   arr.push({
+     uid,
+     name:data[uid].name || "Player",
+     surname:data[uid].surname || "",
+     score:data[uid].score || 0,
+     time:data[uid].timestamp || 0
+   });
+
+ }
+
+ arr.sort((a,b)=>b.score-a.score);
+
+ content.innerHTML="";
+
+ arr.slice(0,75).forEach((p,i)=>{
+
+   let cls="normal";
+
+   if(i===0) cls="gold";
+   if(i===1) cls="silver";
+   if(i===2) cls="bronze";
+
+   const date =
+   new Date(p.time)
+   .toLocaleString();
+
+   const div =
+   document.createElement("div");
+
+   div.className =
+   "card "+cls;
+
+   div.innerHTML = `
+   <b>${i+1}. ${p.name}</b><br>
+   ${p.score}<br>
+   <small>${date}</small>
+   `;
+
+   content.appendChild(div);
+
+   if(
+     currentUser &&
+     currentUser.uid === p.uid
+   ){
+     rankEl.innerText =
+     "RANK: "+(i+1);
+   }
+
+ });
+
+ if(
+   !arr.find(
+     p=>p.uid===currentUser?.uid
+   )
+ ){
+   rankEl.innerText =
+   "RANK: N/A";
+ }
 
 });
+
+/* START */
+
+updateDate();
+updateTimer();
 
 </script>
 
