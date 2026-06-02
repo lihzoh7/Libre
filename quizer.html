@@ -12,9 +12,41 @@
   #display-box { width: 100%; max-width: 500px; height: 300px; background: #000; border-radius: 8px; display: none; justify-content: center; align-items: center; overflow: hidden; position: relative; }
   #display-box img, #display-box video { width: 100%; height: 100%; object-fit: contain; }
   #audio-icon { font-size: 80px; color: white; }
-  #question-text { font-size: 22px; font-weight: bold; margin-bottom: 15px; text-align: center; min-height: 30px; }
+  #question-text { font-size: 22px; font-weight: bold; margin-bottom: 15px; text-align: center; min-height: 30px; color: #001f3f; }
   #answer-input { padding: 12px; width: 80%; max-width: 400px; border-radius: 4px; border: 2px solid #333; font-size: 16px; margin-top: 15px; text-align: center; display: none; }
   #replay-btn { position: absolute; bottom: 10px; right: 10px; background: red; color: white; border: none; padding: 5px 10px; font-weight: bold; cursor: pointer; display: none; border-radius: 4px; z-index: 10; }
+
+  /* DEATH POPUP STYLES */
+  #deathPopup {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+  }
+  .popup-box {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    text-align: center;
+    width: 300px;
+    border: 3px solid red;
+  }
+  .popup-box h2 { margin-top: 0; color: red; font-size: 28px; }
+  .popup-box p { font-size: 18px; font-weight: bold; margin-bottom: 25px; }
+  .popup-buttons { display: flex; justify-content: space-around; gap: 10px; }
+  .popup-btn {
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .continue { background-color: green; color: white; }
+  .exit { background-color: #555; color: white; }
 </style>
 </head>
 <body>
@@ -38,6 +70,17 @@
   <input type="text" id="answer-input" placeholder="Type your answer here...">
 </div>
 
+<div id="deathPopup">
+  <div class="popup-box">
+    <h2>YOU DIED!</h2>
+    <p>Remaining Lives: <span id="popup-lives">0</span></p>
+    <div class="popup-buttons">
+      <button class="popup-btn continue" id="continueBtn">CONTINUE</button>
+      <button class="popup-btn exit" id="exitBtn">EXIT</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
   import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -55,7 +98,7 @@
   const db = getDatabase(app);
   const auth = getAuth(app);
 
-  let uid, lives, score = 0, timerInterval, countdown = 30;
+  let uid, lives = 0, score = 0, timerInterval, countdown = 30;
   let pool = [], currentItem = null, currentQuestionIdx = -1;
   let activeAudio = null;
 
@@ -69,7 +112,7 @@
 
   document.getElementById('start-btn').onclick = async function() {
     this.style.display = 'none';
-    lives--; // deduct one life when the game starts
+    lives--; // Deduct life when starting game broadcast
     updateLivesDisplay();
     await saveRemainingLivesToWallet();
     
@@ -95,16 +138,21 @@
   async function nextRound() {
     clearInterval(timerInterval);
     if(activeAudio) { activeAudio.pause(); activeAudio = null; }
+    
     document.getElementById('game-img').style.display = 'none';
     document.getElementById('game-video').style.display = 'none';
     document.getElementById('audio-icon').style.display = 'none';
     document.getElementById('replay-btn').style.display = 'none';
     document.getElementById('answer-input').value = '';
+    document.getElementById('question-text').innerText = '';
+    
+    currentItem = null;
+    currentQuestionIdx = -1;
 
-    if(lives <= 0) { endGame(); return; }
-    if(pool.length === 0) { alert("No challenges loaded!"); return; }
+    if(lives < 0) { endGame(); return; }
+    if(pool.length === 0) { alert("No challenges uploaded yet!"); return; }
 
-    // Weighted Probability Roll Engine
+    // Broadcaster Odds Calculation System (35% Audio, 35% Video, 30% Image)
     let roll = Math.random() * 100;
     let preferredType = 'image';
     if(roll < 35) preferredType = 'audio';
@@ -113,16 +161,15 @@
     let typedPool = pool.filter(i => i.type === preferredType);
     if(typedPool.length === 0) typedPool = pool; 
     
-    // Shuffling items randomly
     typedPool.sort(() => Math.random() - 0.5);
 
-    // Filter questions that haven't been shown yet
+    // Filter historical item matches out completely
     for(let item of typedPool){
       let historySnap = await get(ref(db, `history/${uid}/${item.id}`));
       let history = historySnap.val() || {};
       
-      for(let i=0; i<10; i++){
-        if(item.questions[i] && !history[i]){
+      for(let i = 0; i < 10; i++){
+        if(item.questions && item.questions[i] && item.questions[i].trim() !== "" && !history[i]){
           currentItem = item;
           currentQuestionIdx = i;
           break;
@@ -131,13 +178,29 @@
       if(currentItem) break;
     }
 
+    // Fallback search parameters if target randomized selection hits empty sets
     if(!currentItem) {
-      alert("You have completed all available questions!");
+      for(let item of pool){
+        let historySnap = await get(ref(db, `history/${uid}/${item.id}`));
+        let history = historySnap.val() || {};
+        for(let i=0; i<10; i++){
+          if(item.questions && item.questions[i] && item.questions[i].trim() !== "" && !history[i]){
+            currentItem = item;
+            currentQuestionIdx = i;
+            break;
+          }
+        }
+        if(currentItem) break;
+      }
+    }
+
+    if(!currentItem) {
+      alert("Amazing! You have cleared all available questions in existence.");
       endGame();
       return;
     }
 
-    // Render step
+    // Active screen interface assignments
     document.getElementById('question-text').innerText = currentItem.questions[currentQuestionIdx];
     
     if(currentItem.type === 'image'){
@@ -148,12 +211,14 @@
       const vid = document.getElementById('game-video');
       vid.src = currentItem.data;
       vid.style.display = 'block';
-      vid.play();
+      vid.muted = false;
+      vid.currentTime = 0;
+      vid.play().catch(e => console.log("Playback error: ", e));
       document.getElementById('replay-btn').style.display = 'block';
     } else if(currentItem.type === 'audio'){
       document.getElementById('audio-icon').style.display = 'block';
       activeAudio = new Audio(currentItem.data);
-      activeAudio.play();
+      activeAudio.play().catch(e => console.log("Playback error: ", e));
       document.getElementById('replay-btn').style.display = 'block';
     }
 
@@ -168,7 +233,7 @@
       document.getElementById('timer').innerText = countdown;
       if(countdown <= 0) {
         clearInterval(timerInterval);
-        handleWrongAnswer();
+        handleWrongAnswer(); // Deducts life when time completely expires
       }
     }, 1000);
   }
@@ -186,41 +251,58 @@
   };
 
   document.getElementById('answer-input').oninput = async function() {
-    let correctAns = currentItem.answers[currentQuestionIdx];
-    if(this.value === correctAns) {
+    if(!currentItem) return;
+    let correctAns = currentItem.answers[currentQuestionIdx].trim();
+    let playerAns = this.value.trim();
+
+    if(playerAns === correctAns) {
       clearInterval(timerInterval);
-      score += countdown; // Award remainder of the countdown as points
+      score += countdown; 
       document.getElementById('score').innerText = score;
       
-      // Save question history to prevent it from repeating
       await set(ref(db, `history/${uid}/${currentItem.id}/${currentQuestionIdx}`), true);
       
-      currentItem = null; 
       nextRound();
     }
   };
 
   async function handleWrongAnswer() {
+    clearInterval(timerInterval);
+    if(activeAudio) activeAudio.pause();
+    const vid = document.getElementById('game-video');
+    vid.pause();
+
     lives--;
     updateLivesDisplay();
     await saveRemainingLivesToWallet();
+
     if(lives <= 0) {
       endGame();
     } else {
-      nextRound();
+      // Trigger death menu layout
+      document.getElementById('popup-lives').innerText = lives;
+      document.getElementById('deathPopup').style.display = 'flex';
     }
   }
 
+  document.getElementById('continueBtn').onclick = function() {
+    document.getElementById('deathPopup').style.display = 'none';
+    nextRound();
+  };
+
+  document.getElementById('exitBtn').onclick = function() {
+    location.href = "muustandigamin.html";
+  };
+
   async function saveRemainingLivesToWallet() {
-    let walletSnap = await get(ref(db, "wallet/" + uid));
-    let walletData = walletSnap.val() || {};
-    await set(ref(db, "wallet/" + uid + "/lives"), (walletData.lives || 0));
+    if(!uid) return;
+    await set(ref(db, "wallet/" + uid + "/lives"), lives);
     localStorage.setItem("selectedLives", lives);
   }
 
   function updateLivesDisplay() {
     let out = '';
-    for(let i=0; i<lives; i++) out += '❤️ ';
+    for(let i=0; i<lives; i++) out += '❤️';
     document.getElementById('lives-display').innerText = "Lives: " + (out || "None");
   }
 
