@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Select Lives</title>
+
+<style>
+body{
+  margin:0;
+  background:#0a0a0a;
+  font-family:Arial;
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.box{
+  background:#111;
+  padding:30px;
+  border-radius:16px;
+  text-align:center;
+  width:300px;
+  border:2px solid #0074D9;
+}
+
+button{
+  padding:10px;
+  margin:5px;
+  font-size:18px;
+  border:none;
+  border-radius:8px;
+  background:#0074D9;
+  color:white;
+  cursor:pointer;
+}
+
+.count{
+  font-size:24px;
+  margin:10px;
+}
+
+/* 🔥 BREAK POPUP */
+#breakPopup{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.85);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+}
+
+.popup-box{
+  background:#111;
+  padding:30px;
+  border-radius:16px;
+  text-align:center;
+  border:2px solid red;
+}
+
+.popup-box h2{
+  margin-bottom:15px;
+  color:red;
+}
+
+.food{
+  font-size:60px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h2>Select Lives ❤️</h2>
+
+  <div>Wallet: <span id="wallet">0</span></div>
+
+  <div>
+    <button onclick="dec()">➖</button>
+    <span id="count" class="count">0</span>
+    <button onclick="inc()">➕</button>
+  </div>
+
+  <button onclick="enter()">ENTER GAME</button>
+</div>
+
+<!-- 🔥 BREAK POPUP -->
+<div id="breakPopup">
+  <div class="popup-box">
+    <h2>ON THE BREAK</h2>
+    <div class="food">🍲🍱🥗</div>
+  </div>
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.appspot.com",
+  messagingSenderId: "475447495901",
+  appId: "1:475447495901:web:9189276a162a3680afdf34"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+let user;
+let walletLives = 0;
+let count = 0;
+
+/* 🔐 AUTH */
+onAuthStateChanged(auth, async (u)=>{
+  if(!u){
+    location.href="index.html";
+    return;
+  }
+
+  user = u;
+
+  const snap = await get(ref(db,"wallet/"+user.uid));
+  const data = snap.val() || {};
+
+  walletLives = data.lives || 0;
+
+  document.getElementById("wallet").innerText = walletLives;
+});
+
+/* ➕➖ CONTROLS */
+window.inc = ()=>{
+  if(count < walletLives && count < 5){
+    count++;
+    document.getElementById("count").innerText = count;
+  }
+};
+
+window.dec = ()=>{
+  if(count > 0){
+    count--;
+    document.getElementById("count").innerText = count;
+  }
+};
+
+/* ⏰ BREAK CHECK */
+function isBreakTime(){
+  let now = new Date();
+  let h = now.getHours();
+  let m = now.getMinutes();
+
+  // 17:30 → 18:00
+  if(h === 17 && m >= 30) return true;
+  if(h === 18 && m === 0) return true;
+
+  // 05:30 → 06:00
+  if(h === 5 && m >= 30) return true;
+  if(h === 6 && m === 0) return true;
+
+  return false;
+}
+
+/* 🚀 ENTER GAME */
+window.enter = async ()=>{
+
+  // 🔥 BLOCK DURING BREAK
+  if(isBreakTime()){
+    document.getElementById("breakPopup").style.display = "flex";
+    return;
+  }
+
+  if(count <= 0){
+    alert("SELECT LIVES");
+    return;
+  }
+
+  if(count > walletLives){
+    alert("NOT ENOUGH LIVES");
+    return;
+  }
+
+  await set(ref(db,"wallet/"+user.uid+"/lives"), walletLives - count);
+
+  localStorage.setItem("selectedLives", count);
+
+  location.href = "lifequizzer.html";
+};
+
+/* 🔄 AUTO BREAK DETECT */
+setInterval(()=>{
+  if(isBreakTime()){
+    document.getElementById("breakPopup").style.display = "flex";
+  } else {
+    document.getElementById("breakPopup").style.display = "none";
+  }
+},1000);
+
+</script>
+
+</body>
+  </html>
