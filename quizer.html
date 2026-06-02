@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quizer Game</title>
+<style>
+  body { margin: 0; font-family: Arial, sans-serif; background-color: #87CEEB; color: #333; height: 100vh; display: flex; flex-direction: column; }
+  header { display: flex; justify-content: space-between; padding: 15px; font-weight: bold; font-size: 20px; background: rgba(255,255,255,0.2); }
+  #game-zone { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; position: relative; }
+  #start-btn { font-size: 80px; cursor: pointer; background: none; border: none; color: #004d00; }
+  #display-box { width: 100%; max-width: 500px; height: 300px; background: #000; border-radius: 8px; display: none; justify-content: center; align-items: center; overflow: hidden; position: relative; }
+  #display-box img, #display-box video { width: 100%; height: 100%; object-fit: contain; }
+  #audio-icon { font-size: 80px; color: white; }
+  #question-text { font-size: 22px; font-weight: bold; margin-bottom: 15px; text-align: center; min-height: 30px; }
+  #answer-input { padding: 12px; width: 80%; max-width: 400px; border-radius: 4px; border: 2px solid #333; font-size: 16px; margin-top: 15px; text-align: center; display: none; }
+  #replay-btn { position: absolute; bottom: 10px; right: 10px; background: red; color: white; border: none; padding: 5px 10px; font-weight: bold; cursor: pointer; display: none; border-radius: 4px; z-index: 10; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>Score: <span id="score">0</span></div>
+  <div>Timer: <span id="timer">30</span></div>
+  <div id="lives-display">Lives: </div>
+</header>
+
+<div id="game-zone">
+  <button id="start-btn">▶</button>
+  
+  <div id="question-text"></div>
+  <div id="display-box">
+    <button id="replay-btn">replay</button>
+    <img id="game-img" style="display:none;">
+    <video id="game-video" style="display:none;"></video>
+    <div id="audio-icon" style="display:none;">🔊</div>
+  </div>
+  <input type="text" id="answer-input" placeholder="Type your answer here...">
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+    authDomain: "tose-ccf8f.firebaseapp.com",
+    databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "tose-ccf8f",
+    storageBucket: "tose-ccf8f.appspot.com",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
+
+  let uid, lives, score = 0, timerInterval, countdown = 30;
+  let pool = [], currentItem = null, currentQuestionIdx = -1;
+  let activeAudio = null;
+
+  onAuthStateChanged(auth, async (user) => {
+    if(!user) { location.href = "login.html"; return; }
+    uid = user.uid;
+    lives = parseInt(localStorage.getItem("selectedLives")) || 0;
+    updateLivesDisplay();
+    if(lives <= 0) { alert("No lives chosen!"); location.href = "lifequizzer.html"; }
+  });
+
+  document.getElementById('start-btn').onclick = async function() {
+    this.style.display = 'none';
+    lives--; // deduct one life when the game starts
+    updateLivesDisplay();
+    await saveRemainingLivesToWallet();
+    
+    document.getElementById('display-box').style.display = 'flex';
+    document.getElementById('answer-input').style.display = 'block';
+    
+    await loadMediaPool();
+    nextRound();
+  };
+
+  async function loadMediaPool() {
+    const types = ['audio', 'video', 'image'];
+    pool = [];
+    for(let t of types){
+      let snap = await get(ref(db, "quizMedia/" + t));
+      let val = snap.val() || {};
+      for(let key in val){
+        pool.push({id: key, ...val[key]});
+      }
+    }
+  }
+
+  async function nextRound() {
+    clearInterval(timerInterval);
+    if(activeAudio) { activeAudio.pause(); activeAudio = null; }
+    document.getElementById('game-img').style.display = 'none';
+    document.getElementById('game-video').style.display = 'none';
+    document.getElementById('audio-icon').style.display = 'none';
+    document.getElementById('replay-btn').style.display = 'none';
+    document.getElementById('answer-input').value = '';
+
+    if(lives <= 0) { endGame(); return; }
+    if(pool.length === 0) { alert("No challenges loaded!"); return; }
+
+    // Weighted Probability Roll Engine
+    let roll = Math.random() * 100;
+    let preferredType = 'image';
+    if(roll < 35) preferredType = 'audio';
+    else if(roll < 70) preferredType = 'video';
+
+    let typedPool = pool.filter(i => i.type === preferredType);
+    if(typedPool.length === 0) typedPool = pool; 
+    
+    // Shuffling items randomly
+    typedPool.sort(() => Math.random() - 0.5);
+
+    // Filter questions that haven't been shown yet
+    for(let item of typedPool){
+      let historySnap = await get(ref(db, `history/${uid}/${item.id}`));
+      let history = historySnap.val() || {};
+      
+      for(let i=0; i<10; i++){
+        if(item.questions[i] && !history[i]){
+          currentItem = item;
+          currentQuestionIdx = i;
+          break;
+        }
+      }
+      if(currentItem) break;
+    }
+
+    if(!currentItem) {
+      alert("You have completed all available questions!");
+      endGame();
+      return;
+    }
+
+    // Render step
+    document.getElementById('question-text').innerText = currentItem.questions[currentQuestionIdx];
+    
+    if(currentItem.type === 'image'){
+      const img = document.getElementById('game-img');
+      img.src = currentItem.data;
+      img.style.display = 'block';
+    } else if(currentItem.type === 'video'){
+      const vid = document.getElementById('game-video');
+      vid.src = currentItem.data;
+      vid.style.display = 'block';
+      vid.play();
+      document.getElementById('replay-btn').style.display = 'block';
+    } else if(currentItem.type === 'audio'){
+      document.getElementById('audio-icon').style.display = 'block';
+      activeAudio = new Audio(currentItem.data);
+      activeAudio.play();
+      document.getElementById('replay-btn').style.display = 'block';
+    }
+
+    startTimer();
+  }
+
+  function startTimer() {
+    countdown = 30;
+    document.getElementById('timer').innerText = countdown;
+    timerInterval = setInterval(() => {
+      countdown--;
+      document.getElementById('timer').innerText = countdown;
+      if(countdown <= 0) {
+        clearInterval(timerInterval);
+        handleWrongAnswer();
+      }
+    }, 1000);
+  }
+
+  document.getElementById('replay-btn').onclick = function() {
+    if(countdown <= 0) return;
+    if(currentItem.type === 'video') {
+      const vid = document.getElementById('game-video');
+      vid.currentTime = 0;
+      vid.play();
+    } else if(currentItem.type === 'audio' && activeAudio) {
+      activeAudio.currentTime = 0;
+      activeAudio.play();
+    }
+  };
+
+  document.getElementById('answer-input').oninput = async function() {
+    let correctAns = currentItem.answers[currentQuestionIdx];
+    if(this.value === correctAns) {
+      clearInterval(timerInterval);
+      score += countdown; // Award remainder of the countdown as points
+      document.getElementById('score').innerText = score;
+      
+      // Save question history to prevent it from repeating
+      await set(ref(db, `history/${uid}/${currentItem.id}/${currentQuestionIdx}`), true);
+      
+      currentItem = null; 
+      nextRound();
+    }
+  };
+
+  async function handleWrongAnswer() {
+    lives--;
+    updateLivesDisplay();
+    await saveRemainingLivesToWallet();
+    if(lives <= 0) {
+      endGame();
+    } else {
+      nextRound();
+    }
+  }
+
+  async function saveRemainingLivesToWallet() {
+    let walletSnap = await get(ref(db, "wallet/" + uid));
+    let walletData = walletSnap.val() || {};
+    await set(ref(db, "wallet/" + uid + "/lives"), (walletData.lives || 0));
+    localStorage.setItem("selectedLives", lives);
+  }
+
+  function updateLivesDisplay() {
+    let out = '';
+    for(let i=0; i<lives; i++) out += '❤️ ';
+    document.getElementById('lives-display').innerText = "Lives: " + (out || "None");
+  }
+
+  function endGame() {
+    clearInterval(timerInterval);
+    if(activeAudio) activeAudio.pause();
+    alert("GAME OVER!\nYour Final Score: " + score);
+    location.href = "muustandigamin.html";
+  }
+</script>
+</body>
+</html>
