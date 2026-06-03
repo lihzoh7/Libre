@@ -156,13 +156,12 @@ const auth = getAuth(app);
 
 let user;
 
-/* SAVE SCORE */
+/* ISOLATED SAVE SCORE FOR RING MASTER */
 async function saveScore(finalScore){
-
   const uid = user.uid;
   const time = Date.now();
 
-  // 🔥 GET REAL USER NAME FROM DATABASE
+  // Get user profile details
   const snap = await get(ref(db, "users/" + uid));
   const userData = snap.val();
 
@@ -170,27 +169,28 @@ async function saveScore(finalScore){
     ? userData.name + " " + (userData.surname || "")
     : "Player";
 
-  // 🔥 SAVE ONLY IF HIGHER SCORE
-  const currentSnap = await get(ref(db, "leaderboard/current/" + uid));
+  // ISOLATED SEARCH LAYER: leaderboard/ringmaster
+  const currentSnap = await get(ref(db, "leaderboard/ringmaster/" + uid));
   const currentData = currentSnap.val();
 
   if(currentData && currentData.score >= finalScore){
-    return; // ❌ don't overwrite if lower score
+    return; // Do not overwrite if existing score is higher
   }
 
-  // ✅ SAVE NEW HIGH SCORE
-  await set(ref(db, "leaderboard/current/" + uid), {
+  // Save new isolated high score
+  await set(ref(db, "leaderboard/ringmaster/" + uid), {
     score: finalScore,
     name: realName,
     timestamp: time
   });
 
-  // OPTIONAL HISTORY
-  await push(ref(db,"highScores/"+uid),{
+  // Save score history logs
+  await push(ref(db, "highScores/ringmaster/" + uid), {
     score: finalScore,
     timestamp: time
   });
-  }
+}
+  
 /* OVERRIDE YOUR END GAME */
 
 /* GAME VARIABLES */
