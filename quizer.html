@@ -414,13 +414,37 @@
     document.getElementById('lives-display').innerText = "Lives: " + (out || "None");
   }
 
-  function showEndGameModal() {
-    clearInterval(timerInterval);
-    if(activeAudio) activeAudio.pause();
-    document.getElementById('lifePopup').style.display = 'none';
-    document.getElementById('finalScoreLabel').innerText = score;
-    document.getElementById('gameOverPopup').style.display = 'flex';
+  async function showEndGameModal() {
+  clearInterval(timerInterval);
+  if(activeAudio) activeAudio.pause();
+  document.getElementById('lifePopup').style.display = 'none';
+  document.getElementById('finalScoreLabel').innerText = score;
+  document.getElementById('gameOverPopup').style.display = 'flex';
+
+  // --- SUBMIT HIGHSCORE TO ISOLATED QUIZER NODE ---
+  if (uid) {
+    // Fetch profile details
+    const userProfileSnap = await get(ref(db, "users/" + uid));
+    const userProfile = userProfileSnap.val();
+    const realName = userProfile?.name 
+      ? userProfile.name + " " + (userProfile.surname || "")
+      : "Player";
+
+    // Verify against existing isolated values
+    const currentSnap = await get(ref(db, "leaderboard/quizer/" + uid));
+    const currentData = currentSnap.val();
+
+    // High score verification rule
+    if(!currentData || score > (currentData.score || 0)) {
+      await set(ref(db, "leaderboard/quizer/" + uid), {
+        name: realName,
+        score: score,
+        timestamp: Date.now()
+      });
+    }
   }
+}
+
 </script>
 </body>
 </html>
