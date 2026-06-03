@@ -77,7 +77,6 @@ body {
   border-radius: 0 0 12px 12px;
 }
 
-/* Red line drawing configuration when crossed out via admin reset */
 .card.line-drawn::after {
   background: #ff0000 !important;
   box-shadow: 0 0 8px #ff0000;
@@ -155,53 +154,37 @@ onAuthStateChanged(auth, (u) => {
 
 function updateTimeAndSchedule() {
   let now = new Date();
-  
-  // Format local live date-time string
   document.getElementById("date").innerText = now.toLocaleDateString() + " " + now.toLocaleTimeString();
 
   let hrs = now.getHours();
-  let mins = now.getMinutes();
-  let secs = now.getSeconds();
-  
   let timerEl = document.getElementById("timer");
   let statusEl = document.getElementById("status-msg");
 
-  // Determine standard execution rules according to requested timestamps
-  // Schedule Phase A: Morning active segment [07:00 to 13:00)
   if (hrs >= 7 && hrs < 13) {
     isFrozen = false;
     statusEl.style.display = "none";
     timerEl.style.display = "block";
-    
-    let target = new Date(now);
-    target.setHours(13, 0, 0, 0);
+    let target = new Date(now).setHours(13, 0, 0, 0);
     let diff = target - now;
-    
     let h = Math.floor(diff / 1000 / 60 / 60);
     let m = Math.floor((diff / 1000 / 60) % 60);
     timerEl.innerText = `${h}H:${m}M LEFT`;
   } 
-  // Schedule Phase B: First freeze segment [13:00 to 14:00)
   else if (hrs >= 13 && hrs < 14) {
     isFrozen = true;
     timerEl.style.display = "none";
     statusEl.style.display = "block";
   } 
-  // Schedule Phase C: Afternoon active segment [14:00 to 20:00)
   else if (hrs >= 14 && hrs < 20) {
     isFrozen = false;
     statusEl.style.display = "none";
     timerEl.style.display = "block";
-    
-    let target = new Date(now);
-    target.setHours(20, 0, 0, 0);
+    let target = new Date(now).setHours(20, 0, 0, 0);
     let diff = target - now;
-    
     let h = Math.floor(diff / 1000 / 60 / 60);
     let m = Math.floor((diff / 1000 / 60) % 60);
     timerEl.innerText = `${h}H:${m}M LEFT`;
   } 
-  // Schedule Phase D: Night freeze segment [20:00 to 07:00 next day)
   else {
     isFrozen = true;
     timerEl.style.display = "none";
@@ -211,24 +194,20 @@ function updateTimeAndSchedule() {
 setInterval(updateTimeAndSchedule, 1000);
 updateTimeAndSchedule();
 
-// Listen for admin driven layout strikes / visual line draws
-onValue(ref(db, "leaderboard/adminLineDrawn"), (snap) => {
+// Listen for admin driven layout strikes - separated path
+onValue(ref(db, "leaderboard/quizerAdminLineDrawn"), (snap) => {
   const lineDrawn = snap.val() || false;
-  const cards = document.querySelectorAll('.card');
-  cards.forEach(card => {
-    if (lineDrawn) {
-      card.classList.add('line-drawn');
-    } else {
-      card.classList.remove('line-drawn');
-    }
+  document.querySelectorAll('.card').forEach(card => {
+    if (lineDrawn) card.classList.add('line-drawn');
+    else card.classList.remove('line-drawn');
   });
 });
 
-// Real-time scores fetching node containing core dynamic filter logic
 const content = document.getElementById("content");
 const rankEl = document.getElementById("rank");
 
-onValue(ref(db, "leaderboard/current"), snap => {
+// ISOLATED PATH: leaderboard/quizer
+onValue(ref(db, "leaderboard/quizer"), snap => {
   const data = snap.val() || {};
   let arr = [];
 
@@ -241,7 +220,6 @@ onValue(ref(db, "leaderboard/current"), snap => {
     });
   }
 
-  // Sort Descending
   arr.sort((a, b) => b.score - a.score);
   content.innerHTML = "";
 
@@ -254,13 +232,7 @@ onValue(ref(db, "leaderboard/current"), snap => {
     let date = new Date(p.time).toLocaleString();
     let div = document.createElement("div");
     div.className = "card " + cls;
-
-    div.innerHTML = `
-      <b>${i + 1}. ${p.name}</b><br>
-      Score: ${p.score}<br>
-      <small>${date}</small>
-    `;
-
+    div.innerHTML = `<b>${i + 1}. ${p.name}</b><br>Score: ${p.score}<br><small>${date}</small>`;
     content.appendChild(div);
 
     if (currentUser && currentUser.uid === p.uid) {
@@ -272,35 +244,6 @@ onValue(ref(db, "leaderboard/current"), snap => {
     rankEl.innerText = "RANK: N/A";
   }
 });
-
-// Inject dynamic interception rules inside the Game score updates pipeline
-// This intercepts any score submissions and filters out low updates
-window.submitScoreSecurely = async function(playerUid, playerName, potentialNewScore) {
-  if (isFrozen) {
-    console.log("Database is frozen. Score rejected.");
-    return;
-  }
-  
-  const recordRef = ref(db, `leaderboard/current/${playerUid}`);
-  const existingSnap = await get(recordRef);
-  const existingData = existingSnap.val();
-  
-  if (existingData && existingData.score !== undefined) {
-    if (potentialNewScore > existingData.score) {
-      await set(recordRef, {
-        name: playerName,
-        score: potentialNewScore,
-        timestamp: Date.now()
-      });
-    }
-  } else {
-    await set(recordRef, {
-      name: playerName,
-      score: potentialNewScore,
-      timestamp: Date.now()
-    });
-  }
-};
 </script>
 </body>
 </html>
