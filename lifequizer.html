@@ -42,14 +42,14 @@ button{
   margin:10px;
 }
 
-/* 🔥 BREAK POPUP */
+/* 🔥 LEADERBOARD FREEZE BREAK POPUP */
 #breakPopup{
   position:fixed;
   top:0;
   left:0;
   width:100%;
   height:100%;
-  background:rgba(0,0,0,0.85);
+  background:rgba(0,0,0,0.9);
   display:none;
   justify-content:center;
   align-items:center;
@@ -58,15 +58,24 @@ button{
 
 .popup-box{
   background:#111;
-  padding:30px;
+  padding:40px;
   border-radius:16px;
   text-align:center;
   border:2px solid red;
+  max-width: 80%;
 }
 
 .popup-box h2{
-  margin-bottom:15px;
-  color:red;
+  margin: 0 0 10px 0;
+  color: red;
+  font-size: 32px;
+  letter-spacing: 1px;
+}
+
+.popup-box p {
+  color: #ccc;
+  font-size: 16px;
+  margin-bottom: 20px;
 }
 
 .food{
@@ -95,6 +104,7 @@ button{
 <div id="breakPopup">
   <div class="popup-box">
     <h2>ON THE BREAK</h2>
+    <p>Leaderboard is currently frozen. Gameplay is disabled.</p>
     <div class="food">🍲🍱🥗</div>
   </div>
 </div>
@@ -155,19 +165,16 @@ window.dec = ()=>{
   }
 };
 
-/* ⏰ BREAK CHECK */
+/* ⏰ LEADERBOARD FREEZE ALIGNED CHECK */
 function isBreakTime(){
   let now = new Date();
-  let h = now.getHours();
-  let m = now.getMinutes();
+  let hrs = now.getHours();
 
-  // 17:30 → 18:00
-  if(h === 17 && m >= 30) return true;
-  if(h === 18 && m === 0) return true;
+  // Freeze from 13:00 up to 14:00 (13:00 - 13:59)
+  if (hrs >= 13 && hrs < 14) return true;
 
-  // 05:30 → 06:00
-  if(h === 5 && m >= 30) return true;
-  if(h === 6 && m === 0) return true;
+  // Freeze from 20:00 overnight up to 07:00 (20:00 - 06:59)
+  if (hrs >= 20 || hrs < 7) return true;
 
   return false;
 }
@@ -175,7 +182,7 @@ function isBreakTime(){
 /* 🚀 ENTER GAME */
 window.enter = async ()=>{
 
-  // 🔥 BLOCK DURING BREAK
+  // 🔥 BLOCK ENTRY IF MATCHING LEADERBOARD FREEZE WINDOW
   if(isBreakTime()){
     document.getElementById("breakPopup").style.display = "flex";
     return;
@@ -198,7 +205,7 @@ window.enter = async ()=>{
   location.href = "quizer.html";
 };
 
-/* 🔄 AUTO BREAK DETECT */
+/* 🔄 AUTO BREAK DETECT LOOP */
 setInterval(()=>{
   if(isBreakTime()){
     document.getElementById("breakPopup").style.display = "flex";
@@ -210,4 +217,4 @@ setInterval(()=>{
 </script>
 
 </body>
-  </html>
+</html>
