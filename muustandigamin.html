@@ -98,9 +98,90 @@
             z-index: 2; /* Sits on top of the image */
             font-size: 2.2rem;
             font-weight: bold;
-            text-transform: capitalize;
+            text-transform: uppercase;
             letter-spacing: 1px;
             text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
+        }
+
+        /* ==========================================================================
+           🎨 CUSTOM LIVE ANIMATIONS FOR TOP-UP AND BANK BACKGROUNDS
+           ========================================================================== */
+        
+        .animated-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            overflow: hidden;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+        .tile-link:hover .animated-bg {
+            opacity: 0.8;
+        }
+
+        /* --- 💼 TOP-UP WALLET ANIMATION PANEL --- */
+        .wallet-container {
+            position: absolute;
+            bottom: 10px;
+            left: 15%;
+            font-size: 70px;
+            animation: pulseWallet 2.5s ease-in-out infinite;
+        }
+        .smiley-heart {
+            position: absolute;
+            font-size: 32px;
+            bottom: 60px;
+            left: 18%;
+            opacity: 0;
+            animation: floatHearts 3s linear infinite;
+        }
+        /* Staggering the 5 variant heart delays */
+        .h1 { animation-delay: 0.0s; left: 16%; }
+        .h2 { animation-delay: 0.6s; left: 19%; font-size: 26px; }
+        .h3 { animation-delay: 1.2s; left: 15%; font-size: 36px; }
+        .h4 { animation-delay: 1.8s; left: 21%; font-size: 28px; }
+        .h5 { animation-delay: 2.4s; left: 17%; font-size: 34px; }
+
+        @keyframes pulseWallet {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.08) rotate(-3deg); }
+        }
+        @keyframes floatHearts {
+            0% { transform: translateY(20px) translateX(0) scale(0.5); opacity: 0; }
+            15% { opacity: 1; }
+            80% { opacity: 0.9; }
+            100% { transform: translateY(-140px) translateX(-30px) scale(1.2); opacity: 0; }
+        }
+
+        /* --- 🏧 BANK ATM DEPOSIT ANIMATION PANEL --- */
+        .atm-machine {
+            position: absolute;
+            right: 15%;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 65px;
+            border-bottom: 4px solid #3b82f6;
+        }
+        .flying-money {
+            position: absolute;
+            font-size: 45px;
+            left: -150px;
+            top: 25px;
+            opacity: 0;
+            animation: depositMoney 2s linear infinite;
+        }
+        .m1 { animation-delay: 0s; }
+        .m2 { animation-delay: 0.6s; }
+        .m3 { animation-delay: 1.2s; }
+
+        @keyframes depositMoney {
+            0% { transform: translateX(0) translateY(-10px) rotate(0deg) scale(1); opacity: 0; }
+            10% { opacity: 1; }
+            85% { opacity: 1; }
+            100% { transform: translateX(160px) translateY(-5px) rotate(15deg) scale(0.4); opacity: 0; }
         }
     </style>
 </head>
@@ -110,6 +191,7 @@
 
     <div class="tile-container">
 
+        <!-- SLIDE -->
         <a href="slide.html" class="tile-link">
             <div class="tile">
                 <img src="slide.png" alt="" class="tile-bg" onerror="this.style.display='none';">
@@ -117,6 +199,7 @@
             </div>
         </a>
 
+        <!-- QUIZER -->
         <a href="dashboard.html" class="tile-link">
             <div class="tile">
                 <img src="quizer.png" alt="" class="tile-bg" onerror="this.style.display='none';">
@@ -124,10 +207,41 @@
             </div>
         </a>
 
+        <!-- HOPPER -->
         <a href="hopper.html" class="tile-link">
             <div class="tile">
                 <img src="hopper.png" alt="" class="tile-bg" onerror="this.style.display='none';">
                 <div class="tile-title">hopper</div>
+            </div>
+        </a>
+
+        <!-- 💼 TOP-UP WALLET TILE -->
+        <a href="wallet.html" class="tile-link">
+            <div class="tile">
+                <div class="animated-bg">
+                    <div class="wallet-container">💼</div>
+                    <div class="smiley-heart h1">🥰</div>
+                    <div class="smiley-heart h2">🥰</div>
+                    <div class="smiley-heart h3">🥰</div>
+                    <div class="smiley-heart h4">🥰</div>
+                    <div class="smiley-heart h5">🥰</div>
+                </div>
+                <div class="tile-title">TOP-UP</div>
+            </div>
+        </a>
+
+        <!-- 🏧 BANK ATM TILE -->
+        <a href="bank.html" class="tile-link">
+            <div class="tile">
+                <div class="animated-bg">
+                    <div class="atm-machine">
+                        🏧
+                        <div class="flying-money m1">💵</div>
+                        <div class="flying-money m2">💵</div>
+                        <div class="flying-money m3">💵</div>
+                    </div>
+                </div>
+                <div class="tile-title">Bank</div>
             </div>
         </a>
 
