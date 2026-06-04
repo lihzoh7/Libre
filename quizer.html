@@ -414,12 +414,7 @@
   document.getElementById('popExitBtn').onclick = function() {  
     location.href = "muustandigamin.html";  
   };  
-  
-  async function saveRemainingLivesToWallet() {  
-    if(!uid) return;  
-    await set(ref(db, "wallet/" + uid + "/lives"), lives);  
-    localStorage.setItem("selectedLives", lives);  
-  }  
+    
   
   function updateLivesDisplay() {  
     let out = '';  
