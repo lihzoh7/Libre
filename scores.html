@@ -144,7 +144,7 @@ async function checkReset(){
 
   if(lastReset === currentKey) return;
 
-  const snap = await get(ref(db,"leaderboard/current"));
+  const snap = await get(ref(db,"leaderboard/ringmaster"));
   const data = snap.val();
 
   if(data){
