@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quizer Tournament Prizes</title>
+
+<style>
+body {
+  margin: 0;
+  background: black;
+  font-family: Arial, sans-serif;
+  color: white;
+  padding: 20px;
+}
+
+/* HEADER BAR */
+.header-bar {
+  display: flex;
+  flex-direction: column;
+  max-width: 1200px;
+  margin: 0 auto 20px auto;
+  border-bottom: 2px solid #003366;
+  padding-bottom: 10px;
+}
+
+.header-title {
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+#weekTimeline {
+  font-size: 14px;
+  color: #3b82f6;
+  margin-top: 5px;
+  font-weight: bold;
+}
+
+/* 3 COLUMNS MATRIX GRID */
+.prizes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .prizes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* TILES */
+.prize-tile {
+  background: #001f3f;
+  border: 1px solid #003366;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #3b82f6;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.prize-value {
+  font-size: 26px;
+  font-weight: bold;
+  color: #22c55e; /* Green color for money representation */
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+}
+</style>
+</head>
+<body>
+
+  <div class="header-bar">
+    <div class="header-title">🏆 QUIZER TOURNAMENT PRIZES</div>
+    <div id="weekTimeline">Loading tournament timeline...</div>
+  </div>
+
+  <div class="prizes-grid" id="prizesContainer">
+    </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const container = document.getElementById("prizesContainer");
+const timelineText = document.getElementById("weekTimeline");
+
+const days = 7;
+const rows = 2;
+
+// Real-time reader pulling cleanly from independent quizer data branch
+onValue(ref(db, "quizer/prizes"), (snapshot) => {
+  container.innerHTML = "";
+  const data = snapshot.val() || {};
+
+  // Display current timeline window bounds
+  if (data.fromDate && data.toDate) {
+    timelineText.innerText = `Current Season: ${data.fromDate} To ${data.toDate}`;
+  } else {
+    timelineText.innerText = "Current Season: Dynamic Weekly Update";
+  }
+
+  // Generate 3 column matrix list blocks
+  for (let d = 0; d < days; d++) {
+    for (let r = 0; r < rows; r++) {
+      let prizeAmount = data?.schedule?.[d]?.[r]?.value || 0;
+
+      const tile = document.createElement("div");
+      tile.className = "prize-tile";
+      
+      tile.innerHTML = `
+        <span class="label">Day ${d} — Slot ${r}</span>
+        <div class="prize-value">R ${prizeAmount}</div>
+        <span class="label" style="color: #555;">Available Pool</span>
+      `;
+      
+      container.appendChild(tile);
+    }
+  }
+});
+</script>
+
+</body>
+</html>
