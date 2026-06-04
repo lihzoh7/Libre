@@ -401,12 +401,6 @@
     location.href = "muustandigamin.html";
   };
 
-  async function saveRemainingLivesToWallet() {
-    if(!uid) return;
-    // Push modification back to the user profiles
-    await set(ref(db, "wallet/" + uid + "/lives"), lives);
-    localStorage.setItem("selectedLives", lives);
-  }
 
   function updateLivesDisplay() {
     let out = '';
