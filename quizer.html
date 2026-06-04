@@ -227,16 +227,19 @@
   onAuthStateChanged(auth, async (user) => {  
     if(!user) { location.href = "login.html"; return; }  
     uid = user.uid;  
+    
+    // ✅ READ SELECTED LIVES LOCALLY ONLY
     lives = parseInt(localStorage.getItem("selectedLives")) || 0;  
     updateLivesDisplay();  
-    if(lives <= 0) { alert("No lives chosen!"); location.href = "quizerlifeselector.html"; }  
+    
+    if(lives <= 0) { 
+      alert("No lives chosen!"); 
+      location.href = "quizerlifeselector.html"; 
+    }  
   });  
   
   document.getElementById('start-btn').onclick = async function() {  
     this.style.display = 'none';  
-    
-    // ✅ FIXED: Removed double-deduction wallet logic here. 
-    // Lives are already deducted safely by your Selection Page before routing here.
     updateLivesDisplay();  
       
     document.getElementById('display-box').style.display = 'flex';  
@@ -319,7 +322,7 @@
       return;  
     }  
   
-    document.getElementById('question-text').innerText = currentItem.questions[currentQuestionIdx];  
+  document.getElementById('question-text').innerText = currentItem.questions[currentQuestionIdx];  
       
     if(currentItem.type === 'image'){  
       const img = document.getElementById('game-img');  
@@ -392,13 +395,21 @@
     }  
   }  
   
+  async function handleWrongAnswer() {  
+    // ✅ ONLY MINUS LOCALLY - NO WALLET WRITE STREAMS REACHED HERE
+    lives--;  
+    updateLivesDisplay();  
+    
+    if(activeAudio) activeAudio.pause();  
+
+    let correctAns = currentItem.answers[currentQuestionIdx].toString().trim();
+    document.getElementById('revealedAnswerText').innerText = correctAns;
+    document.getElementById('correctAnswerPopup').style.display = 'flex';
+  }  
   
-  
-  // 🔥 NEXT BUTTON CLICK EVENT FOR THE GREEN POPUP
   document.getElementById('correctPopNextBtn').onclick = function() {  
     document.getElementById('correctAnswerPopup').style.display = 'none';  
     
-    // Check if the game should finish entirely or prompt a live resurrection layout
     if(lives <= 0) {  
       showEndGameModal();  
     } else {  
@@ -414,7 +425,6 @@
   document.getElementById('popExitBtn').onclick = function() {  
     location.href = "muustandigamin.html";  
   };  
-    
   
   function updateLivesDisplay() {  
     let out = '';  
@@ -426,7 +436,7 @@
     clearInterval(timerInterval);  
     if(activeAudio) activeAudio.pause();  
     document.getElementById('lifePopup').style.display = 'none';  
-    document.getElementById('correctAnswerPopup').style.display = 'none'; // Close both popups safely
+    document.getElementById('correctAnswerPopup').style.display = 'none'; 
     document.getElementById('finalScoreLabel').innerText = score;  
     document.getElementById('gameOverPopup').style.display = 'flex';  
   
