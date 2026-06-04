@@ -169,27 +169,28 @@ async function saveScore(finalScore){
     ? userData.name + " " + (userData.surname || "")
     : "Player";
 
-  // ISOLATED SEARCH LAYER: leaderboard/ringmaster
-  const currentSnap = await get(ref(db, "leaderboard/ringmaster/" + uid));
+  // ✅ FIXED PATHWAY: Writing directly to leaderboard/current so admin & display panels sync up
+  const currentSnap = await get(ref(db, "leaderboard/current/" + uid));
   const currentData = currentSnap.val();
 
   if(currentData && currentData.score >= finalScore){
     return; // Do not overwrite if existing score is higher
   }
 
-  // Save new isolated high score
-  await set(ref(db, "leaderboard/ringmaster/" + uid), {
+  // Save to the active node your leaderboards are listening to
+  await set(ref(db, "leaderboard/current/" + uid), {
     score: finalScore,
     name: realName,
     timestamp: time
   });
 
-  // Save score history logs
+  // Keep your backup log history intact
   await push(ref(db, "highScores/ringmaster/" + uid), {
     score: finalScore,
     timestamp: time
   });
 }
+
   
 /* OVERRIDE YOUR END GAME */
 
