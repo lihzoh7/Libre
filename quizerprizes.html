@@ -1,148 +1,269 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quizer Tournament Prizes</title>
+<title>Prizes & Rewards</title>
 
 <style>
 body {
   margin: 0;
-  background: black;
-  font-family: Arial, sans-serif;
+  padding: 10px;
+  /* Light and black stripes background */
+  background: repeating-linear-gradient(
+    45deg,
+    #111,
+    #111 20px,
+    #222 20px,
+    #222 40px
+  );
   color: white;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+/* Base Tier Container */
+.tier-container {
+  width: 100%;
+  margin-bottom: 20px;
+  border-radius: 12px;
   padding: 20px;
-}
-
-/* HEADER BAR */
-.header-bar {
-  display: flex;
-  flex-direction: column;
-  max-width: 1200px;
-  margin: 0 auto 20px auto;
-  border-bottom: 2px solid #003366;
-  padding-bottom: 10px;
-}
-
-.header-title {
-  font-size: 24px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-#weekTimeline {
-  font-size: 14px;
-  color: #3b82f6;
-  margin-top: 5px;
-  font-weight: bold;
-}
-
-/* 3 COLUMNS MATRIX GRID */
-.prizes-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-@media (max-width: 768px) {
-  .prizes-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* TILES */
-.prize-tile {
-  background: #001f3f;
-  border: 1px solid #003366;
-  border-radius: 8px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 6px;
+  box-sizing: border-box;
+  text-align: center;
   box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
-.label {
-  font-size: 11px;
-  text-transform: uppercase;
-  color: #3b82f6;
-  font-weight: bold;
-  letter-spacing: 0.5px;
+/* Tier Themes */
+.diamond-tier {
+  background: linear-gradient(135deg, #b9f2ff, #2980b9);
+  color: #001f3f;
+}
+.gold-tier {
+  background: linear-gradient(135deg, #ffe066, #f39c12);
+  color: #001f3f;
+}
+.silver-tier {
+  background: linear-gradient(135deg, #e0e0e0, #7f8c8d);
+  color: #fff;
+  text-align: right; /* Text alignment requirement for Silver/Bronze */
+}
+.bronze-tier {
+  background: linear-gradient(135deg, #d35400, #a04000);
+  color: #fff;
+  text-align: right;
 }
 
-.prize-value {
-  font-size: 26px;
+/* Center alignments overrides for Diamond and Gold */
+.diamond-tier h1, .diamond-tier h2, .gold-tier h1, .gold-tier h2 {
+  text-align: center;
+}
+
+.tier-title {
+  font-size: 32px;
   font-weight: bold;
-  color: #22c55e; /* Green color for money representation */
-  text-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+  margin: 0 0 5px 0;
+}
+.tier-prize {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0 0 15px 0;
+}
+
+/* Grid areas for players */
+.player-space-single {
+  display: flex;
+  justify-content: center;
+  margin: 15px 0;
+}
+.player-space-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 15px 0;
+  text-align: center; /* keep cards clean */
+}
+
+/* Player Cards within Tiers */
+.player-card {
+  background: #002b55;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  min-width: 150px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.description {
+  font-size: 13px;
+  margin-top: 15px;
+  opacity: 0.9;
+  font-weight: normal;
+  display: block;
+  text-align: center; /* Keep small text readable & centered across all */
 }
 </style>
 </head>
+
 <body>
 
-  <div class="header-bar">
-    <div class="header-title">🏆 QUIZER TOURNAMENT PRIZES</div>
-    <div id="weekTimeline">Loading tournament timeline...</div>
-  </div>
+<div class="tier-container diamond-tier">
+  <div class="tier-title">Diamond 💎</div>
+  <div class="tier-prize">R250 Cash Prize</div>
+  <div class="player-space-single" id="diamond-players"></div>
+  <span class="description">This prize will be Awarded to the player who obtains 2500+ points, players are contacted for verification of their details</span>
+</div>
 
-  <div class="prizes-grid" id="prizesContainer">
-    </div>
+<div class="tier-container gold-tier">
+  <div class="tier-title">Gold</div>
+  <div class="tier-prize">R25 OTT VOUCHER</div>
+  <div class="player-space-single" id="gold-players"></div>
+  <span class="description">This prize will be Awarded to the player who obtains 1500+ points, players are contacted for verification of their details</span>
+</div>
+
+<div class="tier-container silver-tier">
+  <div class="tier-title">Silver</div>
+  <div class="tier-prize">R15 OTT VOUCHER</div>
+  <div class="player-space-grid" id="silver-players"></div>
+  <span class="description">This prize will be Awarded to the player who obtains 900+ points, players are contacted for verification of their details</span>
+</div>
+
+<div class="tier-container bronze-tier">
+  <div class="tier-title">Bronze</div>
+  <div class="tier-prize">R5 OTT VOUCHER</div>
+  <div class="player-space-grid" id="bronze-players"></div>
+  <span class="description">This prize will be Awarded to the player who obtains 500+ points, players are contacted for verification of their details</span>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-const firebaseConfig = {
+const app = initializeApp({
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  authDomain: "tose-ccf8f.firebaseapp.com",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tose-ccf8f"
-};
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+});
 
-const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const container = document.getElementById("prizesContainer");
-const timelineText = document.getElementById("weekTimeline");
+// Dom Element Hooks
+const diamondDiv = document.getElementById("diamond-players");
+const goldDiv = document.getElementById("gold-players");
+const silverDiv = document.getElementById("silver-players");
+const bronzeDiv = document.getElementById("bronze-players");
 
-const days = 7;
-const rows = 2;
+onValue(ref(db, "leaderboard/current"), snap => {
+  const data = snap.val() || {};
+  let leaderboardArray = [];
 
-// Real-time reader pulling cleanly from independent quizer data branch
-onValue(ref(db, "quizer/prizes"), (snapshot) => {
-  container.innerHTML = "";
-  const data = snapshot.val() || {};
-
-  // Display current timeline window bounds
-  if (data.fromDate && data.toDate) {
-    timelineText.innerText = `Current Season: ${data.fromDate} To ${data.toDate}`;
-  } else {
-    timelineText.innerText = "Current Season: Dynamic Weekly Update";
+  // 1. Gather all players
+  for (let uid in data) {
+    leaderboardArray.push({
+      uid,
+      name: data[uid].name || "Player",
+      surname: data[uid].surname || "",
+      score: data[uid].score,
+      timestamp: data[uid].timestamp
+    });
   }
 
-  // Generate 3 column matrix list blocks
-  for (let d = 0; d < days; d++) {
-    for (let r = 0; r < rows; r++) {
-      let prizeAmount = data?.schedule?.[d]?.[r]?.value || 0;
+  // 2. Sort according to Leaderboard Rules (Highest score first)
+  leaderboardArray.sort((a, b) => b.score - a.score);
 
-      const tile = document.createElement("div");
-      tile.className = "prize-tile";
-      
-      tile.innerHTML = `
-        <span class="label">Day ${d} — Slot ${r}</span>
-        <div class="prize-value">R ${prizeAmount}</div>
-        <span class="label" style="color: #555;">Available Pool</span>
-      `;
-      
-      container.appendChild(tile);
+  // Clear previous HTML pools
+  diamondDiv.innerHTML = "";
+  goldDiv.innerHTML = "";
+  silverDiv.innerHTML = "";
+  bronzeDiv.innerHTML = "";
+
+  // Allocation Buckets
+  let diamondAllocated = [];
+  let goldAllocated = [];
+  let silverAllocated = [];
+  let bronzeAllocated = [];
+
+  // 3. Drop down logic calculation
+  leaderboardArray.forEach(player => {
+    let score = player.score;
+
+    // Check Diamond Eligibility
+    if (score >= 2500) {
+      if (diamondAllocated.length < 1) {
+        diamondAllocated.push(player);
+        return; // Fixed to this tier
+      }
+      // Relegated down to Gold Check
+      if (goldAllocated.length < 1) {
+        goldAllocated.push(player);
+        return; 
+      }
+      // Relegated down to Silver Check
+      if (silverAllocated.length < 3) {
+        silverAllocated.push(player);
+        return;
+      }
+      // Relegated down to Bronze Check
+      if (bronzeAllocated.length < 3) {
+        bronzeAllocated.push(player);
+        return;
+      }
     }
-  }
+
+    // Check Gold Eligibility
+    else if (score >= 1500) {
+      if (goldAllocated.length < 1) {
+        goldAllocated.push(player);
+        return;
+      }
+      if (silverAllocated.length < 3) {
+        silverAllocated.push(player);
+        return;
+      }
+      if (bronzeAllocated.length < 3) {
+        bronzeAllocated.push(player);
+        return;
+      }
+    }
+
+    // Check Silver Eligibility
+    else if (score >= 900) {
+      if (silverAllocated.length < 3) {
+        silverAllocated.push(player);
+        return;
+      }
+      if (bronzeAllocated.length < 3) {
+        bronzeAllocated.push(player);
+        return;
+      }
+    }
+
+    // Check Bronze Eligibility
+    else if (score >= 500) {
+      if (bronzeAllocated.length < 3) {
+        bronzeAllocated.push(player);
+        return;
+      }
+    }
+  });
+
+  // 4. Render Layouts to UI
+  diamondAllocated.forEach(p => diamondDiv.appendChild(createCard(p)));
+  goldAllocated.forEach(p => goldDiv.appendChild(createCard(p)));
+  silverAllocated.forEach(p => silverDiv.appendChild(createCard(p)));
+  bronzeAllocated.forEach(p => bronzeDiv.appendChild(createCard(p)));
 });
+
+// Helper function to draw individual user card component
+function createCard(p) {
+  let date = new Date(p.timestamp).toLocaleString();
+  let div = document.createElement("div");
+  div.className = "player-card";
+  div.innerHTML = `
+    <b>${p.name} ${p.surname}</b><br>
+    SCORE: ${p.score}<br>
+    <small>${date}</small>
+  `;
+  return div;
+}
 </script>
 
 </body>
