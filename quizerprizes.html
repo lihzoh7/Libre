@@ -2,188 +2,157 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Prizes Tier Tracker</title>
+<title>Prizes Tier</title>
 
 <style>
 body {
   margin: 0;
-  /* Light and black stripes background */
+  /* Light and black stripes background pattern */
   background: repeating-linear-gradient(
     45deg,
-    #111,
-    #111 20px,
-    #222 20px,
-    #222 40px
+    #050d1a,
+    #050d1a 10px,
+    #111111 10px,
+    #111111 20px
   );
   color: white;
   font-family: Arial, sans-serif;
   text-align: center;
-  padding: 10px;
+  padding: 20px 10px;
   box-sizing: border-box;
 }
 
-/* Master container for the 4 full-width tiles */
+/* Master Tier Container */
 .tier-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
   width: 100%;
-}
-
-/* Base style for each prize tier box */
-.prize-tile {
-  width: 100%;
-  /* Fills roughly 1/3 of screen height, adapts neatly to content */
-  min-height: 33vh; 
+  min-height: 33.33vh; /* Fills at least 1/3 of the screen */
+  margin: 20px 0;
+  padding: 20px;
   border-radius: 15px;
   box-sizing: border-box;
-  padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
 }
 
-/* Distinct color treatments for each tier background */
-.diamond-tier {
-  background: linear-gradient(135deg, #b9f2ff, #2980b9);
-  color: #001f3f;
-}
-.gold-tier {
-  background: linear-gradient(135deg, #ffe066, #d4af37);
-  color: #1a1a1a;
-}
-.silver-tier {
-  background: linear-gradient(135deg, #e0e0e0, #95a5a6);
-  color: #1a1a1a;
-}
-.bronze-tier {
-  background: linear-gradient(135deg, #d7a15c, #a05a2c);
-  color: white;
-}
+/* Specific Tier Theme Colors */
+.diamond-tier { background: linear-gradient(135deg, #4fa8ff, #001f3f); border: 2px solid #b9dfff; }
+.gold-tier { background: linear-gradient(135deg, #d4af37, #3a2f0b); border: 2px solid #fff3a8; }
+.silver-tier { background: linear-gradient(135deg, #a0a0a0, #2c2c2c); border: 2px solid #e6e6e6; }
+.bronze-tier { background: linear-gradient(135deg, #cd7f32, #3d220a); border: 2px solid #ffa478; }
 
-/* Header typography styles */
+/* Text Sizing / Zoom Content */
 .tier-title {
   font-size: 32px;
   font-weight: bold;
-  margin: 5px 0;
   text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 5px 0;
 }
-.prize-value {
+
+.tier-prize {
   font-size: 26px;
   font-weight: bold;
   margin-bottom: 15px;
 }
 
-/* Flexible grid layouts for player spots inside tiers */
-.player-slot-single {
+.tier-info {
+  font-size: 14px;
+  color: #e0e0e0;
+  max-width: 80%;
+  margin-top: 15px;
+  line-height: 1.4;
+}
+
+/* Player Spaces Placement */
+.player-display-space {
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%;
-  flex-grow: 1;
-  margin-bottom: 15px;
+  gap: 15px;
+  margin: 15px 0;
+  min-height: 90px;
 }
 
-.player-slot-grid {
+/* Grid adjustment for Multi-column (Silver & Bronze) */
+.grid-3-col {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
   width: 100%;
   max-width: 900px;
-  flex-grow: 1;
-  margin-bottom: 15px;
 }
 
-/* Reusable player identity cards matching original layout styles */
-.player-card {
-  background: rgba(0, 31, 63, 0.85);
-  color: white;
-  padding: 15px;
-  border-radius: 10px;
-  font-size: 20px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-  width: 100%;
-  max-width: 280px;
-  box-sizing: border-box;
-}
-
-.empty-placeholder {
+/* Empty State Message */
+.empty-msg {
   font-style: italic;
-  opacity: 0.6;
+  color: rgba(255,255,255,0.4);
   font-size: 18px;
 }
 
-/* Fine print text adjustments at base of tiers */
-.disclaimer {
-  font-size: 14px;
-  max-width: 80%;
-  line-height: 1.4;
-  font-weight: bold;
+/* Unified Player Card matching your design */
+.card {
+  background: #002b55;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 18px;
+  min-width: 200px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
 }
-.diamond-tier .disclaimer { color: #002b55; }
-.gold-tier .disclaimer, .silver-tier .disclaimer { color: #222; }
-.bronze-tier .disclaimer { color: #f0f0f0; }
+.gold-c { color: gold; }
+.silver-c { color: silver; }
+.bronze-c { color: #cd7f32; }
+.normal-c { color: #ccc; }
 </style>
 </head>
 
 <body>
 
-<div class="tier-container">
-
-  <div class="prize-tile diamond-tier">
-    <div>
-      <div class="tier-title">💎 Diamond</div>
-      <div class="prize-value">R250 Cash Prize</div>
-    </div>
-    <div class="player-slot-single" id="diamond-slot">
-      <div class="empty-placeholder">Position Open</div>
-    </div>
-    <div class="disclaimer">
-      This prize will be Awarded to the player who obtains 2500+ points, players are contacted for verification of their details
-    </div>
+<div class="tier-container diamond-tier">
+  <div class="tier-title">Diamond 💎</div>
+  <div class="tier-prize">R250 Cash Prize</div>
+  <div class="player-display-space" id="diamond-space">
+    <div class="empty-msg">No player qualified yet</div>
   </div>
-
-  <div class="prize-tile gold-tier">
-    <div>
-      <div class="tier-title">Gold</div>
-      <div class="prize-value">R25 OTT VOUCHER</div>
-    </div>
-    <div class="player-slot-single" id="gold-slot">
-      <div class="empty-placeholder">Position Open</div>
-    </div>
-    <div class="disclaimer">
-      This prize will be Awarded to the player who obtains 1500+ points, players are contacted for verification of their details
-    </div>
+  <div class="tier-info">
+    This prize will be Awarded to the player who obtains 2500+ points, players are contacted for verification of their details
   </div>
+</div>
 
-  <div class="prize-tile silver-tier">
-    <div>
-      <div class="tier-title">Silver</div>
-      <div class="prize-value">R15 OTT VOUCHER</div>
-    </div>
-    <div class="player-slot-grid" id="silver-slots">
-      <div class="empty-placeholder" style="grid-column: span 3;">Positions Open</div>
-    </div>
-    <div class="disclaimer">
-      This prize will be Awarded to the player who obtains 900+ points, players are contacted for verification of their details
-    </div>
+<div class="tier-container gold-tier">
+  <div class="tier-title">Gold</div>
+  <div class="tier-prize">R25 OTT VOUCHER</div>
+  <div class="player-display-space" id="gold-space">
+    <div class="empty-msg">No player qualified yet</div>
   </div>
-
-  <div class="prize-tile bronze-tier">
-    <div>
-      <div class="tier-title">Bronze</div>
-      <div class="prize-value">R5 OTT VOUCHER</div>
-    </div>
-    <div class="player-slot-grid" id="bronze-slots">
-      <div class="empty-placeholder" style="grid-column: span 3;">Positions Open</div>
-    </div>
-    <div class="disclaimer">
-      This prize will be Awarded to the player who obtains 500+ points, players are contacted for verification of their details
-    </div>
+  <div class="tier-info">
+    This prize will be Awarded to the player who obtains 1500+ points, players are contacted for verification of their details
   </div>
+</div>
 
+<div class="tier-container silver-tier">
+  <div class="tier-title">Silver</div>
+  <div class="tier-prize">R15 OTT VOUCHER</div>
+  <div class="player-display-space grid-3-col" id="silver-space">
+    <div class="empty-msg" style="grid-column: span 3;">No players qualified yet</div>
+  </div>
+  <div class="tier-info">
+    This prize will be Awarded to the player who obtains 900+ points, players are contacted for verification of their details
+  </div>
+</div>
+
+<div class="tier-container bronze-tier">
+  <div class="tier-title">Bronze</div>
+  <div class="tier-prize">R5 OTT VOUCHER</div>
+  <div class="player-display-space grid-3-col" id="bronze-space">
+    <div class="empty-msg" style="grid-column: span 3;">No players qualified yet</div>
+  </div>
+  <div class="tier-info">
+    This prize will be Awarded to the player who obtains 500+ points, players are contacted for verification of their details
+  </div>
 </div>
 
 <script type="module">
@@ -197,124 +166,126 @@ const app = initializeApp({
 
 const db = getDatabase(app);
 
-// Target rendering element buckets
-const diamondSlot = document.getElementById("diamond-slot");
-const goldSlot = document.getElementById("gold-slot");
-const silverSlots = document.getElementById("silver-slots");
-const bronzeSlots = document.getElementById("bronze-slots");
+// Keep global assignments for visual styling tags matching leaderboard rankings
+function getCardClass(score) {
+  if (score >= 2500) return "gold-c";
+  if (score >= 1500) return "silver-c";
+  if (score >= 900) return "bronze-c";
+  return "normal-c";
+}
 
+function makePlayerCard(p) {
+  let date = new Date(p.time).toLocaleString();
+  let cls = getCardClass(p.score);
+  return `
+    <div class="card ${cls}">
+      <b>${p.name}</b><br>
+      SCORE: ${p.score}<br>
+      <small>${date}</small>
+    </div>
+  `;
+}
+
+/* 📊 STREAM LEADERBOARD & RE-CALCULATE TIERS LIVE */
 onValue(ref(db, "leaderboard/current"), snap => {
   const data = snap.val() || {};
-  let players = [];
+  let masterArr = [];
 
-  // 1. Process and format data matching core application elements
+  // Parse raw live data
   for (let uid in data) {
-    players.push({
+    masterArr.push({
       uid,
-      name: data[uid].name || "Player",
-      surname: data[uid].surname || "",
-      score: parseInt(data[uid].score) || 0,
+      name: (data[uid].name || "Player") + " " + (data[uid].surname || ""),
+      score: data[uid].score,
       time: data[uid].timestamp
     });
   }
 
-  // 2. Exact Leaderboard Sort: High Scores First
-  players.sort((a, b) => b.score - a.score);
+  // Pre-sort by high score exactly matching the master leaderboard configuration
+  masterArr.sort((a, b) => b.score - a.score);
 
-  // Storage allocations for prize distributions
-  let diamondWinner = null;
-  let goldWinner = null;
-  let silverWinners = [];
-  let bronzeWinners = [];
+  // Arrays to hold assignments
+  let diamondPlayer = null;
+  let goldPlayer = null;
+  let silverPlayers = [];
+  let bronzePlayers = [];
 
-  // 3. Fall-down distribution logic loop
-  players.forEach(player => {
-    // Check Diamond requirements (2500+)
-    if (player.score >= 2500) {
-      if (!diamondWinner) {
-        diamondWinner = player;
-      } else if (!goldWinner) {
-        goldWinner = player; // Cascaded down from Diamond tie breaker
-      } else if (silverWinners.length < 3) {
-        silverWinners.push(player); // Cascaded down to Silver
-      } else if (bronzeWinners.length < 3) {
-        bronzeWinners.push(player); // Cascaded down to Bronze
+  // Relegation Filtering logic loop
+  masterArr.forEach(player => {
+    let score = player.score;
+
+    // Check Diamond Qualifications
+    if (score >= 2500) {
+      if (!diamondPlayer) {
+        diamondPlayer = player;
+      } else if (!goldPlayer) {
+        goldPlayer = player; // Relegated to gold
+      } else if (silverPlayers.length < 3) {
+        silverPlayers.push(player); // Relegated to silver
+      } else if (bronzePlayers.length < 3) {
+        bronzePlayers.push(player); // Relegated to bronze
       }
     } 
-    // Check Gold requirements (1500 - 2499)
-    else if (player.score >= 1500) {
-      if (!goldWinner) {
-        goldWinner = player;
-      } else if (silverWinners.length < 3) {
-        silverWinners.push(player); // Cascaded down to Silver
-      } else if (bronzeWinners.length < 3) {
-        bronzeWinners.push(player); // Cascaded down to Bronze
+    // Check Gold Qualifications
+    else if (score >= 1500) {
+      if (!goldPlayer) {
+        goldPlayer = player;
+      } else if (silverPlayers.length < 3) {
+        silverPlayers.push(player); // Relegated to silver
+      } else if (bronzePlayers.length < 3) {
+        bronzePlayers.push(player); // Relegated to bronze
       }
     } 
-    // Check Silver requirements (900 - 1499)
-    else if (player.score >= 900) {
-      if (silverWinners.length < 3) {
-        silverWinners.push(player);
-      } else if (bronzeWinners.length < 3) {
-        bronzeWinners.push(player); // Cascaded down to Bronze
+    // Check Silver Qualifications
+    else if (score >= 900) {
+      if (silverPlayers.length < 3) {
+        silverPlayers.push(player);
+      } else if (bronzePlayers.length < 3) {
+        bronzePlayers.push(player); // Relegated to bronze
       }
     } 
-    // Check Bronze requirements (500 - 899)
-    else if (player.score >= 500) {
-      if (bronzeWinners.length < 3) {
-        bronzeWinners.push(player);
+    // Check Bronze Qualifications
+    else if (score >= 500) {
+      if (bronzePlayers.length < 3) {
+        bronzePlayers.push(player);
       }
     }
   });
 
-  // 4. Render Layouts Engine
-  
-  // Render Diamond
-  if (diamondWinner) {
-    diamondSlot.innerHTML = createPlayerCard(diamondWinner);
+  // --- RENDER DOM VIEWS ---
+
+  // 1. Diamond Dom
+  const dSpace = document.getElementById("diamond-space");
+  if (diamondPlayer) {
+    dSpace.innerHTML = makePlayerCard(diamondPlayer);
   } else {
-    diamondSlot.innerHTML = `<div class="empty-placeholder">Position Open</div>`;
+    dSpace.innerHTML = `<div class="empty-msg">No player qualified yet</div>`;
   }
 
-  // Render Gold
-  if (goldWinner) {
-    goldSlot.innerHTML = createPlayerCard(goldWinner);
+  // 2. Gold Dom
+  const gSpace = document.getElementById("gold-space");
+  if (goldPlayer) {
+    gSpace.innerHTML = makePlayerCard(goldPlayer);
   } else {
-    goldSlot.innerHTML = `<div class="empty-placeholder">Position Open</div>`;
+    gSpace.innerHTML = `<div class="empty-msg">No player qualified yet</div>`;
   }
 
-  // Render Silver
-  if (silverWinners.length > 0) {
-    silverSlots.innerHTML = "";
-    silverWinners.forEach(p => {
-      silverSlots.innerHTML += createPlayerCard(p);
-    });
+  // 3. Silver Dom
+  const sSpace = document.getElementById("silver-space");
+  if (silverPlayers.length > 0) {
+    sSpace.innerHTML = silverPlayers.map(p => makePlayerCard(p)).join("");
   } else {
-    silverSlots.innerHTML = `<div class="empty-placeholder" style="grid-column: span 3;">Positions Open</div>`;
+    sSpace.innerHTML = `<div class="empty-msg" style="grid-column: span 3;">No players qualified yet</div>`;
   }
 
-  // Render Bronze
-  if (bronzeWinners.length > 0) {
-    bronzeSlots.innerHTML = "";
-    bronzeWinners.forEach(p => {
-      bronzeSlots.innerHTML += createPlayerCard(p);
-    });
+  // 4. Bronze Dom
+  const bSpace = document.getElementById("bronze-space");
+  if (bronzePlayers.length > 0) {
+    bSpace.innerHTML = bronzePlayers.map(p => makePlayerCard(p)).join("");
   } else {
-    bronzeSlots.innerHTML = `<div class="empty-placeholder" style="grid-column: span 3;">Positions Open</div>`;
+    bSpace.innerHTML = `<div class="empty-msg" style="grid-column: span 3;">No players qualified yet</div>`;
   }
 });
-
-// Helper function to maintain consistent design architecture
-function createPlayerCard(p) {
-  let date = new Date(p.time).toLocaleString();
-  return `
-    <div class="player-card">
-      <b>${p.name} ${p.surname}</b><br>
-      SCORE: ${p.score}<br>
-      <small style="font-size:12px; opacity:0.8;">${date}</small>
-    </div>
-  `;
-}
 </script>
 
 </body>
