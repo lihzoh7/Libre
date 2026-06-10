@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>  
 <html lang="en">  
 <head>  
@@ -374,14 +375,27 @@
   document.getElementById('submit-ans-btn').onclick = function() {  
     validateUserResponse();  
   };  
+
+  // Helper function to clean text of all spaces and special characters
+  function normalizeText(str) {
+    if (!str) return "";
+    return str
+      .toString()
+      .toLowerCase()
+      .replace(/[\s\W_]+/g, ""); // Removes spaces, punctuation symbols, hyphens, etc.
+  }
   
   async function validateUserResponse() {  
     if(!currentItem || currentQuestionIdx === -1) return;  
       
-    let userAns = document.getElementById('answer-input').value.trim().toLowerCase();  
-    let correctAns = currentItem.answers[currentQuestionIdx].toString().trim().toLowerCase();  
+    let rawUserAns = document.getElementById('answer-input').value;  
+    let rawCorrectAns = currentItem.answers[currentQuestionIdx];  
   
-    if(userAns === correctAns) {  
+    // Clean strings to ignore spaces, trailing spaces, and symbols
+    let userAnsCleaned = normalizeText(rawUserAns);
+    let correctAnsCleaned = normalizeText(rawCorrectAns);
+  
+    if(userAnsCleaned === correctAnsCleaned && userAnsCleaned !== "") {  
       clearInterval(timerInterval);  
       score += countdown;   
       document.getElementById('score').innerText = score;  
