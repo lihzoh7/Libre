@@ -13,10 +13,12 @@ body{
   justify-content:center;
   align-items:center;
   height:100vh;
+  position: relative;
 }
 
 #box{
   width:90%;
+  max-width: 500px;
 }
 
 input{
@@ -26,6 +28,7 @@ input{
   font-size:18px;
   background:#fffdd0; /* cream */
   border:none;
+  box-sizing: border-box;
 }
 
 button{
@@ -35,6 +38,8 @@ button{
   background:green;
   color:white;
   border:none;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
 #warn{
@@ -52,11 +57,47 @@ button{
   padding:30px;
   font-size:24px;
   display:none;
+  z-index: 100;
+  color: black;
+  border-radius: 4px;
+}
+
+/* New Show/Hide button positioning */
+#toggleBtn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: auto;
+  padding: 10px 20px;
+  font-size: 16px;
+  background: green;
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+/* Light brownish colored tile layout */
+#detailsDisplay {
+  display: none;
+  background: #CD7F32; /* Light brown / bronze */
+  color: white;
+  padding: 15px;
+  margin-top: 20px;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.detail-item {
+  margin: 8px 0;
+  font-size: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  padding-bottom: 5px;
 }
 </style>
 </head>
 
 <body>
+
+<button id="toggleBtn" onclick="toggleDetails()">SHOW</button>
 
 <div id="box">
   <input id="bank" placeholder="BANK NAME">
@@ -65,6 +106,8 @@ button{
 
   <button onclick="submit()">SUBMIT</button>
 
+  <div id="detailsDisplay"></div>
+
   <div id="warn">verify your details for your winnings</div>
 </div>
 
@@ -72,7 +115,7 @@ button{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -90,6 +133,7 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 let user;
+let showingDetails = false;
 
 onAuthStateChanged(auth,(u)=>{
   if(!u) location.href="index.html";
@@ -115,7 +159,55 @@ window.submit = async ()=>{
   });
 
   document.getElementById("popup").style.display="block";
+  setTimeout(()=>{
+    document.getElementById("popup").style.display="none";
+  }, 2000);
+
+  // Auto-refresh the container view data if details display container is open
+  if (showingDetails) {
+    fetchAndDisplayDetails();
+  }
 };
+
+window.toggleDetails = async () => {
+  const btn = document.getElementById("toggleBtn");
+  const displayBox = document.getElementById("detailsDisplay");
+
+  if (!showingDetails) {
+    await fetchAndDisplayDetails();
+    displayBox.style.display = "block";
+    btn.innerText = "HIDE";
+    btn.style.background = "#A30000"; // Dark red for hide alert look
+    showingDetails = true;
+  } else {
+    displayBox.style.display = "none";
+    btn.innerText = "SHOW";
+    btn.style.background = "green";
+    showingDetails = false;
+  }
+};
+
+async function fetchAndDisplayDetails() {
+  const displayBox = document.getElementById("detailsDisplay");
+  if (!user) return;
+  
+  try {
+    const snapshot = await get(ref(db, "walletDetails/" + user.uid));
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      displayBox.innerHTML = `
+        <div class="detail-item"><b>Bank:</b> ${data.bank}</div>
+        <div class="detail-item"><b>Account No:</b> ${data.account}</div>
+        <div class="detail-item"><b>Branch Code:</b> ${data.branch}</div>
+      `;
+    } else {
+      displayBox.innerHTML = `<div style="text-align:center;">No details found. Please submit data.</div>`;
+    }
+  } catch (error) {
+    console.error(error);
+    displayBox.innerHTML = `<div style="text-align:center; color: #ffcccc;">Error loading records.</div>`;
+  }
+}
 
 const bankInput=document.getElementById("bank");
 const accountInput=document.getElementById("account");
@@ -124,4 +216,4 @@ const branchInput=document.getElementById("branch");
 </script>
 
 </body>
-     </html>
+</html>
