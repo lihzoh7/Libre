@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>  
 <html lang="en">  
 <head>  
@@ -323,7 +322,7 @@
       return;  
     }  
   
-  document.getElementById('question-text').innerText = currentItem.questions[currentQuestionIdx];  
+    document.getElementById('question-text').innerText = currentItem.questions[currentQuestionIdx];  
       
     if(currentItem.type === 'image'){  
       const img = document.getElementById('game-img');  
@@ -375,27 +374,24 @@
   document.getElementById('submit-ans-btn').onclick = function() {  
     validateUserResponse();  
   };  
-
-  // Helper function to clean text of all spaces and special characters
+  
+  // Clean special characters, symbols, and whitespace strings completely
   function normalizeText(str) {
     if (!str) return "";
-    return str
-      .toString()
-      .toLowerCase()
-      .replace(/[\s\W_]+/g, ""); // Removes spaces, punctuation symbols, hyphens, etc.
+    return str.toString()
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, "") // Removes spaces, hyphens, slashes, punctuation symbols completely
+              .trim();
   }
-  
+
   async function validateUserResponse() {  
     if(!currentItem || currentQuestionIdx === -1) return;  
       
-    let rawUserAns = document.getElementById('answer-input').value;  
-    let rawCorrectAns = currentItem.answers[currentQuestionIdx];  
+    let userAnsRaw = document.getElementById('answer-input').value;  
+    let correctAnsRaw = currentItem.answers[currentQuestionIdx];  
   
-    // Clean strings to ignore spaces, trailing spaces, and symbols
-    let userAnsCleaned = normalizeText(rawUserAns);
-    let correctAnsCleaned = normalizeText(rawCorrectAns);
-  
-    if(userAnsCleaned === correctAnsCleaned && userAnsCleaned !== "") {  
+    // Normalize both tokens for robust structural evaluation
+    if(normalizeText(userAnsRaw) === normalizeText(correctAnsRaw)) {  
       clearInterval(timerInterval);  
       score += countdown;   
       document.getElementById('score').innerText = score;  
