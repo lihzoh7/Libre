@@ -223,6 +223,17 @@
   let uid, lives, score = 0, timerInterval = null, countdown = 30;  
   let pool = [], currentItem = null, currentQuestionIdx = -1;  
   let activeAudio = null;  
+
+  // Explicitly grab DOM element bindings inside the module context
+  const startBtn = document.getElementById('start-btn');
+  const answerInput = document.getElementById('answer-input');
+  const submitAnsBtn = document.getElementById('submit-ans-btn');
+  const displayBox = document.getElementById('display-box');
+  const gameImg = document.getElementById('game-img');
+  const gameVideo = document.getElementById('game-video');
+  const audioIcon = document.getElementById('audio-icon');
+  const replayBtn = document.getElementById('replay-btn');
+  const questionText = document.getElementById('question-text');
   
   onAuthStateChanged(auth, async (user) => {  
     if(!user) { location.href = "login.html"; return; }  
@@ -238,13 +249,13 @@
     }  
   });  
   
-  document.getElementById('start-btn').onclick = async function() {  
+  startBtn.onclick = async function() {  
     this.style.display = 'none';  
     updateLivesDisplay();  
       
-    document.getElementById('display-box').style.display = 'flex';  
-    document.getElementById('answer-input').style.display = 'block';  
-    document.getElementById('submit-ans-btn').style.display = 'block';  
+    displayBox.style.display = 'flex';  
+    answerInput.style.display = 'block';  
+    submitAnsBtn.style.display = 'block';  
       
     await loadMediaPool();  
     nextRound();  
@@ -257,7 +268,7 @@
       let snap = await get(ref(db, "quizMedia/" + t));  
       let val = snap.val() || {};  
       for(let key in val){  
-        pool.push({id: key, ...val[key]});  
+        pool.push({id: key, ...val[key], type: t}); // Forced mapping configuration safeguard 
       }  
     }  
   }  
@@ -266,11 +277,11 @@
     clearInterval(timerInterval);  
     if(activeAudio) { activeAudio.pause(); activeAudio = null; }  
       
-    document.getElementById('game-img').style.display = 'none';  
-    document.getElementById('game-video').style.display = 'none';  
-    document.getElementById('audio-icon').style.display = 'none';  
-    document.getElementById('replay-btn').style.display = 'none';  
-    document.getElementById('answer-input').value = '';  
+    gameImg.style.display = 'none';  
+    gameVideo.style.display = 'none';  
+    audioIcon.style.display = 'none';  
+    replayBtn.style.display = 'none';  
+    answerInput.value = '';  
   
     if(lives <= 0) { showEndGameModal(); return; }  
     if(pool.length === 0) { alert("No challenges loaded inside Firebase database paths!"); return; }  
@@ -307,7 +318,8 @@
         let historySnap = await get(ref(db, `history/${uid}/${item.id}`));  
         let history = historySnap.val() || {};  
         for(let i = 0; i < 10; i++){  
-          if(item.questions && item.questions[i] !== undefined && item.questions[i] !== "" && !history[i]){            currentItem = item;  
+          if(item.questions && item.questions[i] !== undefined && item.questions[i] !== "" && !history[i]){            
+            currentItem = item;  
             currentQuestionIdx = i;  
             break;  
           }  
@@ -322,23 +334,21 @@
       return;  
     }  
   
-    document.getElementById('question-text').innerText = currentItem.questions[currentQuestionIdx];  
+    questionText.innerText = currentItem.questions[currentQuestionIdx];  
       
     if(currentItem.type === 'image'){  
-      const img = document.getElementById('game-img');  
-      img.src = currentItem.data;  
-      img.style.display = 'block';  
+      gameImg.src = currentItem.data;  
+      gameImg.style.display = 'block';  
     } else if(currentItem.type === 'video'){  
-      const vid = document.getElementById('game-video');  
-      vid.src = currentItem.data;  
-      vid.style.display = 'block';  
-      vid.play().catch(e => console.log("Autoplay caught, user interaction needed."));  
-      document.getElementById('replay-btn').style.display = 'block';  
+      gameVideo.src = currentItem.data;  
+      gameVideo.style.display = 'block';  
+      gameVideo.play().catch(e => console.log("Autoplay caught, user interaction needed."));  
+      replayBtn.style.display = 'block';  
     } else if(currentItem.type === 'audio'){  
-      document.getElementById('audio-icon').style.display = 'block';  
+      audioIcon.style.display = 'block';  
       activeAudio = new Audio(currentItem.data);  
       activeAudio.play().catch(e => console.log("Autoplay caught, user interaction needed."));  
-      document.getElementById('replay-btn').style.display = 'block';  
+      replayBtn.style.display = 'block';  
     }  
   
     startTimer();  
@@ -359,38 +369,35 @@
     }, 1000);  
   }  
   
-  document.getElementById('replay-btn').onclick = function() {  
+  replayBtn.onclick = function() {  
     if(countdown <= 0) return;  
     if(currentItem.type === 'video') {  
-      const vid = document.getElementById('game-video');  
-      vid.currentTime = 0;  
-      vid.play();  
+      gameVideo.currentTime = 0;  
+      gameVideo.play();  
     } else if(currentItem.type === 'audio' && activeAudio) {  
       activeAudio.currentTime = 0;  
       activeAudio.play();  
     }  
   };  
   
-  document.getElementById('submit-ans-btn').onclick = function() {  
+  submitAnsBtn.onclick = function() {  
     validateUserResponse();  
   };  
   
-  // Clean special characters, symbols, and whitespace strings completely
   function normalizeText(str) {
     if (!str) return "";
     return str.toString()
               .toLowerCase()
-              .replace(/[^a-z0-9]/g, "") // Removes spaces, hyphens, slashes, punctuation symbols completely
+              .replace(/[^a-z0-9]/g, "") 
               .trim();
   }
 
   async function validateUserResponse() {  
     if(!currentItem || currentQuestionIdx === -1) return;  
       
-    let userAnsRaw = document.getElementById('answer-input').value;  
+    let userAnsRaw = answerInput.value;  
     let correctAnsRaw = currentItem.answers[currentQuestionIdx];  
   
-    // Normalize both tokens for robust structural evaluation
     if(normalizeText(userAnsRaw) === normalizeText(correctAnsRaw)) {  
       clearInterval(timerInterval);  
       score += countdown;   
@@ -406,7 +413,6 @@
   }  
   
   async function handleWrongAnswer() {  
-    // ✅ ONLY MINUS LOCALLY - NO WALLET WRITE STREAMS REACHED HERE
     lives--;  
     updateLivesDisplay();  
     
@@ -414,7 +420,7 @@
 
     let correctAns = currentItem.answers[currentQuestionIdx].toString().trim();
     document.getElementById('revealedAnswerText').innerText = correctAns;
-    document.getElementById('correctAnswerPopup').style.display = 'flex';
+    document.getElementById('correctAnswerPopup').style.display = 'flex';  
   }  
   
   document.getElementById('correctPopNextBtn').onclick = function() {  
@@ -469,5 +475,6 @@
       }  
     }  
   }  
-</script>  </body>  
+</script>  
+</body>  
 </html>
