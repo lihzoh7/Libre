@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Database Emergency Cleaner</title>
+<style>
+  body { font-family: Arial; background: #222; color: white; text-align: center; padding-top: 50px; }
+  button { background: red; color: white; font-size: 20px; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+  button:disabled { background: #555; cursor: not-allowed; }
+  #status { margin-top: 20px; font-size: 18px; color: #90EE90; }
+</style>
+</head>
+<body>
+
+  <h2>Firebase Emergency Cleaner</h2>
+  <p>Click the button below to wipe out the heavy video folder that is freezing your console screen.</p>
+  <button id="cleanBtn">WIPE VIDEO NODE</button>
+  <div id="status"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getDatabase, ref, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+    authDomain: "tose-ccf8f.firebaseapp.com",
+    databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "tose-ccf8f",
+    storageBucket: "tose-ccf8f.appspot.com",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  document.getElementById('cleanBtn').onclick = async () => {
+    if(!confirm("This will clear out the video path in your database so your screen unfreezes. Ready?")) return;
+    
+    const btn = document.getElementById('cleanBtn');
+    const status = document.getElementById('status');
+    
+    btn.disabled = true;
+    status.innerText = "Cleaning database... please wait.";
+
+    try {
+      // Targets the specific node that is clogging your browser memory
+      await remove(ref(db, "quizMedia/video"));
+      status.innerText = "SUCCESS! The heavy video node has been cleared out.";
+      alert("Database cleared! You can close this page now.");
+    } catch (error) {
+      console.error(error);
+      status.style.color = "red";
+      status.innerText = "Error: " + error.message;
+      btn.disabled = false;
+    }
+  };
+</script>
+</body>
+</html>
