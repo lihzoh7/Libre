@@ -118,7 +118,7 @@ body {
     <div class="empty-msg">No player qualified yet</div>
   </div>
   <div class="tier-info">
-    This prize will be Awarded to the player who obtains 2500+ points, players are contacted for verification of their details
+    This prize will be Awarded to the player who obtains 3500+ points, players are contacted for verification of their details
   </div>
 </div>
 
@@ -129,7 +129,7 @@ body {
     <div class="empty-msg">No player qualified yet</div>
   </div>
   <div class="tier-info">
-    This prize will be Awarded to the player who obtains 1500+ points, players are contacted for verification of their details
+    This prize will be Awarded to the player who obtains 2500+ points, players are contacted for verification of their details
   </div>
 </div>
 
@@ -140,7 +140,7 @@ body {
     <div class="empty-msg" style="grid-column: span 3;">No players qualified yet</div>
   </div>
   <div class="tier-info">
-    This prize will be Awarded to the player who obtains 900+ points, players are contacted for verification of their details
+    This prize will be Awarded to the player who obtains 1500+ points, players are contacted for verification of their details
   </div>
 </div>
 
@@ -151,7 +151,7 @@ body {
     <div class="empty-msg" style="grid-column: span 3;">No players qualified yet</div>
   </div>
   <div class="tier-info">
-    This prize will be Awarded to the player who obtains 500+ points, players are contacted for verification of their details
+    This prize will be Awarded to the player who obtains 1000+ points, players are contacted for verification of their details
   </div>
 </div>
 
@@ -215,7 +215,7 @@ onValue(ref(db, "leaderboard/current"), snap => {
     let score = player.score;
 
     // Check Diamond Qualifications
-    if (score >= 2500) {
+    if (score >= 3500) {
       if (!diamondPlayer) {
         diamondPlayer = player;
       } else if (!goldPlayer) {
@@ -227,7 +227,7 @@ onValue(ref(db, "leaderboard/current"), snap => {
       }
     } 
     // Check Gold Qualifications
-    else if (score >= 1500) {
+    else if (score >= 2500) {
       if (!goldPlayer) {
         goldPlayer = player;
       } else if (silverPlayers.length < 3) {
@@ -237,7 +237,7 @@ onValue(ref(db, "leaderboard/current"), snap => {
       }
     } 
     // Check Silver Qualifications
-    else if (score >= 900) {
+    else if (score >= 1500) {
       if (silverPlayers.length < 3) {
         silverPlayers.push(player);
       } else if (bronzePlayers.length < 3) {
@@ -245,7 +245,7 @@ onValue(ref(db, "leaderboard/current"), snap => {
       }
     } 
     // Check Bronze Qualifications
-    else if (score >= 500) {
+    else if (score >= 1000) {
       if (bronzePlayers.length < 3) {
         bronzePlayers.push(player);
       }
