@@ -11,19 +11,18 @@ body {
   background: #001f3f;
   color: white;
   display: flex;
-  flex-direction: column; /* Allows content to flow vertically */
+  flex-direction: column; 
   justify-content: center;
   align-items: center; 
   min-height: 100vh;
 }
 
 #wallet {
-  width: 500px; /* Slightly wider to accommodate side-text easily */
+  width: 500px; 
   padding: 20px;
   text-align: center; 
 }
 
-/* Ice-colored heading styling */
 .winter-header {
   color: #00f0ff;
   font-size: 28px;
@@ -66,7 +65,6 @@ body {
   transition: background 0.3s;
 }
 
-/* Left-side counter badge */
 .click-count {
   font-size: 20px;
   font-weight: bold;
@@ -77,7 +75,6 @@ body {
   margin-right: 10px;
 }
 
-/* Middle clickable button section */
 .tab-btn {
   flex-grow: 1;
   text-align: center;
@@ -86,7 +83,6 @@ body {
   font-weight: bold;   
 }
 
-/* Right-side status notice */
 .status-text {
   font-size: 14px;
   font-weight: bold;
@@ -99,15 +95,16 @@ body {
   background: #003366; 
 }
 
-/* Disabled styling for completed specials */
+/* Grayed out disabled style */
 .tab-container.disabled {
   background: #333333 !important;
   border-color: #555555 !important;
-  cursor: not-allowed;
-  opacity: 0.6;
+  cursor: not-allowed !important;
+  opacity: 0.5;
 }
 .tab-container.disabled .tab-btn {
-  cursor: not-allowed;
+  cursor: not-allowed !important;
+  pointer-events: none; /* Disables HTML clicking entirely */
 }
 
 h2 {
@@ -209,7 +206,6 @@ onAuthStateChanged(auth, async (user) => {
   listenToPromoLimits();
 });
 
-/* REAL-TIME WALLET LISTENER */
 function loadWallet(){
   onValue(ref(db, "wallet/" + uid), (snap) => {
     const data = snap.val() || {};
@@ -218,7 +214,7 @@ function loadWallet(){
   });
 }
 
-/* LISTEN TO USER PROMO CLICK COUNT */
+/* REAL-TIME CLICK MONITOR */
 function listenToPromoLimits() {
   onValue(ref(db, "winter_special_clicks/" + uid), (snap) => {
     const clicks = snap.val() || {};
@@ -229,14 +225,16 @@ function listenToPromoLimits() {
   });
 }
 
-/* DYNAMICALLY CONFIGURE TILE UI BASED ON CLICKS */
 function updateTileUI(tierId, clickCount) {
   const container = document.getElementById("container-" + tierId);
   const countBadge = document.getElementById("count-" + tierId);
   const statusLabel = document.getElementById("status-" + tierId);
 
-  let remaining = 2 - clickCount;
-  if (remaining < 0) remaining = 0;
+  // Read backup local storage count just in case network is slow
+  const localBackupCount = parseInt(localStorage.getItem(`promo_${uid}_${tierId}`) || "0", 10);
+  const finalCount = Math.max(clickCount, localBackupCount);
+
+  let remaining = 2 - finalCount;
 
   if (remaining === 2) {
     countBadge.innerText = "2";
@@ -249,42 +247,60 @@ function updateTileUI(tierId, clickCount) {
     statusLabel.innerText = "";
     container.classList.remove("disabled");
   } else {
-    // 0 remaining clicks
+    // 0 remaining clicks - completely lock tile
     countBadge.style.display = "none";
     statusLabel.innerText = "SPECIAL ENDED";
     container.classList.add("disabled");
   }
 }
 
-/* INSTANT PURCHASE PROCESSING ROUTINE */
+/* REVISED FORCE-CLAMPED PURCHASE PROCESSOR */
 window.processInstantPromo = async function(tierId, gemsToAdd, livesToAdd) {
-  // Check limitations first
-  const clickSnap = await get(ref(db, "winter_special_clicks/" + uid + "/" + tierId));
-  const currentClicks = clickSnap.val() || 0;
+  if (!uid) return;
 
-  if (currentClicks >= 2) {
-    alert("This special offer has ended for you!");
+  // 1. Check local backup block first for instant feedback
+  const localCount = parseInt(localStorage.getItem(`promo_${uid}_${tierId}`) || "0", 10);
+  if (localCount >= 2) {
+    alert("Special Offer Ended!");
     return;
   }
 
-  // Get current wallet values safely
+  // 2. Fetch fresh live value from Cloud Database to verify
+  const clickSnap = await get(ref(db, "winter_special_clicks/" + uid + "/" + tierId));
+  const serverClicks = clickSnap.val() || 0;
+
+  if (serverClicks >= 2) {
+    localStorage.setItem(`promo_${uid}_${tierId}`, "2"); // sync backup
+    updateTileUI(tierId, 2);
+    alert("Special Offer Ended!");
+    return;
+  }
+
+  // Calculate next click step value
+  const nextClickValue = serverClicks + 1;
+
+  // 3. Immediately set local storage backup shield to block double clicks
+  localStorage.setItem(`promo_${uid}_${tierId}`, nextClickValue.toString());
+  updateTileUI(tierId, nextClickValue);
+
+  // 4. Fetch wallet data and apply additions
   const walletSnap = await get(ref(db, "wallet/" + uid));
   const walletData = walletSnap.val() || {};
   
   let currentGems = walletData.gems || 0;
   let currentLives = walletData.lives || 0;
 
-  // Set updated wallet calculations instantly
+  // Save the new balances down to Firebase
   await set(ref(db, "wallet/" + uid + "/gems"), currentGems + gemsToAdd);
   await set(ref(db, "wallet/" + uid + "/lives"), currentLives + livesToAdd);
 
-  // Track the usage count inside database
-  await set(ref(db, "winter_special_clicks/" + uid + "/" + tierId), currentClicks + 1);
+  // Save the updated click counter tracking node down to Firebase
+  await set(ref(db, "winter_special_clicks/" + uid + "/" + tierId), nextClickValue);
 
-  alert(`Successfully loaded +${gemsToAdd} 💎 and +${livesToAdd} ❤️!`);
+  alert(`Loaded +${gemsToAdd} 💎 and +${livesToAdd} ❤️!`);
 };
 
-/* CONVERT GEMS TO LIVES MECHANIC */
+/* GEMS CONVERSION */
 document.getElementById("buyLife").onclick = async () => {
   const snap = await get(ref(db, "wallet/" + uid));
   const data = snap.val() || {};
@@ -300,7 +316,7 @@ document.getElementById("buyLife").onclick = async () => {
   await set(ref(db, "wallet/" + uid + "/gems"), gems - 300);
   await set(ref(db, "wallet/" + uid + "/lives"), lives + 1);
 
-  alert("+1 ❤️ purchased via Gems!");
+  alert("+1 ❤️ purchased!");
 };
 </script>
 
