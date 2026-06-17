@@ -17,26 +17,25 @@ body {
 }
 
 #wallet {
-  width: 450px; 
+  width: 500px; /* Slightly wider to accommodate the "SPECIAL ENDED" text */
   padding: 20px;
   text-align: center; 
 }
 
-/* Icy Cyan Header for the Winter Special */
-.special-header {
-  color: #a5f3fc; /* Deep icy/cyan color */
-  font-size: 26px;
+/* Winter Special Heading styling */
+.special-heading {
+  color: #b0e0e6; /* Icy powder blue color */
+  font-size: 28px;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 2px;
   margin-bottom: 5px;
-  text-shadow: 0 0 10px rgba(165, 243, 252, 0.5);
 }
 
 h2 {
   font-size: 32px; 
   margin-top: 0;
-  margin-bottom: 25px;
+  margin-bottom: 30px;
 }
 
 .tiles {
@@ -53,16 +52,15 @@ h2 {
   border-radius: 10px;
   font-size: 24px; 
   font-weight: bold;
-  cursor: pointer; /* Keeps the Gem-to-Life click clear */
 }
 
-/* Flex layout for tabs to place "SPECIAL ENDED" nicely on the right */
+/* Flexbox container for tab to push "SPECIAL ENDED" to the right side */
 .tab {
   margin-top: 15px;
   background: #001f5c;
   padding: 20px; 
   display: flex;
-  justify-content: space-between; /* Pushes text to left and status to right */
+  justify-content: space-between;
   align-items: center;
   cursor: pointer;
   border-radius: 8px; 
@@ -72,26 +70,23 @@ h2 {
   transition: all 0.3s;
 }
 
-.tab:hover:not(.disabled) {
+.tab:hover {
   background: #003366; 
 }
 
-/* Grayed out, unclickable style when limit is reached */
+/* Disabled/Greyed out tile state */
 .tab.disabled {
-  background: #334155 !important;
-  color: #94a3b8 !important;
-  border: 1px solid #475569 !important;
+  background: #333333 !important;
+  color: #888888 !important;
+  border-color: #555555 !important;
   cursor: not-allowed;
-}
-
-.status-text {
-  font-size: 14px;
+  pointer-events: none; /* Disables clicking entirely */
 }
 
 .ended-text {
-  color: #ef4444; /* Red color for Special Ended */
+  color: #ff4d4d; /* Reddish text for attention */
+  font-size: 14px;
   font-weight: bold;
-  font-size: 13px;
 }
 
 .wallet-notice {
@@ -100,7 +95,7 @@ h2 {
   font-weight: bold;
   letter-spacing: 0.5px;
   line-height: 1.5;
-  margin-top: 20px;
+  margin-top: 10px;
   padding: 10px;
   background: rgba(0, 0, 0, 0.2); 
   border-radius: 5px;
@@ -111,34 +106,30 @@ h2 {
 <body>
 
 <div id="wallet">
-  <!-- Upper Center Winter Special Header -->
-  <div class="special-header">❄️ Winter Special ❄️</div>
+  <div class="special-heading">WINTER SPECIAL</div>
   <h2>WALLET</h2>
 
   <div class="tiles">
     <div class="tile">💎 <span id="gems">0</span></div>
-    <!-- Fixed click check from 100 to 300 gems -->
     <div class="tile" id="buyLife">❤️ <span id="lives">0</span></div>
   </div>
 
-  <!-- R0.50 Tile -->
-  <div id="tile-050" class="tab" onclick="buySpecial('050', 150, 1, 'https://pay.ikhokha.com/i-am-lizo-tose/mpr/slide-1')">
-    <span class="label-text">R0.50 (1❤️+150💎) CLICK TO BUY</span>
-    <span id="status-050" class="status-text">(0/2)</span>
+  <div id="tile-r050" class="tab" onclick="claimSpecial('r050', 150, 1)">
+    <span>R0.50 (1❤️+150💎) CLICK TO BUY</span>
+    <span class="ended-text" id="status-r050"></span>
   </div>
 
-  <!-- R1.50 Tile -->
-  <div id="tile-150" class="tab" onclick="buySpecial('150', 350, 2, 'https://pay.ikhokha.com/i-am-lizo-tose/mpr/slide-2')">
-    <span class="label-text">R1.50 (2❤️+350💎) CLICK TO BUY</span>
-    <span id="status-150" class="status-text">(0/2)</span>
+  <div id="tile-r150" class="tab" onclick="claimSpecial('r150', 350, 2)">
+    <span>R1.50 (2❤️+350💎) CLICK TO BUY</span>
+    <span class="ended-text" id="status-r150"></span>
   </div>
 
-  <!-- R3.00 Tile -->
-  <div id="tile-300" class="tab" onclick="buySpecial('300', 400, 5, 'https://pay.ikhokha.com/i-am-lizo-tose/mpr/slide-3')">
-    <span class="label-text">R3 (5❤️+400💎) CLICK TO BUY</span>
-    <span id="status-300" class="status-text">(0/2)</span>
+  <div id="tile-r3" class="tab" onclick="claimSpecial('r3', 400, 5)">
+    <span>R3 (5❤️+400💎) CLICK TO BUY</span>
+    <span class="ended-text" id="status-r3"></span>
   </div>
 
+  <br><br>
   <div class="wallet-notice">
     Wallet Can Only Be Topped-Up Between Times 07:00 TO 20:00
   </div>
@@ -167,9 +158,6 @@ const gemsEl = document.getElementById("gems");
 const livesEl = document.getElementById("lives");
 
 let uid;
-let currentGems = 0;
-let currentLives = 0;
-let claims = { "050": 0, "150": 0, "300": 0 };
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -184,80 +172,87 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   uid = user.uid;
-  loadWallet(); 
+  load(); 
 });
 
-/* REAL-TIME WALLET LISTENER */
-function loadWallet() {
+/* LOAD USER BALANCES & SPECIAL OFFER STATUSES */
+function load(){
+  // Real-time listener for balances
   onValue(ref(db, "wallet/" + uid), (snap) => {
     const data = snap.val() || {};
-    
-    currentGems = data.gems || 0;
-    currentLives = data.lives || 0;
-    
-    // Extract claim counts safely
-    const dbClaims = data.specialClaims || {};
-    claims["050"] = dbClaims["050"] || 0;
-    claims["150"] = dbClaims["150"] || 0;
-    claims["300"] = dbClaims["300"] || 0;
+    gemsEl.innerText = data.gems || 0;
+    livesEl.innerText = data.lives || 0;
+  });
 
-    // Update Text Fields
-    gemsEl.innerText = currentGems;
-    livesEl.innerText = currentLives;
-
-    // Update UI Elements for the special tiles
-    updateTileUI("050");
-    updateTileUI("150");
-    updateTileUI("300");
+  // Real-time listener for the user's claims limits
+  onValue(ref(db, "specialClaims/" + uid), (snap) => {
+    const claims = snap.val() || { r050: 0, r150: 0, r3: 0 };
+    
+    checkLimit("r050", claims.r050 || 0);
+    checkLimit("r150", claims.r150 || 0);
+    checkLimit("r3", claims.r3 || 0);
   });
 }
 
-/* UPDATE TILES VISUALLY BASED ON CLAIMS */
-function updateTileUI(tileId) {
-  const tileEl = document.getElementById("tile-" + tileId);
-  const statusEl = document.getElementById("status-" + tileId);
-  const count = claims[tileId];
-
+/* HELPER TO GREY OUT TILES IF THEY REACHED 2 CLAIMS */
+function checkLimit(tileId, count) {
+  const element = document.getElementById("tile-" + tileId);
+  const textElement = document.getElementById("status-" + tileId);
+  
   if (count >= 2) {
-    tileEl.classList.add("disabled");
-    statusEl.innerHTML = '<span class="ended-text">SPECIAL ENDED</span>';
+    element.classList.add("disabled");
+    textElement.innerText = "SPECIAL ENDED";
   } else {
-    tileEl.classList.remove("disabled");
-    statusEl.innerText = "(" + count + "/2)";
+    element.classList.remove("disabled");
+    textElement.innerText = "";
   }
 }
 
-/* INSTANT AUTO-LOAD TRANSACTION */
-window.buySpecial = async function(tileId, gemsToAdd, livesToAdd, paymentLink) {
-  // Guard clause: stop execution if already claimed twice
-  if (claims[tileId] >= 2) {
-    alert("You have already reached the maximum limit for this special item!");
+/* INSTANT LOADER FOR SPECIAL TILES (NO LINKS, INSTANT CREDITING) */
+window.claimSpecial = async function(tileId, gemsToAdd, livesToAdd) {
+  if (!uid) return;
+
+  // 1. Double check current claim count directly from DB
+  const claimsSnap = await get(ref(db, "specialClaims/" + uid + "/" + tileId));
+  const currentClaims = claimsSnap.val() || 0;
+
+  if (currentClaims >= 2) {
+    alert("You have already used your 2 claims for this special package!");
     return;
   }
 
-  // 1. Open the payment gateway link immediately
-  window.open(paymentLink, "_blank");
+  // 2. Fetch current wallet balances
+  const walletSnap = await get(ref(db, "wallet/" + uid));
+  const walletData = walletSnap.val() || { gems: 0, lives: 0 };
 
-  // 2. Increment local tracking value
-  const finalClaimsCount = claims[tileId] + 1;
+  let currentGems = walletData.gems || 0;
+  let currentLives = walletData.lives || 0;
 
-  // 3. Update balances and claim counter directly into Firebase (No Admin Needed!)
+  // 3. Update wallet items and increment claim count in database instantly
   await set(ref(db, "wallet/" + uid + "/gems"), currentGems + gemsToAdd);
   await set(ref(db, "wallet/" + uid + "/lives"), currentLives + livesToAdd);
-  await set(ref(db, "wallet/" + uid + "/specialClaims/" + tileId), finalClaimsCount);
+  await set(ref(db, "specialClaims/" + uid + "/" + tileId), currentClaims + 1);
 
-  alert("Special loaded successfully! +" + gemsToAdd + " 💎 and +" + livesToAdd + " ❤️ added to your wallet.");
+  alert(`Successfully claimed! +${gemsToAdd} 💎 and +${livesToAdd} ❤️ added to your wallet.`);
 };
 
-/* IN-APP GEM CONVERSION (300 GEMS -> 1 LIFE) */
+/* GEM-TO-LIFE EXCHANGE TILE (FIXED BUG SO IT CHECKS FOR 300 GEMS) */
 document.getElementById("buyLife").onclick = async () => {
-  if (currentGems < 300) { // Fixed balance constraint check to match costs
+  if (!uid) return;
+
+  const snap = await get(ref(db, "wallet/" + uid));
+  const data = snap.val() || {};
+
+  let gems = data.gems || 0;
+  let lives = data.lives || 0;
+
+  if (gems < 300) {
     alert("Not enough gems (300 💎 = 1 ❤️)");
     return;
   }
 
-  await set(ref(db, "wallet/" + uid + "/gems"), currentGems - 300);
-  await set(ref(db, "wallet/" + uid + "/lives"), currentLives + 1);
+  await set(ref(db, "wallet/" + uid + "/gems"), gems - 300);
+  await set(ref(db, "wallet/" + uid + "/lives"), lives + 1);
 
   alert("+1 ❤️ purchased with gems!");
 };
