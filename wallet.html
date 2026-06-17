@@ -11,27 +11,26 @@ body {
   background: #001f3f;
   color: white;
   display: flex;
-  flex-direction: column; 
   justify-content: center;
   align-items: center; 
   min-height: 100vh;
 }
 
 #wallet {
-  width: 500px; 
+  width: 450px; 
   padding: 20px;
   text-align: center; 
 }
 
-/* Winter Special Text Heading */
+/* New Winter Special Header Style */
 .winter-header {
-  font-size: 26px;
-  color: #a5f3fc; /* Bright Icy / Cyan blue color */
+  color: #a5f3fc; /* Icy blue / cyan color */
+  font-size: 28px;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 2px;
   margin-bottom: 5px;
-  text-shadow: 0 0 10px rgba(165, 243, 252, 0.5);
+  text-shadow: 0 0 10px rgba(165, 243, 252, 0.6);
 }
 
 .tiles {
@@ -50,57 +49,46 @@ body {
   font-weight: bold;
 }
 
-/* Wrapper to structure the button text and the special notice side-by-side */
-.tab-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* Flex layout to align the tile text and the "SPECIAL ENDED" text */
+.tab {
   margin-top: 15px;
   background: #001f5c;
   padding: 20px; 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
   border-radius: 8px; 
+  font-size: 16px;     
+  font-weight: bold;   
   border: 1px solid #004080; 
   transition: all 0.3s;
-  cursor: pointer; /* Cursor is now on the whole tile */
 }
 
-.tab-btn {
-  flex-grow: 1;
-  text-align: left;
-  font-size: 18px;     
-  font-weight: bold;   
-  pointer-events: none; /* Prevents clicks from hitting the text directly instead of the container */
-}
-
-.tab-status {
-  font-size: 14px;
-  font-weight: bold;
-  color: #ffcc00; /* Gold for remaining uses */
-  margin-left: 15px;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-.tab-container:hover:not(.disabled) {
+.tab:hover {
   background: #003366; 
 }
 
-/* Disabled/Greyed Out State Rules */
-.tab-container.disabled {
-  background: #334155 !important; /* Metallic slate grey */
-  border-color: #475569 !important;
-  cursor: not-allowed !important;
-  opacity: 0.6;
+/* Styling for the disabled, greyed-out packages */
+.tab.disabled {
+  background: #334155 !important;
+  color: #94a3b8 !important;
+  border: 1px solid #475569 !important;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
-.tab-container.disabled .tab-status {
-  color: #ef4444 !important; /* Red for special ended */
+.ended-text {
+  color: #ef4444; /* Bright red */
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1px;
 }
 
 h2 {
   font-size: 32px; 
-  margin-top: 0;
-  margin-bottom: 20px;
+  margin-top: 5px;
+  margin-bottom: 30px;
 }
 
 .wallet-notice {
@@ -109,7 +97,7 @@ h2 {
   font-weight: bold;
   letter-spacing: 0.5px;
   line-height: 1.5;
-  margin-top: 25px;
+  margin-top: 10px;
   padding: 10px;
   background: rgba(0, 0, 0, 0.2); 
   border-radius: 5px;
@@ -119,39 +107,28 @@ h2 {
 
 <body>
 
-<!-- Winter Special Headline at upper center -->
-<div class="winter-header">❄️ Winter Special ❄️</div>
-
 <div id="wallet">
+<div class="winter-header">❄️ WINTER SPECIAL ❄️</div>
 <h2>WALLET</h2>
 
 <div class="tiles">
   <div class="tile">💎 <span id="gems">0</span></div>
-  <div class="tile" id="buyLife">❤️ <span id="lives">0</span></div>
+  <div class="tile" id="buyLife" style="cursor:pointer;">❤️ <span id="lives">0</span></div>
 </div>
 
-<!-- Bundle 1: R0.50 (Onclick is now securely on the container) -->
-<div class="tab-container" id="container-tier1" onclick="claimSpecial('tier1', 150, 1)">
-  <div class="tab-btn">
-    R0.50 (1❤️+150💎) CLICK TO LOAD
-  </div>
-  <div class="tab-status" id="status-tier1">2 CLAIMS LEFT</div>
+<div id="pkg-half" class="tab" onclick="claimSpecial('half', 150, 1)">
+  <span>R0.50 (1❤️+150💎) CLICK TO CLAIM</span>
+  <span id="ended-half" class="ended-text" style="display:none;">SPECIAL ENDED</span>
 </div>
 
-<!-- Bundle 2: R1.50 -->
-<div class="tab-container" id="container-tier2" onclick="claimSpecial('tier2', 350, 2)">
-  <div class="tab-btn">
-    R1.50 (2❤️+350💎) CLICK TO LOAD
-  </div>
-  <div class="tab-status" id="status-tier2">2 CLAIMS LEFT</div>
+<div id="pkg-onehalf" class="tab" onclick="claimSpecial('onehalf', 350, 2)">
+  <span>R1.50 (2❤️+350💎) CLICK TO CLAIM</span>
+  <span id="ended-onehalf" class="ended-text" style="display:none;">SPECIAL ENDED</span>
 </div>
 
-<!-- Bundle 3: R3.00 -->
-<div class="tab-container" id="container-tier3" onclick="claimSpecial('tier3', 400, 5)">
-  <div class="tab-btn">
-    R3 (5❤️+400💎) CLICK TO LOAD
-  </div>
-  <div class="tab-status" id="status-tier3">2 CLAIMS LEFT</div>
+<div id="pkg-three" class="tab" onclick="claimSpecial('three', 400, 5)">
+  <span>R3.00 (5❤️+400💎) CLICK TO CLAIM</span>
+  <span id="ended-three" class="ended-text" style="display:none;">SPECIAL ENDED</span>
 </div>
 
 <br><br>
@@ -198,76 +175,72 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   uid = user.uid;
-  loadWallet();
-  syncSpecialLimits();
+  load(); 
 });
 
-/* REAL-TIME WALLET DISPLAY */
-function loadWallet(){
+/* LOAD WALLET AND CLICK LIMITS */
+function load(){
+  // Live listener for user's balance
   onValue(ref(db, "wallet/" + uid), (snap) => {
     const data = snap.val() || {};
     gemsEl.innerText = data.gems || 0;
     livesEl.innerText = data.lives || 0;
   });
-}
 
-/* LISTEN FOR USER'S CLAIM COUNT PER TILE */
-function syncSpecialLimits() {
-  onValue(ref(db, "specialClaims/" + uid), (snap) => {
-    const claims = snap.val() || {};
-    const tiers = ['tier1', 'tier2', 'tier3'];
+  // Live listener for tracking special promotional clicks
+  onValue(ref(db, "winterSpecialClicks/" + uid), (snap) => {
+    const usage = snap.val() || { half: 0, onehalf: 0, three: 0 };
     
-    tiers.forEach(tier => {
-      const count = claims[tier] || 0;
-      const container = document.getElementById("container-" + tier);
-      const statusText = document.getElementById("status-" + tier);
-      
-      if (count >= 2) {
-        container.classList.add("disabled");
-        statusText.innerText = "SPECIAL ENDED";
-      } else {
-        container.classList.remove("disabled");
-        statusText.innerText = (2 - count) + " CLAIMS LEFT";
-      }
-    });
+    checkLimit("half", usage.half);
+    checkLimit("onehalf", usage.onehalf);
+    checkLimit("three", usage.three);
   });
 }
 
-/* AUTOMATIC SPECIAL CLAIM ENGINE */
-window.claimSpecial = async function(tier, gemsToAdd, livesToAdd) {
-  const container = document.getElementById("container-" + tier);
+// Helper to grey out buttons and display "SPECIAL ENDED"
+function checkLimit(pkgId, count) {
+  const btn = document.getElementById("pkg-" + pkgId);
+  const endedLabel = document.getElementById("ended-" + pkgId);
   
-  // 1. FRONTEND GUARD: Stop immediately if the tile is visually disabled
-  if (container.classList.contains("disabled")) {
-    alert("This special offer has ended!");
+  if (count >= 2) {
+    btn.classList.add("disabled");
+    endedLabel.style.display = "inline";
+  } else {
+    btn.classList.remove("disabled");
+    endedLabel.style.display = "none";
+  }
+}
+
+/* NEW INSTANT CLAIM FUNCTION (REPLACES OLD BUY LINK FUNCTION) */
+window.claimSpecial = async function(pkgId, promoGems, promoLives) {
+  // 1. Get current usage count
+  const usageSnap = await get(ref(db, "winterSpecialClicks/" + uid));
+  const usage = usageSnap.val() || { half: 0, onehalf: 0, three: 0 };
+  
+  if (usage[pkgId] >= 2) {
+    alert("You have already used your 2 claims for this package!");
     return;
   }
 
-  // 2. BACKEND GUARD: Double check the actual value in Firebase before updating anything
-  const countSnap = await get(ref(db, "specialClaims/" + uid + "/" + tier));
-  const currentCount = countSnap.val() || 0;
-  
-  if (currentCount >= 2) {
-    alert("This special offer has already ended for your account.");
-    return;
-  }
-
-  // 3. If tests pass, fetch wallet balances
+  // 2. Fetch current wallet balances securely
   const walletSnap = await get(ref(db, "wallet/" + uid));
-  const walletData = walletSnap.val() || {};
-  
+  const walletData = walletSnap.val() || { gems: 0, lives: 0 };
+
   let currentGems = walletData.gems || 0;
   let currentLives = walletData.lives || 0;
 
-  // 4. Update balances and step up the count tracking
-  await set(ref(db, "wallet/" + uid + "/gems"), currentGems + gemsToAdd);
-  await set(ref(db, "wallet/" + uid + "/lives"), currentLives + livesToAdd);
-  await set(ref(db, "specialClaims/" + uid + "/" + tier), currentCount + 1);
+  // 3. Update balances instantly without admin approval
+  await set(ref(db, "wallet/" + uid + "/gems"), currentGems + promoGems);
+  await set(ref(db, "wallet/" + uid + "/lives"), currentLives + promoLives);
 
-  alert(`Successfully loaded +${gemsToAdd} Gems and +${livesToAdd} Lives!`);
+  // 4. Increment the click counter in database
+  usage[pkgId] = (usage[pkgId] || 0) + 1;
+  await set(ref(db, "winterSpecialClicks/" + uid), usage);
+
+  alert(`Successfully loaded +${promoGems} 💎 and +${promoLives} ❤️!`);
 };
 
-/* IN-APP GEM CONVERSION */
+/* GEM TO LIFE CONVERSION (300 gems = 1 life) */
 document.getElementById("buyLife").onclick = async () => {
   const snap = await get(ref(db, "wallet/" + uid));
   const data = snap.val() || {};
@@ -275,7 +248,7 @@ document.getElementById("buyLife").onclick = async () => {
   let gems = data.gems || 0;
   let lives = data.lives || 0;
 
-  if(gems < 300){
+  if (gems < 300) { // Fixed typo here to match your logic statement alert
     alert("Not enough gems (300 💎 = 1 ❤️)");
     return;
   }
@@ -283,7 +256,7 @@ document.getElementById("buyLife").onclick = async () => {
   await set(ref(db, "wallet/" + uid + "/gems"), gems - 300);
   await set(ref(db, "wallet/" + uid + "/lives"), lives + 1);
 
-  alert("+1 ❤️ purchased with Gems!");
+  alert("+1 ❤️ purchased!");
 };
 </script>
 
