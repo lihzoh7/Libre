@@ -11,14 +11,14 @@ body {
   background: #001f3f;
   color: white;
   display: flex;
-  flex-direction: column; /* Allows stacking headers vertically */
+  flex-direction: column; 
   justify-content: center;
   align-items: center; 
   min-height: 100vh;
 }
 
 #wallet {
-  width: 500px; /* Slightly wider to accommodate the status text nicely */
+  width: 500px; 
   padding: 20px;
   text-align: center; 
 }
@@ -61,14 +61,15 @@ body {
   border-radius: 8px; 
   border: 1px solid #004080; 
   transition: all 0.3s;
+  cursor: pointer; /* Cursor is now on the whole tile */
 }
 
 .tab-btn {
   flex-grow: 1;
   text-align: left;
-  cursor: pointer;
   font-size: 18px;     
   font-weight: bold;   
+  pointer-events: none; /* Prevents clicks from hitting the text directly instead of the container */
 }
 
 .tab-status {
@@ -77,6 +78,7 @@ body {
   color: #ffcc00; /* Gold for remaining uses */
   margin-left: 15px;
   white-space: nowrap;
+  pointer-events: none;
 }
 
 .tab-container:hover:not(.disabled) {
@@ -87,7 +89,7 @@ body {
 .tab-container.disabled {
   background: #334155 !important; /* Metallic slate grey */
   border-color: #475569 !important;
-  cursor: not-allowed;
+  cursor: not-allowed !important;
   opacity: 0.6;
 }
 
@@ -128,25 +130,25 @@ h2 {
   <div class="tile" id="buyLife">❤️ <span id="lives">0</span></div>
 </div>
 
-<!-- Bundle 1: R0.50 -->
-<div class="tab-container" id="container-tier1">
-  <div class="tab-btn" onclick="claimSpecial('tier1', 150, 1)">
+<!-- Bundle 1: R0.50 (Onclick is now securely on the container) -->
+<div class="tab-container" id="container-tier1" onclick="claimSpecial('tier1', 150, 1)">
+  <div class="tab-btn">
     R0.50 (1❤️+150💎) CLICK TO LOAD
   </div>
   <div class="tab-status" id="status-tier1">2 CLAIMS LEFT</div>
 </div>
 
 <!-- Bundle 2: R1.50 -->
-<div class="tab-container" id="container-tier2">
-  <div class="tab-btn" onclick="claimSpecial('tier2', 350, 2)">
+<div class="tab-container" id="container-tier2" onclick="claimSpecial('tier2', 350, 2)">
+  <div class="tab-btn">
     R1.50 (2❤️+350💎) CLICK TO LOAD
   </div>
   <div class="tab-status" id="status-tier2">2 CLAIMS LEFT</div>
 </div>
 
 <!-- Bundle 3: R3.00 -->
-<div class="tab-container" id="container-tier3">
-  <div class="tab-btn" onclick="claimSpecial('tier3', 400, 5)">
+<div class="tab-container" id="container-tier3" onclick="claimSpecial('tier3', 400, 5)">
+  <div class="tab-btn">
     R3 (5❤️+400💎) CLICK TO LOAD
   </div>
   <div class="tab-status" id="status-tier3">2 CLAIMS LEFT</div>
@@ -213,8 +215,6 @@ function loadWallet(){
 function syncSpecialLimits() {
   onValue(ref(db, "specialClaims/" + uid), (snap) => {
     const claims = snap.val() || {};
-    
-    // Tiers list to update structural loops quickly
     const tiers = ['tier1', 'tier2', 'tier3'];
     
     tiers.forEach(tier => {
@@ -237,13 +237,13 @@ function syncSpecialLimits() {
 window.claimSpecial = async function(tier, gemsToAdd, livesToAdd) {
   const container = document.getElementById("container-" + tier);
   
-  // Guard check: Stop execution instantly if tile is greyed out
+  // 1. FRONTEND GUARD: Stop immediately if the tile is visually disabled
   if (container.classList.contains("disabled")) {
-    alert("You have reached the claim limit for this offer!");
+    alert("This special offer has ended!");
     return;
   }
 
-  // Check database counts explicitly to bypass client-side manipulation risks
+  // 2. BACKEND GUARD: Double check the actual value in Firebase before updating anything
   const countSnap = await get(ref(db, "specialClaims/" + uid + "/" + tier));
   const currentCount = countSnap.val() || 0;
   
@@ -252,14 +252,14 @@ window.claimSpecial = async function(tier, gemsToAdd, livesToAdd) {
     return;
   }
 
-  // 1. Fetch current balances
+  // 3. If tests pass, fetch wallet balances
   const walletSnap = await get(ref(db, "wallet/" + uid));
   const walletData = walletSnap.val() || {};
   
   let currentGems = walletData.gems || 0;
   let currentLives = walletData.lives || 0;
 
-  // 2. Add rewards and increase count
+  // 4. Update balances and step up the count tracking
   await set(ref(db, "wallet/" + uid + "/gems"), currentGems + gemsToAdd);
   await set(ref(db, "wallet/" + uid + "/lives"), currentLives + livesToAdd);
   await set(ref(db, "specialClaims/" + uid + "/" + tier), currentCount + 1);
@@ -267,7 +267,7 @@ window.claimSpecial = async function(tier, gemsToAdd, livesToAdd) {
   alert(`Successfully loaded +${gemsToAdd} Gems and +${livesToAdd} Lives!`);
 };
 
-/* IN-APP GEM CONVERSION (FIXED GEM LOGIC RULE) */
+/* IN-APP GEM CONVERSION */
 document.getElementById("buyLife").onclick = async () => {
   const snap = await get(ref(db, "wallet/" + uid));
   const data = snap.val() || {};
@@ -275,7 +275,6 @@ document.getElementById("buyLife").onclick = async () => {
   let gems = data.gems || 0;
   let lives = data.lives || 0;
 
-  // Fixed your original bug check so balances won't plunge past 0
   if(gems < 300){
     alert("Not enough gems (300 💎 = 1 ❤️)");
     return;
