@@ -11,32 +11,27 @@ body {
   background: #001f3f;
   color: white;
   display: flex;
+  flex-direction: column; /* Allows stacking headers vertically */
   justify-content: center;
   align-items: center; 
   min-height: 100vh;
 }
 
 #wallet {
-  width: 500px; /* Slightly widened to accommodate the "SPECIAL ENDED" text */
+  width: 500px; /* Slightly wider to accommodate the status text nicely */
   padding: 20px;
   text-align: center; 
 }
 
-/* Ice-colored Winter Special Header */
+/* Winter Special Text Heading */
 .winter-header {
-  color: #a5f3fc; /* Icy light blue/cyan */
   font-size: 26px;
+  color: #a5f3fc; /* Bright Icy / Cyan blue color */
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 2px;
   margin-bottom: 5px;
   text-shadow: 0 0 10px rgba(165, 243, 252, 0.5);
-}
-
-h2 {
-  font-size: 32px; 
-  margin-top: 0;
-  margin-bottom: 30px;
 }
 
 .tiles {
@@ -55,38 +50,55 @@ h2 {
   font-weight: bold;
 }
 
-/* Flexbox wrapper inside tab to position content left and right */
-.tab {
+/* Wrapper to structure the button text and the special notice side-by-side */
+.tab-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-top: 15px;
   background: #001f5c;
   padding: 20px; 
-  cursor: pointer;
   border-radius: 8px; 
-  font-size: 16px;     
-  font-weight: bold;   
   border: 1px solid #004080; 
   transition: all 0.3s;
-  display: flex;
-  justify-content: space-between; /* Pushes "SPECIAL ENDED" to the far right */
-  align-items: center;
 }
 
-.tab:hover:not(.disabled) {
+.tab-btn {
+  flex-grow: 1;
+  text-align: left;
+  cursor: pointer;
+  font-size: 18px;     
+  font-weight: bold;   
+}
+
+.tab-status {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffcc00; /* Gold for remaining uses */
+  margin-left: 15px;
+  white-space: nowrap;
+}
+
+.tab-container:hover:not(.disabled) {
   background: #003366; 
 }
 
-/* Disabled/Grayed Out State */
-.tab.disabled {
-  background: #444444 !important;
-  border-color: #555555 !important;
-  color: #888888 !important;
+/* Disabled/Greyed Out State Rules */
+.tab-container.disabled {
+  background: #334155 !important; /* Metallic slate grey */
+  border-color: #475569 !important;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
-.special-ended-text {
-  color: #ff4444; /* Bright red to stand out */
-  font-size: 14px;
-  font-weight: bold;
+.tab-container.disabled .tab-status {
+  color: #ef4444 !important; /* Red for special ended */
+}
+
+h2 {
+  font-size: 32px; 
+  margin-top: 0;
+  margin-bottom: 20px;
 }
 
 .wallet-notice {
@@ -95,7 +107,7 @@ h2 {
   font-weight: bold;
   letter-spacing: 0.5px;
   line-height: 1.5;
-  margin-top: 20px;
+  margin-top: 25px;
   padding: 10px;
   background: rgba(0, 0, 0, 0.2); 
   border-radius: 5px;
@@ -105,36 +117,46 @@ h2 {
 
 <body>
 
+<!-- Winter Special Headline at upper center -->
+<div class="winter-header">❄️ Winter Special ❄️</div>
+
 <div id="wallet">
-  <!-- Upper Center Icy Header -->
-  <div class="winter-header">WINTER SPECIAL</div>
-  <h2>WALLET</h2>
+<h2>WALLET</h2>
 
-  <div class="tiles">
-    <div class="tile">💎 <span id="gems">0</span></div>
-    <div class="tile" id="buyLife" style="cursor:pointer;">❤️ <span id="lives">0</span></div>
-  </div>
+<div class="tiles">
+  <div class="tile">💎 <span id="gems">0</span></div>
+  <div class="tile" id="buyLife">❤️ <span id="lives">0</span></div>
+</div>
 
-  <!-- Special Offer Tabs with Unique IDs for Click Counting -->
-  <div id="tier_r050" class="tab" onclick="buyDirect('r050', 150, 1)">
-    <span>R0.50 (1❤️+150💎) CLICK TO BUY</span>
-    <span class="special-ended-text" style="display:none;">SPECIAL ENDED</span>
+<!-- Bundle 1: R0.50 -->
+<div class="tab-container" id="container-tier1">
+  <div class="tab-btn" onclick="claimSpecial('tier1', 150, 1)">
+    R0.50 (1❤️+150💎) CLICK TO LOAD
   </div>
+  <div class="tab-status" id="status-tier1">2 CLAIMS LEFT</div>
+</div>
 
-  <div id="tier_r150" class="tab" onclick="buyDirect('r150', 350, 2)">
-    <span>R1.50 (2❤️+350💎) CLICK TO BUY</span>
-    <span class="special-ended-text" style="display:none;">SPECIAL ENDED</span>
+<!-- Bundle 2: R1.50 -->
+<div class="tab-container" id="container-tier2">
+  <div class="tab-btn" onclick="claimSpecial('tier2', 350, 2)">
+    R1.50 (2❤️+350💎) CLICK TO LOAD
   </div>
+  <div class="tab-status" id="status-tier2">2 CLAIMS LEFT</div>
+</div>
 
-  <div id="tier_r300" class="tab" onclick="buyDirect('r3', 400, 5)">
-    <span>R3 (5❤️+400💎) CLICK TO BUY</span>
-    <span class="special-ended-text" style="display:none;">SPECIAL ENDED</span>
+<!-- Bundle 3: R3.00 -->
+<div class="tab-container" id="container-tier3">
+  <div class="tab-btn" onclick="claimSpecial('tier3', 400, 5)">
+    R3 (5❤️+400💎) CLICK TO LOAD
   </div>
+  <div class="tab-status" id="status-tier3">2 CLAIMS LEFT</div>
+</div>
 
-  <br><br>
-  <div class="wallet-notice">
-    Wallet Can Only Be Topped-Up Between Times 07:00 TO 20:00
-  </div>
+<br><br>
+<div class="wallet-notice">
+  Wallet Can Only Be Topped-Up Between Times 07:00 TO 20:00
+</div>
+
 </div>
 
 <script type="module">
@@ -160,7 +182,6 @@ const gemsEl = document.getElementById("gems");
 const livesEl = document.getElementById("lives");
 
 let uid; 
-let userClicks = { r050: 0, r150: 0, r3: 0 }; // Local cache of click data
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -175,14 +196,11 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   uid = user.uid;
-  
-  // 1. Listen to wallet balance
   loadWallet();
-  
-  // 2. Listen to this user's dynamic special special offer click counters
-  listenToSpecialLimits();
+  syncSpecialLimits();
 });
 
+/* REAL-TIME WALLET DISPLAY */
 function loadWallet(){
   onValue(ref(db, "wallet/" + uid), (snap) => {
     const data = snap.val() || {};
@@ -191,61 +209,65 @@ function loadWallet(){
   });
 }
 
-// Monitors real-time click tracking in Firebase so refreshing doesn't reset limits
-function listenToSpecialLimits() {
-  onValue(ref(db, "specialOffers/" + uid), (snap) => {
-    const data = snap.val() || { r050: 0, r150: 0, r3: 0 };
-    userClicks = data;
+/* LISTEN FOR USER'S CLAIM COUNT PER TILE */
+function syncSpecialLimits() {
+  onValue(ref(db, "specialClaims/" + uid), (snap) => {
+    const claims = snap.val() || {};
     
-    checkAndDisableTier("r050", "tier_r050");
-    checkAndDisableTier("r150", "tier_r150");
-    checkAndDisableTier("r3", "tier_r300");
+    // Tiers list to update structural loops quickly
+    const tiers = ['tier1', 'tier2', 'tier3'];
+    
+    tiers.forEach(tier => {
+      const count = claims[tier] || 0;
+      const container = document.getElementById("container-" + tier);
+      const statusText = document.getElementById("status-" + tier);
+      
+      if (count >= 2) {
+        container.classList.add("disabled");
+        statusText.innerText = "SPECIAL ENDED";
+      } else {
+        container.classList.remove("disabled");
+        statusText.innerText = (2 - count) + " CLAIMS LEFT";
+      }
+    });
   });
 }
 
-// Helper to look at counts, switch on CSS gray out classes, and reveal right-aligned text
-function checkAndDisableTier(tierKey, elementId) {
-  const element = document.getElementById(elementId);
-  const count = userClicks[tierKey] || 0;
+/* AUTOMATIC SPECIAL CLAIM ENGINE */
+window.claimSpecial = async function(tier, gemsToAdd, livesToAdd) {
+  const container = document.getElementById("container-" + tier);
   
-  if (count >= 2) {
-    element.classList.add("disabled");
-    // Find the child ending notice span and make it visible
-    element.querySelector(".special-ended-text").style.display = "inline";
-  }
-}
-
-/* NO APPROVAL DIRECT BUY LOGIC */
-window.buyDirect = async function(tierKey, gemsToAdd, livesToAdd) {
-  // Guard clause checking if they already maximum loaded this item
-  if ((userClicks[tierKey] || 0) >= 2) {
-    alert("This special offer has ended for you!");
+  // Guard check: Stop execution instantly if tile is greyed out
+  if (container.classList.contains("disabled")) {
+    alert("You have reached the claim limit for this offer!");
     return;
   }
 
-  // Get current balances safely
+  // Check database counts explicitly to bypass client-side manipulation risks
+  const countSnap = await get(ref(db, "specialClaims/" + uid + "/" + tier));
+  const currentCount = countSnap.val() || 0;
+  
+  if (currentCount >= 2) {
+    alert("This special offer has already ended for your account.");
+    return;
+  }
+
+  // 1. Fetch current balances
   const walletSnap = await get(ref(db, "wallet/" + uid));
-  const currentWallet = walletSnap.val() || { gems: 0, lives: 0 };
+  const walletData = walletSnap.val() || {};
   
-  let currentGems = currentWallet.gems || 0;
-  let currentLives = currentWallet.lives || 0;
+  let currentGems = walletData.gems || 0;
+  let currentLives = walletData.lives || 0;
 
-  // Increment total calculations directly without admin nodes
-  const newGems = currentGems + gemsToAdd;
-  const newLives = currentLives + livesToAdd;
-  const newClickCount = (userClicks[tierKey] || 0) + 1;
+  // 2. Add rewards and increase count
+  await set(ref(db, "wallet/" + uid + "/gems"), currentGems + gemsToAdd);
+  await set(ref(db, "wallet/" + uid + "/lives"), currentLives + livesToAdd);
+  await set(ref(db, "specialClaims/" + uid + "/" + tier), currentCount + 1);
 
-  // Update wallet directly
-  await set(ref(db, "wallet/" + uid + "/gems"), newGems);
-  await set(ref(db, "wallet/" + uid + "/lives"), newLives);
-  
-  // Save updated click metrics directly down to user node paths
-  await set(ref(db, "specialOffers/" + uid + "/" + tierKey), newClickCount);
-
-  alert(`⚡ Winter Special Applied! Added +${gemsToAdd} 💎 and +${livesToAdd} ❤️ instantly.`);
+  alert(`Successfully loaded +${gemsToAdd} Gems and +${livesToAdd} Lives!`);
 };
 
-/* GEM TO LIFE TRADING (Fixed verification bug logic to 300) */
+/* IN-APP GEM CONVERSION (FIXED GEM LOGIC RULE) */
 document.getElementById("buyLife").onclick = async () => {
   const snap = await get(ref(db, "wallet/" + uid));
   const data = snap.val() || {};
@@ -253,7 +275,8 @@ document.getElementById("buyLife").onclick = async () => {
   let gems = data.gems || 0;
   let lives = data.lives || 0;
 
-  if (gems < 300) {
+  // Fixed your original bug check so balances won't plunge past 0
+  if(gems < 300){
     alert("Not enough gems (300 💎 = 1 ❤️)");
     return;
   }
@@ -261,7 +284,7 @@ document.getElementById("buyLife").onclick = async () => {
   await set(ref(db, "wallet/" + uid + "/gems"), gems - 300);
   await set(ref(db, "wallet/" + uid + "/lives"), lives + 1);
 
-  alert("+1 ❤️ purchased with gems!");
+  alert("+1 ❤️ purchased with Gems!");
 };
 </script>
 
