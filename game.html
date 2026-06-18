@@ -126,7 +126,7 @@ Score: <span id="score">0</span><br>
 </div>
 
 <div id="popup" class="popup"></div>
-
+<audio id="bgMusic" src="slidetapper.mp3" loop></audio>
 </div>
 
 <script type="module">
@@ -242,6 +242,8 @@ function gameOpen(){
 ===================== */
 function startGame(){
   running=true;
+  document.getElementById("bgMusic").play().catch(e => console.log("Audio waiting for user interaction."));
+  
   update();
   spawnRings();
   spawnEnemies();
