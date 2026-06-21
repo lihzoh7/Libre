@@ -145,34 +145,34 @@ body {
   <div class="player-slot-single" id="diamond-slot">
     <div class="no-winner">No Qualified Winner</div>
   </div>
-  <div class="tier-footnote">This prize will be Awarded to the player who obtains 2500+ points, players are contacted for verification of their details</div>
+  <div class="tier-footnote">This prize will be Awarded to the player who obtains 3500+ points, players are contacted for verification of their details</div>
 </div>
 
 <div class="prize-tier tier-gold">
   <div class="tier-title">Gold</div>
-  <div class="tier-reward">R22 OTT VOUCHER</div>
+  <div class="tier-reward">R100 CASH PRIZE</div>
   <div class="player-slot-single" id="gold-slot">
     <div class="no-winner">No Qualified Winner</div>
   </div>
-  <div class="tier-footnote">This prize will be Awarded to the player who obtains 1500+ points, players are contacted for verification of their details</div>
+  <div class="tier-footnote">This prize will be Awarded to the player who obtains 2500+ points, players are contacted for verification of their details</div>
 </div>
 
 <div class="prize-tier tier-silver">
   <div class="tier-title">Silver</div>
-  <div class="tier-reward">R15 OTT VOUCHER</div>
+  <div class="tier-reward">R75 CASH PRIZE</div>
   <div class="player-slot-grid" id="silver-slot">
     <div class="no-winner" style="grid-column: span 3;">No Qualified Winners</div>
   </div>
-  <div class="tier-footnote">This prize will be Awarded to the player who obtains 900+ points, players are contacted for verification of their details</div>
+  <div class="tier-footnote">This prize will be Awarded to the player who obtains 1500+ points, players are contacted for verification of their details</div>
 </div>
 
 <div class="prize-tier tier-bronze">
   <div class="tier-title">Bronze</div>
-  <div class="tier-reward">R5 OTT VOUCHER</div>
+  <div class="tier-reward">R10 OTT VOUCHER</div>
   <div class="player-slot-grid" id="bronze-slot">
     <div class="no-winner" style="grid-column: span 3;">No Qualified Winners</div>
   </div>
-  <div class="tier-footnote">This prize will be Awarded to the player who obtains 500+ points, players are contacted for verification of their details</div>
+  <div class="tier-footnote">This prize will be Awarded to the player who obtains 750+ points, players are contacted for verification of their details</div>
 </div>
 
 <script type="module">
@@ -218,7 +218,7 @@ onValue(ref(db, "leaderboard/quizer"), snap => {
   // 3. Distribute cascading down down based on rules constraints limits
   players.forEach(player => {
     // Check Diamond Criteria
-    if (player.score >= 2500) {
+    if (player.score >= 3500) {
       if (!diamondWinner) {
         diamondWinner = player;
       } else if (!goldWinner) {
@@ -230,7 +230,7 @@ onValue(ref(db, "leaderboard/quizer"), snap => {
       }
     } 
     // Check Gold Criteria
-    else if (player.score >= 1500) {
+    else if (player.score >= 2500) {
       if (!goldWinner) {
         goldWinner = player;
       } else if (silverWinners.length < 3) {
@@ -240,7 +240,7 @@ onValue(ref(db, "leaderboard/quizer"), snap => {
       }
     } 
     // Check Silver Criteria
-    else if (player.score >= 900) {
+    else if (player.score >= 1500) {
       if (silverWinners.length < 3) {
         silverWinners.push(player);
       } else if (bronzeWinners.length < 3) {
@@ -248,7 +248,7 @@ onValue(ref(db, "leaderboard/quizer"), snap => {
       }
     } 
     // Check Bronze Criteria
-    else if (player.score >= 500) {
+    else if (player.score >= 750) {
       if (bronzeWinners.length < 3) {
         bronzeWinners.push(player);
       }
