@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Under Construction Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .header-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #ff4757;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: #ffa502;
+            margin: 0;
+            font-weight: 400;
+            font-style: italic;
+        }
+
+        .score-board {
+            font-size: 1.2rem;
+            margin: 10px 0;
+            color: #2ed573;
+        }
+
+        canvas {
+            background-color: #1e1e1e;
+            border: 4px solid #ffa502;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            cursor: none; /* Hides cursor over the game */
+        }
+
+        .instructions {
+            margin-top: 15px;
+            color: #a4b0be;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1>Currently not available</h1>
+        <h2>Under Works</h2>
+        <div class="score-board">Score: <span id="score">0</span></div>
+    </div>
+
+    <!-- The Game Canvas -->
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <div class="instructions">
+        <p>Move your mouse / drag your finger left and right to catch the falling blocks!</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+
+        // Game Variables
+        let score = 0;
+        let gameOver = false;
+
+        // Paddle (The Player)
+        const paddle = {
+            width: 80,
+            height: 15,
+            x: canvas.width / 2 - 40,
+            y: canvas.height - 30,
+            color: #ffa502
+        };
+
+        // Falling Object
+        const item = {
+            x: Math.random() * (canvas.width - 20),
+            y: 0,
+            size: 20,
+            speed: 4,
+            color: #2ed573
+        };
+
+        // Track Mouse/Touch Movement
+        function movePaddle(e) {
+            let clientX;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+            } else {
+                clientX = e.clientX;
+            }
+            
+            const rect = canvas.getBoundingClientRect();
+            const rootX = clientX - rect.left;
+            
+            // Keep paddle within canvas bounds
+            paddle.x = rootX - paddle.width / 2;
+            if (paddle.x < 0) paddle.x = 0;
+            if (paddle.x > canvas.width - paddle.width) paddle.x = canvas.width - paddle.width;
+        }
+
+        window.addEventListener('mousemove', movePaddle);
+        window.addEventListener('touchmove', movePaddle);
+
+        // Game Loop
+        function update() {
+            if (gameOver) return;
+
+            // Move the falling item
+            item.y += item.speed;
+
+            // Check for collision with paddle
+            if (
+                item.y + item.size >= paddle.y &&
+                item.x + item.size >= paddle.x &&
+                item.x <= paddle.x + paddle.width
+            ) {
+                // Caught it!
+                score++;
+                scoreElement.textContent = score;
+                resetItem();
+                // Speed up slightly to increase difficulty
+                item.speed += 0.3;
+            }
+
+            // Check if item hit the bottom (Game Over)
+            if (item.y > canvas.height) {
+                gameOver = true;
+            }
+        }
+
+        function resetItem() {
+            item.x = Math.random() * (canvas.width - item.size);
+            item.y = 0;
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Paddle
+            ctx.fillStyle = paddle.color;
+            ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+
+            // Draw Falling Item
+            ctx.fillStyle = item.color;
+            ctx.fillRect(item.x, item.y, item.size, item.size);
+
+            // Draw Game Over Screen
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#ff4757';
+                ctx.font = '30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 10);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '16px Arial';
+                ctx.fillText('Click / Tap to Try Again', canvas.width / 2, canvas.height / 2 + 20);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Restart Game on Click
+        canvas.addEventListener('click', () => {
+            if (gameOver) {
+                score = 0;
+                scoreElement.textContent = score;
+                item.speed = 4;
+                resetItem();
+                gameOver = false;
+            }
+        });
+
+        // Start the game loop
+        gameLoop();
+    </script>
+</body>
+</html>
