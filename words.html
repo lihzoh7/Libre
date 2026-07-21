@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WORDZ - Game</title>
+<style>
+  body {
+    margin: 0;
+    background: #001f3f;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    user-select: none;
+  }
+  /* TOP HEADER HUD */
+  #hud {
+    width: 90%;
+    max-width: 500px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    font-size: 22px;
+    font-weight: bold;
+  }
+  .hud-val { color: #00d4ff; }
+  
+  #levelInfo {
+    font-size: 18px;
+    margin-bottom: 5px;
+    color: #ffd700;
+  }
+
+  /* TARGET WORDS DISPLAY (2 LINES) */
+  #wordsContainer {
+    width: 90%;
+    max-width: 500px;
+    min-height: 50px;
+    background: #002b55;
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    box-sizing: border-box;
+  }
+  .word-target {
+    background: #004080;
+    padding: 4px;
+    border-radius: 4px;
+    word-break: break-all;
+  }
+  .word-target.found {
+    background: #28a745;
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+
+  /* SUBMIT BUTTON CONTAINER ABOVE GRID */
+  #submitContainer {
+    height: 40px;
+    margin-bottom: 5px;
+  }
+  #submitBtn {
+    background: #0074D9;
+    color: white;
+    border: none;
+    padding: 8px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 20px;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0,116,217,0.8);
+    display: none;
+  }
+
+  /* 10x10 GRID */
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 4px;
+    width: 90%;
+    max-width: 450px;
+    aspect-ratio: 1 / 1;
+    background: #00152b;
+    padding: 6px;
+    border-radius: 10px;
+    box-sizing: border-box;
+  }
+  .cell {
+    background: #002b55;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .cell.selected { background: #00aaff !important; color: white; }
+  .cell.correct { background: #28a745 !important; color: white; }
+
+  /* OVERLAYS & POPUPS */
+  .overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+  }
+  .modal {
+    background: #111;
+    border: 2px solid lightcoral;
+    border-radius: 12px;
+    padding: 25px;
+    text-align: center;
+    max-width: 300px;
+    width: 80%;
+  }
+  .modal h2 { color: lightcoral; margin-top: 0; font-size: 32px; }
+  .btn-group { display: flex; justify-content: space-between; margin-top: 20px; }
+  .btn-group button {
+    padding: 10px 20px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .btn-exit { background: #dc3545; color: white; }
+  .btn-cont { background: #28a745; color: white; }
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div>SCORE: <span id="score" class="hud-val">0</span></div>
+  <div><span id="timer" class="hud-val">150</span>s</div>
+  <div>❤️ <span id="lives" class="hud-val">0</span></div>
+</div>
+
+<div id="levelInfo">LEVEL <span id="levelNum">1</span> / 35</div>
+
+<div id="wordsContainer"></div>
+
+<div id="submitContainer">
+  <button id="submitBtn">SUBMIT</button>
+</div>
+
+<div id="grid"></div>
+
+<!-- GAME OVER OVERLAY -->
+<div id="gameOverModal" class="overlay">
+  <div class="modal">
+    <h2>GAME OVER</h2>
+    <p id="modalMsg" style="color:#ccc;">Time expired!</p>
+    <div class="btn-group">
+      <button class="btn-exit" id="btnExit">EXIT</button>
+      <button class="btn-cont" id="btnContinue">CONTINUE</button>
+    </div>
+  </div>
+</div>
+
+<!-- BREAK OVERLAY -->
+<div id="breakPopup" class="overlay">
+  <div class="modal" style="border-color:red;">
+    <h2 style="color:red;">ON THE BREAK</h2>
+    <div style="font-size: 50px;">🍲🍱🥗</div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, set, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+let user = null;
+let currentLives = 0;
+let score = 0;
+let level = 1;
+let timeLeft = 150;
+let timerInterval = null;
+
+let gridMatrix = Array(10).fill(null).map(() => Array(10).fill(''));
+let placedWords = []; // [{ word, coords: [[r,c],...] }]
+let foundWords = new Set();
+let selectedCells = []; // [[r,c], ...]
+let userHistoryWords = new Set();
+let allUploadedWords = [];
+
+/* BREAK TIME CHECK */
+function isBreakTime(){
+  let now = new Date();
+  let h = now.getHours(), m = now.getMinutes();
+  return (h === 17 && m >= 30) || (h === 18 && m === 0) || (h === 5 && m >= 30) || (h === 6 && m === 0);
+}
+
+/* INITIALIZATION */
+onAuthStateChanged(auth, async (u) => {
+  if (!u) { location.href = "index.html"; return; }
+  user = u;
+
+  // Retrieve lives from Life Selector
+  const storedLives = localStorage.getItem("selectedLives");
+  if (!storedLives || parseInt(storedLives) <= 0) {
+    alert("No lives selected! Redirecting to Life Selector.");
+    location.href = "life-selector.html";
+    return;
+  }
+  currentLives = parseInt(storedLives);
+  document.getElementById("lives").innerText = currentLives;
+
+  // Load User Found History
+  const historySnap = await get(ref(db, `words/userFoundWords/${user.uid}`));
+  if (historySnap.exists()) {
+    Object.keys(historySnap.val()).forEach(w => userHistoryWords.add(w.toUpperCase()));
+  }
+
+  // Load Database Words
+  const wordsSnap = await get(ref(db, "words/wordsList"));
+  if (!wordsSnap.exists() || !wordsSnap.val()) {
+    alert("Game cannot start: No words uploaded by admin!");
+    location.href = "main-menu.html";
+    return;
+  }
+
+  const rawWords = wordsSnap.val();
+  allUploadedWords = Object.values(rawWords)
+    .map(item => (typeof item === "string" ? item : item.word).toUpperCase().trim())
+    .filter(w => w.length >= 2 && w.length <= 10);
+
+  startLevel();
+});
+
+/* START LEVEL */
+function startLevel() {
+  if (level > 35) {
+    alert("CONGRATULATIONS! You completed all 35 levels!");
+    saveScoreAndExit();
+    return;
+  }
+  document.getElementById("levelNum").innerText = level;
+  foundWords.clear();
+  selectedCells = [];
+  updateSubmitVisibility();
+
+  // Filter out already found words for this user
+  let availableWords = allUploadedWords.filter(w => !userHistoryWords.has(w));
+  if (availableWords.length < 10) {
+    // If user ran out of unique words, reuse uploaded pool
+    availableWords = [...allUploadedWords];
+  }
+
+  // Pick up to 10 random words
+  let shuffled = availableWords.sort(() => 0.5 - Math.random());
+  let targetWords = shuffled.slice(0, 10);
+
+  buildGrid(targetWords);
+  renderTargetWordsDisplay(targetWords);
+  
+  // Timer Setup
+  clearInterval(timerInterval);
+  timeLeft = 150;
+  document.getElementById("timer").innerText = timeLeft;
+  timerInterval = setInterval(tickTimer, 1000);
+}
+
+function tickTimer() {
+  if (isBreakTime()) {
+    document.getElementById("breakPopup").style.display = "flex";
+    return;
+  } else {
+    document.getElementById("breakPopup").style.display = "none";
+  }
+
+  timeLeft--;
+  document.getElementById("timer").innerText = timeLeft;
+
+  if (timeLeft <= 0) {
+    clearInterval(timerInterval);
+    handleTimeOut();
+  }
+}
+
+/* GRID GENERATION ENGINE */
+function buildGrid(wordsToPlace) {
+  gridMatrix = Array(10).fill(null).map(() => Array(10).fill(''));
+  placedWords = [];
+
+  const directions = [
+    [0, 1],   // H forward
+    [0, -1],  // H reverse
+    [1, 0],   // V forward
+    [-1, 0],  // V reverse
+    [1, 1],   // Diag SE
+    [-1, -1], // Diag NW
+    [1, -1],  // Diag SW
+    [-1, 1]   // Diag NE
+  ];
+
+  wordsToPlace.forEach(word => {
+    let placed = false;
+    let attempts = 0;
+    while (!placed && attempts < 100) {
+      attempts++;
+      let dir = directions[Math.floor(Math.random() * directions.length)];
+      let r = Math.floor(Math.random() * 10);
+      let c = Math.floor(Math.random() * 10);
+
+      if (canPlaceWord(word, r, c, dir)) {
+        let coords = [];
+        for (let i = 0; i < word.length; i++) {
+          let nr = r + dir[0] * i;
+          let nc = c + dir[1] * i;
+          gridMatrix[nr][nc] = word[i];
+          coords.push([nr, nc]);
+        }
+        placedWords.push({ word, coords });
+        placed = true;
+      }
+    }
+  });
+
+  // Fill random letters in empty slots
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const gridEl = document.getElementById("grid");
+  gridEl.innerHTML = "";
+
+  for (let r = 0; r < 10; r++) {
+    for (let c = 0; c < 10; c++) {
+      if (!gridMatrix[r][c]) {
+        gridMatrix[r][c] = alphabet[Math.floor(Math.random() * alphabet.length)];
+      }
+      let cell = document.createElement("div");
+      cell.className = "cell";
+      cell.innerText = gridMatrix[r][c];
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      cell.onclick = () => toggleCellSelect(r, c, cell);
+      gridEl.appendChild(cell);
+    }
+  }
+}
+
+function canPlaceWord(word, r, c, dir) {
+  for (let i = 0; i < word.length; i++) {
+    let nr = r + dir[0] * i;
+    let nc = c + dir[1] * i;
+    if (nr < 0 || nr >= 10 || nc < 0 || nc >= 10) return false;
+    if (gridMatrix[nr][nc] !== '' && gridMatrix[nr][nc] !== word[i]) return false;
+  }
+  return true;
+}
+
+function renderTargetWordsDisplay(words) {
+  const container = document.getElementById("wordsContainer");
+  container.innerHTML = "";
+  words.forEach(w => {
+    let div = document.createElement("div");
+    div.className = "word-target";
+    div.id = "target-" + w;
+    div.innerText = w;
+    container.appendChild(div);
+  });
+}
+
+/* SELECTION AND SUBMIT */
+function toggleCellSelect(r, c, el) {
+  let idx = selectedCells.findIndex(coord => coord[0] === r && coord[1] === c);
+  if (idx > -1) {
+    selectedCells.splice(idx, 1);
+    el.classList.remove("selected");
+  } else {
+    selectedCells.push([r, c]);
+    el.classList.add("selected");
+  }
+  updateSubmitVisibility();
+}
+
+function updateSubmitVisibility() {
+  const btn = document.getElementById("submitBtn");
+  btn.style.display = selectedCells.length > 0 ? "block" : "none";
+}
+
+document.getElementById("submitBtn").onclick = async () => {
+  let formedStr = selectedCells.map(([r,c]) => gridMatrix[r][c]).join("");
+  let reversedStr = formedStr.split("").reverse().join("");
+
+  let matchedWord = placedWords.find(pw => 
+    !foundWords.has(pw.word) && 
+    (pw.word === formedStr || pw.word === reversedStr) &&
+    coordsMatch(pw.coords, selectedCells)
+  );
+
+  if (matchedWord) {
+    // CORRECT MATCH
+    foundWords.add(matchedWord.word);
+    userHistoryWords.add(matchedWord.word);
+
+    // Highlight green
+    selectedCells.forEach(([r,c]) => {
+      let cellEl = document.querySelector(`.cell[data-r='${r}'][data-c='${c}']`);
+      if (cellEl) {
+        cellEl.classList.remove("selected");
+        cellEl.classList.add("correct");
+      }
+    });
+
+    // Mark off display list
+    let targetEl = document.getElementById("target-" + matchedWord.word);
+    if (targetEl) targetEl.classList.add("found");
+
+    // DB Record history + Increment count in DB
+    await set(ref(db, `words/userFoundWords/${user.uid}/${matchedWord.word}`), true);
+    await runTransaction(ref(db, `words/wordsListCount/${matchedWord.word}`), (count) => (count || 0) + 1);
+
+    selectedCells = [];
+    updateSubmitVisibility();
+
+    // Check level finish
+    if (foundWords.size === placedWords.length) {
+      clearInterval(timerInterval);
+      score += timeLeft; // Remaining countdown added to score
+      document.getElementById("score").innerText = score;
+      alert(`Level ${level} Complete! Added ${timeLeft}s bonus to score.`);
+      level++;
+      startLevel();
+    }
+  } else {
+    // INCORRECT MATCH
+    score = Math.max(0, score - 6);
+    document.getElementById("score").innerText = score;
+
+    selectedCells.forEach(([r,c]) => {
+      let cellEl = document.querySelector(`.cell[data-r='${r}'][data-c='${c}']`);
+      if (cellEl) cellEl.classList.remove("selected");
+    });
+    selectedCells = [];
+    updateSubmitVisibility();
+  }
+};
+
+function coordsMatch(c1, c2) {
+  if (c1.length !== c2.length) return false;
+  let set1 = c1.map(p => `${p[0]},${p[1]}`).sort();
+  let set2 = c2.map(p => `${p[0]},${p[1]}`).sort();
+  return set1.every((val, index) => val === set2[index]);
+}
+
+/* TIMEOUT AND OVERLAYS */
+function handleTimeOut() {
+  document.getElementById("modalMsg").innerText = "Time has run out!";
+  document.getElementById("gameOverModal").style.display = "flex";
+}
+
+document.getElementById("btnExit").onclick = () => {
+  saveScoreAndExit();
+};
+
+document.getElementById("btnContinue").onclick = async () => {
+  if (currentLives <= 1) {
+    alert("No lives remaining to continue!");
+    saveScoreAndExit();
+    return;
+  }
+
+  currentLives--;
+  localStorage.setItem("selectedLives", currentLives);
+  document.getElementById("lives").innerText = currentLives;
+  document.getElementById("gameOverModal").style.display = "none";
+  
+  // Refresh Countdown
+  timeLeft = 150;
+  document.getElementById("timer").innerText = timeLeft;
+  timerInterval = setInterval(tickTimer, 1000);
+};
+
+async function saveScoreAndExit() {
+  if (user && score > 0) {
+    const userSnap = await get(ref(db, `users/${user.uid}`));
+    let userData = userSnap.val() || {};
+    let name = userData.name || "Player";
+    let surname = userData.surname || "";
+
+    await set(ref(db, `words/leaderboard/current/${user.uid}`), {
+      name, surname, score, timestamp: Date.now()
+    });
+  }
+  localStorage.removeItem("selectedLives");
+  location.href = "main-menu.html";
+}
+</script>
+</body>
+</html>
