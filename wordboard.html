@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Word Board</title>
+
+<style>
+body{
+  margin:0;
+  background:#2b2b2b; /* Greyish background */
+  color:white;
+  font-family:Arial;
+  text-align:center;
+}
+
+#date, #timer{
+  font-size:42px;
+  margin:10px;
+  font-weight:bold;
+}
+
+#content{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:10px;
+  padding:10px;
+}
+
+.card{
+  background:#3a3a3a; /* Dark grey card background */
+  padding:10px;
+  border-radius:10px;
+  font-size:20px;
+}
+
+.gold{ color:gold; }
+.silver{ color:silver; }
+.bronze{ color:#cd7f32; }
+.normal{ color:#ccc; }
+
+#popup{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:white;
+  color:green;
+  padding:40px;
+  font-size:30px;
+  display:none;
+  border-radius:10px;
+}
+
+#rank{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  font-size:20px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="date"></div>
+<div id="timer"></div>
+
+<div id="content"></div>
+<div id="rank">RANK: N/A</div>
+<div id="popup"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+});
+
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+let currentUser = null;
+let resetLock = false;
+
+onAuthStateChanged(auth,(u)=>{
+  if(!u) location.href="index.html";
+  currentUser = u;
+});
+
+function updateTime(){
+  let now = new Date();
+
+  document.getElementById("date").innerText =
+    now.toLocaleDateString() + " " + now.toLocaleTimeString();
+
+  let end = new Date();
+
+  if(now.getHours() < 17){
+    end.setHours(17,30,0,0);
+  } else {
+    end.setDate(end.getDate()+1);
+    end.setHours(5,30,0,0);
+  }
+
+  let diff = end - now;
+
+  let h = Math.floor(diff/1000/60/60);
+  let m = Math.floor((diff/1000/60)%60);
+
+  document.getElementById("timer").innerText = `${h}H:${m}M`;
+}
+setInterval(updateTime,1000);
+
+async function checkReset(){
+  let now = new Date();
+  let h = now.getHours();
+  let m = now.getMinutes();
+
+  let isResetTime =
+    (h === 5 && m === 30) ||
+    (h === 17 && m === 30);
+
+  if(!isResetTime){
+    resetLock = false;
+    return;
+  }
+
+  if(resetLock) return;
+  resetLock = true;
+
+  const lastResetSnap = await get(ref(db,"words/admin/lastReset"));
+  const lastReset = lastResetSnap.val();
+
+  const currentKey = `${h}:${m}`;
+
+  if(lastReset === currentKey) return;
+
+  const snap = await get(ref(db,"words/leaderboard/current"));
+  const data = snap.val();
+
+  if(data){
+    await set(ref(db,"words/leaderboard/adminHistory/"+Date.now()), data);
+  }
+
+  await set(ref(db,"words/leaderboard/current"), null);
+  await set(ref(db,"words/admin/lastReset"), currentKey);
+
+  document.getElementById("popup").innerText="RESET!";
+  document.getElementById("popup").style.display="block";
+
+  setTimeout(()=>{
+    document.getElementById("popup").style.display="none";
+  },2000);
+}
+setInterval(checkReset,1000);
+
+/* 📊 LEADERBOARD READING FROM words/leaderboard/current */
+const content=document.getElementById("content");
+const rankEl=document.getElementById("rank");
+
+onValue(ref(db,"words/leaderboard/current"), snap=>{
+  const data=snap.val()||{};
+  let arr=[];
+
+  for(let uid in data){
+    arr.push({
+      uid,
+      name: (data[uid].name || "Player") + " " + (data[uid].surname || ""),
+      score: data[uid].score,
+      time: data[uid].timestamp
+    });
+  }
+
+  arr.sort((a,b)=>b.score-a.score);
+
+  content.innerHTML="";
+
+  arr.slice(0,75).forEach((p,i)=>{
+    let cls="normal";
+    if(i===0) cls="gold";
+    if(i===1) cls="silver";
+    if(i===2) cls="bronze";
+
+    let date=new Date(p.time).toLocaleString();
+
+    let div=document.createElement("div");
+    div.className="card "+cls;
+
+    div.innerHTML=`
+      <b>${i+1}. ${p.name}</b><br>
+      ${p.score}<br>
+      <small>${date}</small>
+    `;
+
+    content.appendChild(div);
+
+    if(currentUser && currentUser.uid===p.uid){
+      rankEl.innerText="RANK: "+(i+1);
+    }
+  });
+
+  if(!arr.find(p=>p.uid===currentUser?.uid)){
+    rankEl.innerText="RANK: N/A";
+  }
+});
+</script>
+
+</body>
+</html>
