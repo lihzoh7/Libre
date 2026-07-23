@@ -204,6 +204,7 @@ let timerInterval = null;
 let gridMatrix = Array(10).fill(null).map(() => Array(10).fill(''));
 let placedWords = []; // [{ word, coords: [[r,c],...] }]
 let foundWords = new Set();
+let targetWordsList = []; // Track actual targets on screen
 let selectedCells = []; // [[r,c], ...]
 let userHistoryWords = new Set();
 let allUploadedWords = [];
@@ -270,12 +271,12 @@ function startLevel() {
     availableWords = [...allUploadedWords];
   }
 
-  // Pick 10 random target words for the level
+  // Pick up to 10 random target words for the level
   let shuffled = availableWords.sort(() => 0.5 - Math.random());
-  let targetWords = shuffled.slice(0, 10);
+  targetWordsList = shuffled.slice(0, 10);
 
-  buildGrid(targetWords);
-  renderTargetWordsDisplay(targetWords);
+  buildGrid(targetWordsList);
+  renderTargetWordsDisplay(targetWordsList);
   
   // Timer Setup
   clearInterval(timerInterval);
@@ -320,7 +321,7 @@ function buildGrid(wordsToPlace) {
   wordsToPlace.forEach(word => {
     let placed = false;
     let attempts = 0;
-    while (!placed && attempts < 100) {
+    while (!placed && attempts < 300) { // Increased layout placement attempts to guarantee fit
       attempts++;
       let dir = directions[Math.floor(Math.random() * directions.length)];
       let r = Math.floor(Math.random() * 10);
@@ -437,17 +438,17 @@ document.getElementById("submitBtn").onclick = async () => {
     selectedCells = [];
     updateSubmitVisibility();
 
-    // Check if player found all 10 target words
-    if (foundWords.size === placedWords.length) {
+    // Check level completion: trigger transition if all placed words for this level are found
+    if (foundWords.size >= placedWords.length) {
       clearInterval(timerInterval);
       
-      // Add remaining timer countdown to total score
+      // Stop timer and add remaining countdown seconds to score
       score += timeLeft;
       document.getElementById("score").innerText = score;
       
       alert(`Level ${level} Complete! +${timeLeft} bonus points added from remaining time!`);
       
-      // Go to next level
+      // Advance to next level
       level++;
       startLevel();
     }
