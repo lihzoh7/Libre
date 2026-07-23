@@ -267,11 +267,10 @@ function startLevel() {
   // Filter out already found words for this user
   let availableWords = allUploadedWords.filter(w => !userHistoryWords.has(w));
   if (availableWords.length < 10) {
-    // If user ran out of unique words, reuse uploaded pool
     availableWords = [...allUploadedWords];
   }
 
-  // Pick up to 10 random words
+  // Pick 10 random target words for the level
   let shuffled = availableWords.sort(() => 0.5 - Math.random());
   let targetWords = shuffled.slice(0, 10);
 
@@ -434,15 +433,21 @@ document.getElementById("submitBtn").onclick = async () => {
     await set(ref(db, `words/userFoundWords/${user.uid}/${matchedWord.word}`), true);
     await runTransaction(ref(db, `words/wordsListCount/${matchedWord.word}`), (count) => (count || 0) + 1);
 
+    // Reset current selection and hide submit button until next selection
     selectedCells = [];
     updateSubmitVisibility();
 
-    // Check level finish
+    // Check if player found all 10 target words
     if (foundWords.size === placedWords.length) {
       clearInterval(timerInterval);
-      score += timeLeft; // Remaining countdown added to score
+      
+      // Add remaining timer countdown to total score
+      score += timeLeft;
       document.getElementById("score").innerText = score;
-      alert(`Level ${level} Complete! Added ${timeLeft}s bonus to score.`);
+      
+      alert(`Level ${level} Complete! +${timeLeft} bonus points added from remaining time!`);
+      
+      // Go to next level
       level++;
       startLevel();
     }
@@ -455,6 +460,8 @@ document.getElementById("submitBtn").onclick = async () => {
       let cellEl = document.querySelector(`.cell[data-r='${r}'][data-c='${c}']`);
       if (cellEl) cellEl.classList.remove("selected");
     });
+
+    // Reset selection and hide submit button
     selectedCells = [];
     updateSubmitVisibility();
   }
