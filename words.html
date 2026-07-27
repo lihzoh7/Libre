@@ -15,6 +15,8 @@
     align-items: center;
     min-height: 100vh;
     user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
   }
   /* TOP HEADER HUD */
   #hud {
@@ -67,19 +69,22 @@
   /* SUBMIT BUTTON CONTAINER ABOVE GRID */
   #submitContainer {
     height: 40px;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
   }
   #submitBtn {
     background: #0074D9;
     color: white;
     border: none;
-    padding: 8px 24px;
+    padding: 10px 32px;
     font-size: 16px;
     font-weight: bold;
     border-radius: 20px;
     cursor: pointer;
     box-shadow: 0 0 10px rgba(0,116,217,0.8);
-    display: none;
+    display: block; /* Permanently visible */
+  }
+  #submitBtn:active {
+    background: #0056b3;
   }
 
   /* 10x10 GRID */
@@ -94,6 +99,7 @@
     padding: 6px;
     border-radius: 10px;
     box-sizing: border-box;
+    touch-action: none; /* Prevents mobile scrolling while dragging on grid */
   }
   .cell {
     background: #002b55;
@@ -104,7 +110,7 @@
     font-size: 20px;
     font-weight: bold;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.15s;
   }
   .cell.selected { background: #00aaff !important; color: white; }
   .cell.correct { background: #28a745 !important; color: white; }
@@ -208,6 +214,7 @@ let targetWordsList = []; // Track actual targets on screen
 let selectedCells = []; // [[r,c], ...]
 let userHistoryWords = new Set();
 let allUploadedWords = [];
+let isDragging = false;
 
 /* BREAK TIME CHECK */
 function isBreakTime(){
@@ -262,16 +269,15 @@ function startLevel() {
   }
   document.getElementById("levelNum").innerText = level;
   foundWords.clear();
-  selectedCells = [];
-  updateSubmitVisibility();
+  clearSelection();
 
-  // Filter out already found words for this user
+  // Filter out already found words for this user so they NEVER appear again
   let availableWords = allUploadedWords.filter(w => !userHistoryWords.has(w));
   if (availableWords.length < 10) {
     availableWords = [...allUploadedWords];
   }
 
-  // Pick 10 random target words
+  // Pick 10 random target words from available pool
   let shuffled = availableWords.sort(() => 0.5 - Math.random());
   targetWordsList = shuffled.slice(0, 10);
 
@@ -306,7 +312,6 @@ function tickTimer() {
 function buildGrid(wordsToPlace) {
   let successfullyPlaced = false;
   
-  // Retry generating grid until ALL words are placed
   while (!successfullyPlaced) {
     gridMatrix = Array(10).fill(null).map(() => Array(10).fill(''));
     placedWords = [];
@@ -367,10 +372,11 @@ function buildGrid(wordsToPlace) {
       cell.innerText = gridMatrix[r][c];
       cell.dataset.r = r;
       cell.dataset.c = c;
-      cell.onclick = () => toggleCellSelect(r, c, cell);
       gridEl.appendChild(cell);
     }
   }
+
+  setupDragAndClickEvents();
 }
 
 function canPlaceWord(word, r, c, dir) {
@@ -395,22 +401,59 @@ function renderTargetWordsDisplay(words) {
   });
 }
 
-/* SELECTION AND SUBMIT */
-function toggleCellSelect(r, c, el) {
-  let idx = selectedCells.findIndex(coord => coord[0] === r && coord[1] === c);
-  if (idx > -1) {
-    selectedCells.splice(idx, 1);
-    el.classList.remove("selected");
-  } else {
+/* DRAG & CLICK SELECTION SYSTEM */
+function setupDragAndClickEvents() {
+  const gridEl = document.getElementById("grid");
+
+  const getCellFromPoint = (x, y) => {
+    const el = document.elementFromPoint(x, y);
+    return el && el.classList.contains("cell") ? el : null;
+  };
+
+  const handlePointerStart = (e) => {
+    isDragging = true;
+    clearSelection();
+    const cell = getCellFromPoint(e.clientX, e.clientY);
+    if (cell) addCellToSelection(cell);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDragging) return;
+    const cell = getCellFromPoint(e.clientX, e.clientY);
+    if (cell) addCellToSelection(cell);
+  };
+
+  const handlePointerEnd = () => {
+    isDragging = false;
+  };
+
+  gridEl.removeEventListener("pointerdown", handlePointerStart);
+  window.removeEventListener("pointermove", handlePointerMove);
+  window.removeEventListener("pointerup", handlePointerEnd);
+
+  gridEl.addEventListener("pointerdown", handlePointerStart);
+  window.addEventListener("pointermove", handlePointerMove);
+  window.addEventListener("pointerup", handlePointerEnd);
+}
+
+function addCellToSelection(el) {
+  let r = parseInt(el.dataset.r);
+  let c = parseInt(el.dataset.c);
+  let exists = selectedCells.some(coord => coord[0] === r && coord[1] === c);
+  if (!exists) {
     selectedCells.push([r, c]);
     el.classList.add("selected");
   }
-  updateSubmitVisibility();
 }
 
-function updateSubmitVisibility() {
-  const btn = document.getElementById("submitBtn");
-  btn.style.display = selectedCells.length > 0 ? "block" : "none";
+function clearSelection() {
+  selectedCells.forEach(([r, c]) => {
+    let cellEl = document.querySelector(`.cell[data-r='${r}'][data-c='${c}']`);
+    if (cellEl && !cellEl.classList.contains("correct")) {
+      cellEl.classList.remove("selected");
+    }
+  });
+  selectedCells = [];
 }
 
 /* SUBMIT BUTTON CLICK ACTION */
@@ -420,7 +463,7 @@ document.getElementById("submitBtn").onclick = async () => {
   let formedStr = selectedCells.map(([r,c]) => gridMatrix[r][c]).join("");
   let reversedStr = formedStr.split("").reverse().join("");
 
-  // Search if selection coordinates and string match any un-found placed word
+  // Search if selection matches any target word
   let matchedWord = placedWords.find(pw => 
     !foundWords.has(pw.word) && 
     (pw.word === formedStr || pw.word === reversedStr) &&
@@ -432,7 +475,7 @@ document.getElementById("submitBtn").onclick = async () => {
     foundWords.add(matchedWord.word);
     userHistoryWords.add(matchedWord.word);
 
-    // Highlight found cells in green instantly
+    // Highlight found cells green permanently
     selectedCells.forEach(([r,c]) => {
       let cellEl = document.querySelector(`.cell[data-r='${r}'][data-c='${c}']`);
       if (cellEl) {
@@ -441,52 +484,41 @@ document.getElementById("submitBtn").onclick = async () => {
       }
     });
 
-    // Cross off target from header display
+    // Cross off target display
     let targetEl = document.getElementById("target-" + matchedWord.word);
     if (targetEl) targetEl.classList.add("found");
 
-    // Write to Firebase Database asynchronously
+    // Write to Firebase
     set(ref(db, `words/userFoundWords/${user.uid}/${matchedWord.word}`), true);
     runTransaction(ref(db, `words/wordsListCount/${matchedWord.word}`), (count) => (count || 0) + 1);
 
-    // Clear active selection immediately
     selectedCells = [];
-    updateSubmitVisibility();
 
-    // CHECK LEVEL COMPLETION: Game ends and awards bonus score when all 10 target words are found
+    // LEVEL END logic: level transitions when all 10 words are submitted
     if (foundWords.size >= targetWordsList.length) {
-      clearInterval(timerInterval); // Stop countdown immediately
+      clearInterval(timerInterval); // Stop countdown
       
-      // Add remaining timer seconds directly to total score
+      // Add remaining seconds as bonus points to running total
       let timeBonus = timeLeft;
       score += timeBonus;
       document.getElementById("score").innerText = score;
       
-      // Save current score state immediately to DB
       await saveScoreToDb();
 
-      alert(`Level ${level} Complete! +${timeBonus} time bonus points added!`);
+      alert(`Level ${level} Complete! +${timeBonus} points added from remaining time!`);
       
-      // Advance to next level
       level++;
       startLevel();
     }
   } else {
-    // INCORRECT MATCH - Deduct 6 points and clear selection
+    // INCORRECT MATCH - Reset non-correct cells back to original color
     score = Math.max(0, score - 6);
     document.getElementById("score").innerText = score;
-
-    selectedCells.forEach(([r,c]) => {
-      let cellEl = document.querySelector(`.cell[data-r='${r}'][data-c='${c}']`);
-      if (cellEl) cellEl.classList.remove("selected");
-    });
-
-    selectedCells = [];
-    updateSubmitVisibility();
+    clearSelection();
   }
 };
 
-/* COORDINATE MATCH VALIDATION (Supports forward & backward coordinate paths) */
+/* COORDINATE MATCH VALIDATION */
 function coordsMatch(placedCoords, userCoords) {
   if (placedCoords.length !== userCoords.length) return false;
   
@@ -523,7 +555,7 @@ document.getElementById("btnContinue").onclick = async () => {
   document.getElementById("lives").innerText = currentLives;
   document.getElementById("gameOverModal").style.display = "none";
   
-  // Reset level timer and restart countdown
+  // Reset timer & resume
   timeLeft = 150;
   document.getElementById("timer").innerText = timeLeft;
   timerInterval = setInterval(tickTimer, 1000);
@@ -546,7 +578,7 @@ async function saveScoreToDb() {
 async function saveScoreAndExit() {
   await saveScoreToDb();
   localStorage.removeItem("selectedLives");
-  location.href = "main-menu.html";
+  location.href = "changeit.html"; // Redirects player to changeit.html
 }
 </script>
 </body>
