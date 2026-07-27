@@ -174,7 +174,7 @@ function isBreakTime(){
   if (hrs >= 13 && hrs < 14) return true;
 
   // Freeze from 20:00 overnight up to 07:00 (20:00 - 06:59)
-  if (hrs >= 22 || hrs < 7) return true;
+  if (hrs >= 23 || hrs < 7) return true;
 
   return false;
 }
