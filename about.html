@@ -1,256 +1,498 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MUUSTANDI GAMING</title>
-    <style>
-        body {
-            background-color: #050505;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            text-align: center;
-            overflow-x: hidden;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PDF Page Combiner</title>
+  
+  <!-- PDF.js for rendering PDF page thumbnails -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <!-- PDF-lib for merging and creating new PDFs -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 
-        header {
-            width: 100%;
-            background: linear-gradient(90deg, #001f3f, #0074D9, #001f3f);
-            padding: 15px 0;
-            box-shadow: 0 4px 15px rgba(0, 116, 217, 0.3);
-        }
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
 
-        h1 {
-            margin: 0;
-            letter-spacing: 8px;
-            font-size: 2.5rem;
-            text-transform: uppercase;
-            width: 100%;
-        }
+    body {
+      background-color: #000000;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-        .container {
-            padding: 40px 20px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
+    /* Top Navigation Bar */
+    header {
+      width: 100%;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background-color: #0d0d0d;
+      z-index: 100;
+      border-bottom: 1px solid #222;
+    }
 
-        .welcome {
-            font-size: 1.8rem;
-            color: #00d4ff;
-            margin-bottom: 40px;
-        }
+    .nav-btn {
+      background: none;
+      border: 2px solid transparent;
+      color: #00e676;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s ease;
+    }
 
-        .notification {
-            color: #ffcc00;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
+    .nav-btn:hover {
+      background-color: #111;
+    }
 
-        /* Styling for the new Winners Banner */
-        .winners-banner {
-            margin: 20px 0 40px 0;
-        }
+    .nav-btn.active-mode {
+      border-color: #00e676;
+      background-color: rgba(0, 230, 118, 0.1);
+    }
 
-        .description {
-            font-size: 1.1rem;
-            line-height: 1.6;
-            color: #cccccc;
-            margin-bottom: 40px;
-        }
+    /* Main Container */
+    #app {
+      width: 100%;
+      max-width: 1400px;
+      padding: 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-        .section-title {
-            font-size: 1.5rem;
-            color: #ffffff;
-            text-decoration: underline;
-            margin-bottom: 15px;
-        }
+    /* Upload Screen */
+    #upload-screen {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 70vh;
+      width: 100%;
+    }
 
-        .slot-box {
-            background: #111;
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid #333;
-            margin-bottom: 30px;
-        }
+    .upload-btn {
+      font-size: 28px;
+      font-weight: bold;
+      color: #ffffff;
+      background-color: #1a1a1a;
+      padding: 20px 50px;
+      border: 2px dashed #444;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      letter-spacing: 2px;
+    }
 
-        .prizes-list {
-            text-align: left;
-            display: inline-block;
-            margin-bottom: 40px;
-            color: #00ff88;
-        }
+    .upload-btn:hover {
+      border-color: #00e676;
+      background-color: #252525;
+      color: #00e676;
+    }
 
-        .play-section {
-            margin: 50px 0;
-        }
+    #file-input {
+      display: none;
+    }
 
-        .play-title {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #ff0055;
-            margin-bottom: 10px;
-        }
+    /* Grid Layout: Exactly 5 Columns */
+    #pages-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 20px;
+      width: 100%;
+      margin-top: 10px;
+    }
 
-        .game-tile {
-            cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            width: 300px;
-            border-radius: 20px;
-            border: 3px solid #00d4ff;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
-        }
+    /* Individual Page Item */
+    .page-card {
+      background-color: #141414;
+      border: 3px solid #333;
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      user-select: none;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
 
-        .game-tile:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 40px rgba(0, 212, 255, 0.7);
-        }
+    .page-card.selectable {
+      cursor: pointer;
+    }
 
-        .download-container {
-            margin: 40px 0;
-        }
+    .page-card.selectable:hover {
+      border-color: #666;
+    }
 
-        .download-link {
-            color: #ffffff;
-            font-weight: bold;
-            font-size: 1.5rem;
-            text-decoration: none;
-            letter-spacing: 2px;
-            border: 2px solid #ffffff;
-            padding: 10px 25px;
-            border-radius: 5px;
-            transition: background 0.3s, color 0.3s;
-        }
+    /* Light Green Highlight when selected */
+    .page-card.selected {
+      background-color: #90ee90 !important;
+      border-color: #00e676 !important;
+    }
 
-        .download-link:hover {
-            background: #ffffff;
-            color: #050505;
-        }
+    .page-card.selected .page-info {
+      color: #000000;
+    }
 
-        .contact-section {
-            margin-top: 60px;
-            padding-bottom: 100px;
-        }
+    .canvas-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #fff;
+      border-radius: 4px;
+      overflow: hidden;
+    }
 
-        .contact-grid {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-start;
-            margin-top: 20px;
-        }
+    canvas {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
 
-        .contact-item {
-            cursor: pointer;
-            width: 150px;
-        }
+    .page-info {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #aaa;
+      text-align: center;
+      word-break: break-all;
+    }
 
-        .icon {
-            font-size: 80px;
-            display: inline-block;
-            transition: transform 0.3s;
-        }
+    /* Popup Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
 
-        .phone-icon {
-            transform: rotate(15deg);
-        }
+    .modal-overlay.hidden {
+      display: none;
+    }
 
-        .contact-detail {
-            margin-top: 15px;
-            font-size: 1.2rem;
-            color: #00d4ff;
-            display: none;
-            word-wrap: break-word;
-        }
-    </style>
+    .modal-box {
+      background-color: #1a1a1a;
+      border: 1px solid #333;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 450px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .modal-box h3 {
+      font-size: 20px;
+      color: #fff;
+    }
+
+    .modal-box input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background-color: #0a0a0a;
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .modal-box input:focus {
+      border-color: #00b0ff;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .cancel-btn {
+      background: none;
+      border: none;
+      color: #888;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .cancel-btn:hover {
+      color: #fff;
+    }
+
+    /* Light Blue DONE button */
+    .done-btn {
+      background-color: #87cefa;
+      color: #000000;
+      border: none;
+      padding: 10px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .done-btn:hover {
+      background-color: #00b0ff;
+      color: #ffffff;
+    }
+
+    /* Loading overlay */
+    #status-msg {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #888;
+    }
+
+    /* Responsive adjustment for small monitors */
+    @media (max-width: 900px) {
+      #pages-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    @media (max-width: 600px) {
+      #pages-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
 </head>
 <body>
 
-    <audio id="bg-sound" src="hot.mp3" loop></audio>
+  <!-- Navigation Bar Header -->
+  <header>
+    <button id="select-btn" class="nav-btn" style="display: none;">SELECT</button>
+    <div id="status-msg"></div>
+    <button id="make-btn" class="nav-btn" style="display: none;">MAKE</button>
+  </header>
 
-    <header>
-        <h1>MUUSTANDI GAMING</h1>
-    </header>
-
-    <div class="container">
-        <div class="welcome">WELCOME</div>
-
-        <div class="notification">Wallet Top Ups Are Open From 06:00 am To 18:00 pm</div>
-
-        <div class="winners-banner">
-            <img src="winners.png" alt="Recent Winners" class="game-tile">
-        </div>
-
-        <p class="description">
-            Muustandi Gaming Is A Skill Based Gaming Platform Where Gamers Compete To Set The Highest Score And Be The Last One Standing When The Game Slot Ends.
-        </p>
-
-        <div class="section-title"><b>Our Game Slots</b></div>
-        <div class="slot-box">
-            Each Day We Have Two Game Slots, Players Must Make Sure They Are In The First Three Positions Before The Game Slot Ends To Win Rewards.<br><br>
-            <strong>06:00 - 17:30 (First Slot)</strong><br>
-            <strong>18:00 - 05:30 (Second Slot)</strong>
-        </div>
-
-        <div class="section-title">Prizes</div>
-        <div class="prizes-list">
-            The Prizes Work As Follows:<br>
-            * The Player In First Place Would Take 60% Of The Total Prize Money<br>
-            * The Player In Second Place Would Take 30% Of The Total Prize Money<br>
-            * The Player In Third Place Would Take 10% Of The Total Prize Money<br><br>
-            <span style="color: #888;">(Don't Forget To Check Prizes To See The Prizes For Each Game Slot)</span>
-        </div>
-
-        <div class="play-section">
-            <div class="play-title">PLAY</div>
-            <p style="font-size: 1.5rem; letter-spacing: 5px; color: gold;">SLIDE</p>
-            <a href="login.html">
-                <img src="slide_game.png" alt="Play Slide" class="game-tile">
-            </a>
-        </div>
-
-        <div class="download-container">
-            <a href="https://storage.appilix.com/uploads/app-apk-69ecac3da3978-1777118269.apk" class="download-link">
-                DOWNLOAD APK
-            </a>
-        </div>
-
-        <div class="contact-section">
-            <div class="section-title">CONTACT US</div>
-            <div class="contact-grid">
-                
-                <div class="contact-item" onclick="toggleDetail('phone-detail')">
-                    <span class="icon phone-icon">📱</span>
-                    <div id="phone-detail" class="contact-detail">0626474239</div>
-                </div>
-
-                <div class="contact-item" onclick="toggleDetail('email-detail')">
-                    <span class="icon">📧</span>
-                    <div id="email-detail" class="contact-detail">muustandigamin@gmail.com</div>
-                </div>
-
-            </div>
-        </div>
+  <!-- Main Content Area -->
+  <main id="app">
+    <!-- Centered Upload Button Area -->
+    <div id="upload-screen">
+      <label for="file-input" class="upload-btn">UPLOAD</label>
+      <input type="file" id="file-input" accept="application/pdf" multiple />
     </div>
 
-    <script>
-        // Toggle contact info
-        function toggleDetail(id) {
-            const detail = document.getElementById(id);
-            if (detail.style.display === "block") {
-                detail.style.display = "none";
-            } else {
-                detail.style.display = "block";
-            }
+    <!-- 5-Column Pages Grid -->
+    <div id="pages-grid"></div>
+  </main>
+
+  <!-- Export Name Modal Popup -->
+  <div id="save-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3>Name Your New PDF</h3>
+      <input type="text" id="pdf-filename" placeholder="Enter document name..." value="Combined_Document" />
+      <div class="modal-actions">
+        <button id="cancel-modal-btn" class="cancel-btn">Cancel</button>
+        <button id="done-btn" class="done-btn">DONE</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    // Application State
+    const uploadedFiles = []; // Array of { file, pdfLibDoc, pdfJsDoc }
+    const pageReferences = []; // Array of { fileIndex, pageIndex, element, selected }
+    let isSelectMode = false;
+
+    // DOM Elements
+    const fileInput = document.getElementById('file-input');
+    const uploadScreen = document.getElementById('upload-screen');
+    const pagesGrid = document.getElementById('pages-grid');
+    const selectBtn = document.getElementById('select-btn');
+    const makeBtn = document.getElementById('make-btn');
+    const saveModal = document.getElementById('save-modal');
+    const filenameInput = document.getElementById('pdf-filename');
+    const doneBtn = document.getElementById('done-btn');
+    const cancelModalBtn = document.getElementById('cancel-modal-btn');
+    const statusMsg = document.getElementById('status-msg');
+
+    // Handle File Uploads
+    fileInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+
+      statusMsg.textContent = "Loading documents...";
+      uploadScreen.style.display = 'none';
+      selectBtn.style.display = 'block';
+      makeBtn.style.display = 'block';
+
+      for (const file of files) {
+        if (file.type !== 'application/pdf') continue;
+
+        const arrayBuffer = await file.arrayBuffer();
+        
+        // Load into PDF-lib (for merging later)
+        const pdfLibDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+        
+        // Load into PDF.js (for rendering page previews)
+        const pdfJsDoc = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+
+        const fileRecordIndex = uploadedFiles.length;
+        uploadedFiles.push({
+          name: file.name,
+          pdfLibDoc: pdfLibDoc,
+          pdfJsDoc: pdfJsDoc
+        });
+
+        // Render each page into the 5-column grid
+        for (let i = 1; i <= pdfJsDoc.numPages; i++) {
+          await renderPageThumbnail(fileRecordIndex, i, file.name);
+        }
+      }
+
+      statusMsg.textContent = "";
+    });
+
+    // Render page thumbnail to grid
+    async function renderPageThumbnail(fileIndex, pageNum, fileName) {
+      const pdfJsDoc = uploadedFiles[fileIndex].pdfJsDoc;
+      const page = await pdfJsDoc.getPage(pageNum);
+
+      const viewport = page.getViewport({ scale: 0.3 });
+      
+      const card = document.createElement('div');
+      card.className = 'page-card';
+
+      const canvasContainer = document.createElement('div');
+      canvasContainer.className = 'canvas-container';
+
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      canvasContainer.appendChild(canvas);
+      card.appendChild(canvasContainer);
+
+      const info = document.createElement('div');
+      info.className = 'page-info';
+      info.textContent = `${fileName} - P.${pageNum}`;
+      card.appendChild(info);
+
+      pagesGrid.appendChild(card);
+
+      // Store reference
+      const pageObj = {
+        fileIndex: fileIndex,
+        pageIndex: pageNum - 1, // 0-based for PDF-lib
+        element: card,
+        selected: false
+      };
+
+      pageReferences.push(pageObj);
+
+      // Handle card selection click
+      card.addEventListener('click', () => {
+        if (!isSelectMode) return;
+
+        pageObj.selected = !pageObj.selected;
+        if (pageObj.selected) {
+          card.classList.add('selected');
+        } else {
+          card.classList.remove('selected');
+        }
+      });
+
+      // Render thumbnail content onto canvas
+      await page.render({ canvasContext: context, viewport: viewport }).promise;
+    }
+
+    // Toggle SELECT Mode
+    selectBtn.addEventListener('click', () => {
+      isSelectMode = !isSelectMode;
+      selectBtn.classList.toggle('active-mode', isSelectMode);
+
+      pageReferences.forEach(ref => {
+        if (isSelectMode) {
+          ref.element.classList.add('selectable');
+        } else {
+          ref.element.classList.remove('selectable');
+        }
+      });
+    });
+
+    // Open MAKE Modal
+    makeBtn.addEventListener('click', () => {
+      const selectedPages = pageReferences.filter(ref => ref.selected);
+      if (selectedPages.length === 0) {
+        alert("Please click SELECT first and choose at least one page to combine!");
+        return;
+      }
+      saveModal.classList.remove('hidden');
+    });
+
+    cancelModalBtn.addEventListener('click', () => {
+      saveModal.classList.add('hidden');
+    });
+
+    // Generate and Download PDF on DONE Click
+    doneBtn.addEventListener('click', async () => {
+      let fileName = filenameInput.value.trim();
+      if (!fileName) fileName = "Combined_Document";
+      if (!fileName.endsWith('.pdf')) fileName += '.pdf';
+
+      const selectedPages = pageReferences.filter(ref => ref.selected);
+      if (selectedPages.length === 0) return;
+
+      statusMsg.textContent = "Creating PDF...";
+      saveModal.classList.add('hidden');
+
+      try {
+        // Create a new blank PDF Document
+        const mergedPdf = await PDFLib.PDFDocument.create();
+
+        for (const item of selectedPages) {
+          const sourcePdfLibDoc = uploadedFiles[item.fileIndex].pdfLibDoc;
+          // Copy page from source document
+          const [copiedPage] = await mergedPdf.copyPages(sourcePdfLibDoc, [item.pageIndex]);
+          mergedPdf.addPage(copiedPage);
         }
 
-        // Script to play hot.mp3 on first interaction
-        document.addEventListener('click', function() {
-            const audio = document.getElementById('bg-sound');
-            audio.play().catch(error => {
-                console.log("Autoplay blocked. Tap anywhere to start sound.");
-            });
-        }, { once: true });
-    </script>
+        // Save new PDF and trigger browser download
+        const pdfBytes = await mergedPdf.save();
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        link.click();
+        URL.revokeObjectURL(link.href);
+
+      } catch (error) {
+        console.error(error);
+        alert("An error occurred while building the PDF.");
+      }
+
+      statusMsg.textContent = "";
+    });
+  </script>
 </body>
 </html>
