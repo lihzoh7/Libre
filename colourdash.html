@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    padding: 20px;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    /* Black background with light blue repeating stripes */
+    background-color: #000000;
+    background-image: repeating-linear-gradient(
+      45deg,
+      #000000,
+      #000000 15px,
+      #0b1d2d 15px,
+      #0b1d2d 30px
+    );
+    color: #ffffff;
+  }
+
+  .dashboard-container {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .tile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, rgba(20, 30, 48, 0.95) 0%, rgba(36, 59, 85, 0.95) 100%);
+    border: 2px solid #1f4068;
+    border-radius: 15px;
+    padding: 25px 30px;
+    text-decoration: none;
+    color: #ffffff;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tile:hover {
+    transform: translateY(-4px);
+    border-color: #00adb5;
+    box-shadow: 0 12px 30px rgba(0, 173, 181, 0.3);
+  }
+
+  .tile:active {
+    transform: translateY(-1px);
+  }
+
+  .tile-text {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+
+  /* --- LEADERBOARD VISUAL: 5 bars of different colors one lower than the other --- */
+  .bars-icon {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 50px;
+  }
+  .bar {
+    width: 10px;
+    border-radius: 3px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  }
+  .bar-1 { height: 50px; background-color: #ff4136; } /* Highest */
+  .bar-2 { height: 41px; background-color: #ff851b; }
+  .bar-3 { height: 32px; background-color: #ffdc00; }
+  .bar-4 { height: 23px; background-color: #2ecc40; }
+  .bar-5 { height: 14px; background-color: #0074d9; } /* Lowest */
+
+  /* --- START VISUAL: Center Play Icon --- */
+  .play-icon {
+    font-size: 44px;
+    color: #00adb5;
+    text-shadow: 0 0 15px rgba(0, 173, 181, 0.6);
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+  }
+  .tile:hover .play-icon {
+    transform: scale(1.2);
+  }
+
+  /* --- PRIZES VISUAL: Gold, silver, and bronze coins --- */
+  .coins-icon {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 75px;
+    height: 50px;
+  }
+  .coin {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+  }
+  .coin-gold {
+    background: radial-gradient(circle at 30% 30%, #ffe066, #f5b041);
+    color: #7d6608;
+    z-index: 3;
+    left: 20px;
+    top: 4px;
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+  .coin-silver {
+    background: radial-gradient(circle at 30% 30%, #ffffff, #bdc3c7);
+    color: #566573;
+    z-index: 2;
+    left: 0px;
+    top: 10px;
+  }
+  .coin-bronze {
+    background: radial-gradient(circle at 30% 30%, #f5b041, #dc7633);
+    color: #6e2c00;
+    z-index: 1;
+    right: 0px;
+    top: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="dashboard-container">
+
+  <a href="colourboard.html" class="tile">
+    <span class="tile-text">Leaderboard</span>
+    <div class="bars-icon">
+      <div class="bar bar-1"></div>
+      <div class="bar bar-2"></div>
+      <div class="bar bar-3"></div>
+      <div class="bar bar-4"></div>
+      <div class="bar bar-5"></div>
+    </div>
+  </a>
+
+  <a href="colourlife.html" class="tile">
+    <span class="tile-text">Start</span>
+    <div class="play-icon">▶</div>
+  </a>
+
+  <a href="colourprizes.html" class="tile">
+    <span class="tile-text">Prizes</span>
+    <div class="coins-icon">
+      <div class="coin coin-silver">S</div>
+      <div class="coin coin-gold">G</div>
+      <div class="coin coin-bronze">B</div>
+    </div>
+  </a>
+
+</div>
+
+</body>
+</html>
