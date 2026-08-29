@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wallet Dashboard</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; padding-top: 40px; background: #eef2f5; }
+    
+    /* Blue Wallet Card */
+    .wallet-card {
+      background: linear-gradient(135deg, #10439f 0%, #1e56a0 100%);
+      color: #ffffff;
+      width: 440px;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 12px 28px rgba(16, 67, 159, 0.25);
+    }
+
+    /* Top Left: Balance Section */
+    .wallet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .balance-label {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #d0e1fd;
+      font-weight: 600;
+    }
+    .balance-amount {
+      font-size: 32px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    /* 1Voucher Deposit Tab / Section */
+    .deposit-box {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      padding: 20px;
+      border-radius: 12px;
+    }
+    .deposit-box label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #e2edff;
+    }
+    .input-group {
+      display: flex;
+      gap: 10px;
+    }
+    .amount-input {
+      flex: 1;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+    }
+    .amount-input:focus {
+      border-color: #2ecc71;
+    }
+
+    /* Green Submit Button */
+    .btn-submit {
+      background-color: #2ecc71;
+      color: #ffffff;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .btn-submit:hover {
+      background-color: #27ae60;
+    }
+
+    #status-msg {
+      margin-top: 12px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wallet-card">
+  <!-- Top Left: Balance -->
+  <div class="wallet-header">
+    <div>
+      <div class="balance-label">Balance</div>
+      <div class="balance-amount" id="user-balance">R 0.00</div>
+    </div>
+  </div>
+
+  <!-- Deposit Form -->
+  <div class="deposit-box">
+    <label for="deposit-amount">Deposit with 1Voucher</label>
+    <div class="input-group">
+      <input type="number" id="deposit-amount" class="amount-input" placeholder="Enter amount (e.g. 50)">
+      <button class="btn-submit" onclick="start1VoucherDeposit()">Submit</button>
+    </div>
+    <div id="status-msg"></div>
+  </div>
+</div>
+
+<script>
+  async function start1VoucherDeposit() {
+    const amount = document.getElementById('deposit-amount').value;
+    const msg = document.getElementById('status-msg');
+
+    if (!amount || amount <= 0) {
+      msg.innerText = "Please enter a valid amount.";
+      msg.style.color = "#ff8e8e";
+      return;
+    }
+
+    msg.innerText = "Redirecting to 1Voucher portal...";
+    msg.style.color = "#ffffff";
+
+    try {
+      // 1. Call your server backend
+      const response = await fetch('/api/deposit/1voucher', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amountInCents: amount * 100 })
+      });
+      
+      const data = await response.json();
+
+      if (data.redirectUri) {
+        // 2. Open PAYM8 / 1Voucher PIN entry screen
+        window.location.href = data.redirectUri;
+      } else {
+        msg.innerText = "Could not initiate deposit. Try again.";
+        msg.style.color = "#ff8e8e";
+      }
+    } catch (err) {
+      msg.innerText = "Connection error.";
+      msg.style.color = "#ff8e8e";
+    }
+  }
+</script>
+</body>
+</html>
