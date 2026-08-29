@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPACE GLASS - Sign Up</title>
+
+<style>
+body { 
+  background-color: lightblue; 
+  font-family: Arial, sans-serif; 
+  display:flex; 
+  justify-content:center; 
+  align-items:center; 
+  min-height:100vh; 
+  margin:0; 
+  padding: 20px 0;
+}
+
+/* BLUR EFFECT */
+.blur{
+  filter: blur(5px);
+  pointer-events:none;
+}
+
+.container { 
+  width:400px; 
+  background: rgba(0,0,0,0.1); 
+  padding:20px; 
+  border-radius:8px; 
+  position:relative;
+  box-sizing: border-box;
+}
+
+h1 { 
+  color:white; 
+  font-size:14px; 
+  text-align:center; 
+}
+
+input { 
+  width:100%; 
+  padding:10px; 
+  margin:5px 0; 
+  border:none; 
+  border-radius:4px; 
+  box-sizing: border-box;
+}
+
+#submitBtn { 
+  width:100%; 
+  padding:10px; 
+  background:green; 
+  color:white; 
+  border:none; 
+  border-radius:4px;
+  cursor:pointer; 
+  font-weight: bold;
+}
+
+/* NEW SIGN IN TAB */
+.signin-tab {
+  margin-top: 20px;
+  background-color: #90ee90;
+  width: 100%;
+  padding: 12px 0;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.signin-tab a {
+  text-decoration: none;
+  color: #004d00;
+  font-weight: bold;
+  font-size: 14px;
+  display: block;
+}
+
+.signin-tab:hover {
+  background-color: #77dd77;
+}
+
+/* POPUPS */
+.popup {
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:white;
+  color:black;
+  padding:30px;
+  border-radius:10px;
+  text-align:center;
+  display:none;
+  z-index:1000;
+  width:300px;
+  box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
+}
+
+.popup button {
+  margin-top:15px;
+  padding:10px;
+  background:#6a0dad;
+  color:white;
+  border:none;
+  cursor:pointer;
+  border-radius: 4px;
+}
+
+#errorPopup {
+  border-top: 5px solid red;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container" id="main">
+  <h1>PERSONAL DETAILS</h1>
+
+  <input id="name" placeholder="Name">
+  <input id="surname" placeholder="Surname">
+  <input id="email" type="email" placeholder="Email">
+  <input id="cellNumber" placeholder="Cell Number">
+  <input id="idNumber" placeholder="ID Number" maxlength="13">
+  <input id="referral" placeholder="Referral Code">
+  
+  <h1>SECURITY</h1>
+  <input id="password" type="password" placeholder="Password">
+  <input id="confirmPassword" type="password" placeholder="Confirm Password">
+
+  <button id="submitBtn">SUBMIT</button>
+
+  <div class="signin-tab">
+    <a href="login.html">Already Have An Account? Sign In</a>
+  </div>
+</div>
+
+<!-- SUCCESS POPUP -->
+<div id="popup" class="popup">
+  <h2>✅ Account Created</h2>
+  <p>You will be redirected to login</p>
+  <button onclick="goLogin()">OK</button>
+</div>
+
+<!-- ERROR / DUPLICATE USER POPUP -->
+<div id="errorPopup" class="popup">
+  <h2>⚠️ User Already Exists</h2>
+  <p id="errorMessage">A user with this Cell Number or ID Number already exists.</p>
+  <button onclick="closeErrorPopup()">OK</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getDatabase, ref, set, get, query, orderByChild, equalTo } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.appspot.com",
+  messagingSenderId: "475447495901",
+  appId: "1:475447495901:web:9189276a162a3680afdf34"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+const popup = document.getElementById("popup");
+const errorPopup = document.getElementById("errorPopup");
+const main = document.getElementById("main");
+
+const nameInput = document.getElementById("name");
+const surnameInput = document.getElementById("surname");
+const emailInput = document.getElementById("email");
+const cellNumberInput = document.getElementById("cellNumber");
+const idNumberInput = document.getElementById("idNumber");
+const referralInput = document.getElementById("referral");
+const passwordInput = document.getElementById("password");
+const confirmPasswordInput = document.getElementById("confirmPassword");
+
+/**
+ * Validates a South African National ID Number using the Luhn Algorithm 
+ * and date checks.
+ */
+function isValidSouthAfricanID(id) {
+  if (!/^\d{13}$/.test(id)) return false;
+
+  const year = parseInt(id.substring(0, 2), 10);
+  const month = parseInt(id.substring(2, 4), 10);
+  const day = parseInt(id.substring(4, 6), 10);
+
+  if (month < 1 || month > 12) return false;
+  if (day < 1 || day > 31) return false;
+
+  const citizenship = parseInt(id.charAt(10), 10);
+  if (citizenship !== 0 && citizenship !== 1) return false;
+
+  // Luhn Algorithm Check
+  let sum = 0;
+  let alternate = false;
+  for (let i = id.length - 1; i >= 0; i--) {
+    let n = parseInt(id.charAt(i), 10);
+    if (alternate) {
+      n *= 2;
+      if (n > 9) n -= 9;
+    }
+    sum += n;
+    alternate = !alternate;
+  }
+  return (sum % 10 === 0);
+}
+
+// Function to check if a key-value pair exists in the 'users' node
+async function checkDuplicate(field, value) {
+  const userQuery = query(ref(db, "users"), orderByChild(field), equalTo(value));
+  const snapshot = await get(userQuery);
+  return snapshot.exists();
+}
+
+document.getElementById("submitBtn").addEventListener("click", async () => {
+
+  const name = nameInput.value.trim();
+  const surname = surnameInput.value.trim();
+  const email = emailInput.value.trim().toLowerCase();
+  const cellNumber = cellNumberInput.value.trim();
+  const idNumber = idNumberInput.value.trim();
+  const referral = referralInput.value.trim().toLowerCase();
+  const password = passwordInput.value;
+  const confirmPassword = confirmPasswordInput.value;
+
+  if (!name || !surname || !email || !cellNumber || !idNumber || !password || !confirmPassword) {
+    return alert("Fill all fields");
+  }
+
+  if (!isValidSouthAfricanID(idNumber)) {
+    return alert("Please enter a valid 13-digit South African ID number.");
+  }
+
+  if (password.length < 8) {
+    return alert("Password must be at least 8 characters");
+  }
+
+  if (password !== confirmPassword) {
+    return alert("Passwords do not match");
+  }
+
+  try {
+    // Check if cell number or ID number already exist in Firebase Database
+    const [cellExists, idExists] = await Promise.all([
+      checkDuplicate("cellNumber", cellNumber),
+      checkDuplicate("idNumber", idNumber)
+    ]);
+
+    if (cellExists || idExists) {
+      showErrorPopup();
+      return;
+    }
+
+    const validReferrals = ["gamer1", "gamer2", "khumalo3", "rori1", "gamer5"];
+    const bonusLives = validReferrals.includes(referral) ? 3 : 0;
+
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+
+    await set(ref(db, "users/" + cred.user.uid), {
+      uid: cred.user.uid,
+      name,
+      surname,
+      email,
+      cellNumber,
+      idNumber,
+      referral,
+      createdAt: Date.now()
+    });
+
+    await set(ref(db, "wallet/" + cred.user.uid), {
+      gems: 0,
+      lives: bonusLives
+    });  
+
+    main.classList.add("blur");
+    popup.style.display = "block";
+
+    setTimeout(() => {
+      window.location.href = "login.html";
+    }, 3000);
+
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+function showErrorPopup() {
+  main.classList.add("blur");
+  errorPopup.style.display = "block";
+}
+
+window.closeErrorPopup = () => {
+  main.classList.remove("blur");
+  errorPopup.style.display = "none";
+};
+
+window.goLogin = () => {
+  window.location.href = "login.html";
+};
+</script>
+
+</body>
+</html>
