@@ -129,8 +129,8 @@
     msg.style.color = "#ffffff";
 
     try {
-      // 1. Call your live deployed Firebase Cloud Function
-      const response = await fetch('https://us-central1-tose-ccf8f.cloudfunctions.net/api/deposit/1voucher', {
+      // Corrected URL pointing to your live backend endpoint
+      const response = await fetch('https://backend-475447495901.europe-west1.run.app/deposit/1voucher', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amountInCents: amount * 100 })
@@ -139,10 +139,10 @@
       const data = await response.json();
 
       if (data.redirectUri) {
-        // 2. Open PAYM8 / 1Voucher PIN entry screen
+        // Redirect user to official 1Voucher PIN entry portal
         window.location.href = data.redirectUri;
       } else {
-        msg.innerText = "Could not initiate deposit. Try again.";
+        msg.innerText = data.error || "Could not initiate deposit. Try again.";
         msg.style.color = "#ff8e8e";
       }
     } catch (err) {
