@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WALLET</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #001f3f;
+    color: white;
+    display: flex;
+    flex-direction: column; 
+    justify-content: center;
+    align-items: center; 
+    min-height: 100vh;
+    padding: 20px 0;
+  }
+
+  #wallet {
+    width: 480px; 
+    padding: 20px;
+    text-align: center; 
+    background: #001428;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+  }
+
+  .winter-header {
+    color: #00f0ff;
+    font-size: 26px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+  }
+
+  /* Top Stat Tiles */
+  .tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .tile {
+    background: #003366;
+    padding: 15px 5px; 
+    text-align: center;
+    border-radius: 8px;
+    font-size: 18px; 
+    font-weight: bold;
+  }
+
+  .balance-tile {
+    background: #004080;
+    border: 1px solid #00f0ff;
+    color: #00f0ff;
+  }
+
+  /* 1Voucher Deposit Form Card */
+  .deposit-card {
+    background: #002244;
+    border: 1px solid #0055a5;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: left;
+  }
+
+  .deposit-card h3 {
+    margin-top: 0;
+    color: #ffcc00;
+    font-size: 18px;
+    text-align: center;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    color: #ccc;
+    margin-bottom: 4px;
+  }
+
+  .form-group input {
+    width: 95%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #004080;
+    background: #001020;
+    color: #fff;
+    font-size: 16px;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 12px;
+    background: #00f0ff;
+    color: #001f3f;
+    font-weight: bold;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .submit-btn:hover { background: #00c4d4; }
+
+  /* Promo Tier Tabs */
+  .tab-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    background: #001f5c;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid #004080;
+  }
+
+  .click-count {
+    font-size: 16px;
+    font-weight: bold;
+    color: #00f0ff;
+    background: rgba(0, 240, 255, 0.1);
+    padding: 4px 10px;
+    border-radius: 5px;
+  }
+
+  .tab-btn {
+    flex-grow: 1;
+    text-align: center;
+    cursor: pointer;
+    font-size: 14px;      
+    font-weight: bold;   
+  }
+
+  .tab-container.disabled {
+    background: #222 !important;
+    border-color: #444 !important;
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .ikhokha-link {
+    display: block;
+    margin-top: 15px;
+    color: #ffcc00;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 10px;
+    border: 1px dashed #ffcc00;
+    border-radius: 5px;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="wallet">
+  <div class="winter-header">WINTER SPECIAL</div>
+
+  <!-- Stat Display Bar -->
+  <div class="tiles">
+    <div class="tile balance-tile">💵 R <span id="cashBalance">0.00</span></div>
+    <div class="tile">💎 <span id="gems">0</span></div>
+    <div class="tile" id="buyLife" style="cursor:pointer;">❤️ <span id="lives">0</span></div>
+  </div>
+
+  <!-- 1Voucher Direct Deposit Box -->
+  <div class="deposit-card">
+    <h3>TOP UP VIA 1VOUCHER</h3>
+    <div class="form-group">
+      <label>Deposit Amount (Rand):</label>
+      <input type="number" id="depositAmount" value="20" min="5" placeholder="e.g. 20">
+    </div>
+    <div class="form-group">
+      <label>1Voucher PIN Digits:</label>
+      <input type="text" id="voucherPin" placeholder="Enter 16-digit 1Voucher PIN">
+    </div>
+    <button class="submit-btn" id="submitVoucherBtn">REDEEM VOUCHER NOW</button>
+  </div>
+
+  <!-- Promo Tiers Section -->
+  <div class="tab-container" id="container-tier1">
+    <div class="click-count" id="count-tier1">2</div>
+    <div class="tab-btn" onclick="processInstantPromo('tier1', 150, 1)">R0.50 (1❤️+150💎) LOAD PROMO</div>
+  </div>
+
+  <div class="tab-container" id="container-tier2">
+    <div class="click-count" id="count-tier2">2</div>
+    <div class="tab-btn" onclick="processInstantPromo('tier2', 350, 2)">R1.50 (2❤️+350💎) LOAD PROMO</div>
+  </div>
+
+  <div class="tab-container" id="container-tier3">
+    <div class="click-count" id="count-tier3">2</div>
+    <div class="tab-btn" onclick="processInstantPromo('tier3', 400, 5)">R3.00 (5❤️+400💎) LOAD PROMO</div>
+  </div>
+
+  <!-- Alternative External Links -->
+  <a href="https://pay.ikhokha.com" target="_blank" class="ikhokha-link">ALTERNATIVE: PAY WITH IKHOKHA LINK</a>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.appspot.com"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+let currentUid = null;
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    currentUid = user.uid;
+    listenToWalletUpdates(currentUid);
+  }
+});
+
+function listenToWalletUpdates(uid) {
+  onValue(ref(db, "wallet/" + uid), (snap) => {
+    const data = snap.val() || {};
+    document.getElementById("cashBalance").innerText = (data.cashBalance || 0).toFixed(2);
+    document.getElementById("gems").innerText = data.gems || 0;
+    document.getElementById("lives").innerText = data.lives || 0;
+  });
+}
+
+// Handle 1Voucher Submission to Cloud Run
+document.getElementById("submitVoucherBtn").onclick = async () => {
+  const amountRand = document.getElementById("depositAmount").value;
+  const pin = document.getElementById("voucherPin").value.trim();
+
+  if (!amountRand || amountRand < 5) {
+    alert("Please enter a valid amount (Minimum R5)");
+    return;
+  }
+  if (!pin) {
+    alert("Please enter your 1Voucher PIN digits.");
+    return;
+  }
+
+  const btn = document.getElementById("submitVoucherBtn");
+  btn.disabled = true;
+  btn.innerText = "Processing Voucher...";
+
+  try {
+    const res = await fetch("https://backend-475447495901.europe-west1.run.app/deposit/1voucher", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amountInCents: parseInt(amountRand, 10) * 100,
+        userId: currentUid || "GUEST",
+        voucherPin: pin
+      })
+    });
+
+    const result = await res.json();
+
+    if (result.success && result.redirectUri) {
+      window.location.href = result.redirectUri;
+    } else {
+      alert("Error: " + (result.error || "Failed to submit voucher."));
+    }
+  } catch (err) {
+    alert("Network Connection Error: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerText = "REDEEM VOUCHER NOW";
+  }
+};
+</script>
+
+</body>
+</html>
