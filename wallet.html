@@ -210,7 +210,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, get, set, runTransaction, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -242,6 +242,31 @@ function listenToWalletUpdates(uid) {
     document.getElementById("lives").innerText = data.lives || 0;
   });
 }
+
+// Global Promo Handler Function attached to window for HTML onclick compatibility
+window.processInstantPromo = async function(tierId, gemsToAdd, livesToAdd) {
+  if (!currentUid) {
+    alert("Please log in to redeem promos.");
+    return;
+  }
+
+  const userWalletRef = ref(db, "wallet/" + currentUid);
+
+  try {
+    await runTransaction(userWalletRef, (currentData) => {
+      if (!currentData) {
+        currentData = { cashBalance: 0, gems: 0, lives: 0 };
+      }
+      currentData.gems = (currentData.gems || 0) + gemsToAdd;
+      currentData.lives = (currentData.lives || 0) + livesToAdd;
+      return currentData;
+    });
+
+    alert(`Promo claimed successfully! Added ${gemsToAdd} Gems and ${livesToAdd} Lives.`);
+  } catch (err) {
+    alert("Failed to claim promo: " + err.message);
+  }
+};
 
 // Handle 1Voucher Submission to Cloud Run
 document.getElementById("submitVoucherBtn").onclick = async () => {
