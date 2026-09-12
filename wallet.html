@@ -287,15 +287,15 @@ document.getElementById("submitVoucherBtn").onclick = async () => {
   btn.innerText = "Processing Voucher...";
 
   try {
-    const res = await fetch("https://backend-475447495901.europe-west1.run.app/deposit/1voucher", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amountInCents: parseInt(amountRand, 10) * 100,
-        userId: currentUid || "GUEST",
-        voucherPin: pin
-      })
-    });
+    const res = await fetch("https://muustandibackend.onrender.com/deposit/1voucher", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    amountInCents: Math.round(amountRand * 100),
+    userId: currentUid || "GUEST",
+    voucherPin: pin
+  })
+});
 
     const result = await res.json();
 
