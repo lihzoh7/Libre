@@ -267,12 +267,25 @@ document.getElementById("submitVoucherBtn").onclick = async () => {
   btn.innerText = "Redirecting to Gateway...";
 
   try {
+    // Fetch real name and surname from Firebase Realtime DB
+    let userFirstName = "Gamer";
+    let userLastName = "Customer";
+
+    const userSnap = await get(ref(db, "users/" + currentUid));
+    if (userSnap.exists()) {
+      const userData = userSnap.val();
+      userFirstName = userData.name || "Gamer";
+      userLastName = userData.surname || "Customer";
+    }
+
     const res = await fetch("https://muustandibackend.onrender.com/deposit/1voucher", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         amountInCents: Math.round(amountRand * 100),
-        userId: currentUid
+        userId: currentUid,
+        firstName: userFirstName,
+        lastName: userLastName
       })
     });
 
