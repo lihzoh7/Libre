@@ -36,7 +36,6 @@
     text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
   }
 
-  /* Top Stat Tiles */
   .tiles {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -59,7 +58,6 @@
     color: #00f0ff;
   }
 
-  /* 1Voucher Deposit Form Card */
   .deposit-card {
     background: #002244;
     border: 1px solid #0055a5;
@@ -112,7 +110,6 @@
 
   .submit-btn:hover { background: #00c4d4; }
 
-  /* Promo Tier Tabs */
   .tab-container {
     display: flex;
     align-items: center;
@@ -141,13 +138,6 @@
     font-weight: bold;   
   }
 
-  .tab-container.disabled {
-    background: #222 !important;
-    border-color: #444 !important;
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
   .ikhokha-link {
     display: block;
     margin-top: 15px;
@@ -167,28 +157,21 @@
 <div id="wallet">
   <div class="winter-header">WINTER SPECIAL</div>
 
-  <!-- Stat Display Bar -->
   <div class="tiles">
     <div class="tile balance-tile">💵 R <span id="cashBalance">0.00</span></div>
     <div class="tile">💎 <span id="gems">0</span></div>
     <div class="tile" id="buyLife" style="cursor:pointer;">❤️ <span id="lives">0</span></div>
   </div>
 
-  <!-- 1Voucher Direct Deposit Box -->
   <div class="deposit-card">
     <h3>TOP UP VIA 1VOUCHER</h3>
     <div class="form-group">
       <label>Deposit Amount (Rand):</label>
       <input type="number" id="depositAmount" value="20" min="5" placeholder="e.g. 20">
     </div>
-    <div class="form-group">
-      <label>1Voucher PIN Digits:</label>
-      <input type="text" id="voucherPin" placeholder="Enter 16-digit 1Voucher PIN">
-    </div>
-    <button class="submit-btn" id="submitVoucherBtn">REDEEM VOUCHER NOW</button>
+    <button class="submit-btn" id="submitVoucherBtn">CONTINUE TO 1VOUCHER PAYMENT</button>
   </div>
 
-  <!-- Promo Tiers Section -->
   <div class="tab-container" id="container-tier1">
     <div class="click-count" id="count-tier1">2</div>
     <div class="tab-btn" onclick="processInstantPromo('tier1', 150, 1)">R0.50 (1❤️+150💎) LOAD PROMO</div>
@@ -204,13 +187,12 @@
     <div class="tab-btn" onclick="processInstantPromo('tier3', 400, 5)">R3.00 (5❤️+400💎) LOAD PROMO</div>
   </div>
 
-  <!-- Alternative External Links -->
   <a href="https://pay.ikhokha.com" target="_blank" class="ikhokha-link">ALTERNATIVE: PAY WITH IKHOKHA LINK</a>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get, set, runTransaction, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, runTransaction, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -243,7 +225,6 @@ function listenToWalletUpdates(uid) {
   });
 }
 
-// Global Promo Handler Function attached to window for HTML onclick compatibility
 window.processInstantPromo = async function(tierId, gemsToAdd, livesToAdd) {
   if (!currentUid) {
     alert("Please log in to redeem promos.");
@@ -268,47 +249,45 @@ window.processInstantPromo = async function(tierId, gemsToAdd, livesToAdd) {
   }
 };
 
-// Handle 1Voucher Submission to Cloud Run
 document.getElementById("submitVoucherBtn").onclick = async () => {
   const amountRand = document.getElementById("depositAmount").value;
-  const pin = document.getElementById("voucherPin").value.trim();
 
   if (!amountRand || amountRand < 5) {
     alert("Please enter a valid amount (Minimum R5)");
     return;
   }
-  if (!pin) {
-    alert("Please enter your 1Voucher PIN digits.");
+
+  if (!currentUid) {
+    alert("Please log in to make a deposit.");
     return;
   }
 
   const btn = document.getElementById("submitVoucherBtn");
   btn.disabled = true;
-  btn.innerText = "Processing Voucher...";
+  btn.innerText = "Redirecting to Gateway...";
 
   try {
     const res = await fetch("https://muustandibackend.onrender.com/deposit/1voucher", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    amountInCents: Math.round(amountRand * 100),
-    userId: currentUid || "GUEST",
-    voucherPin: pin
-  })
-});
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amountInCents: Math.round(amountRand * 100),
+        userId: currentUid
+      })
+    });
 
     const result = await res.json();
 
     if (result.success && result.redirectUri) {
       window.location.href = result.redirectUri;
     } else {
-      alert("Error: " + (result.error || "Failed to submit voucher."));
+      alert("Error: " + (result.error || "Failed to initialize payment."));
     }
   } catch (err) {
     alert("Network Connection Error: " + err.message);
   } finally {
     btn.disabled = false;
-    btn.innerText = "REDEEM VOUCHER NOW";
+    btn.innerText = "CONTINUE TO 1VOUCHER PAYMENT";
   }
 };
 </script>
