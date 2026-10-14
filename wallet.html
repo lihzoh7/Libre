@@ -4,71 +4,75 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Muustandi Wallet</title>
+<title>MUUSTANDI WALLET</title>
 
 <style>
 * {
   box-sizing: border-box;
 }
 
-html, body {
+body {
   margin: 0;
-  min-height: 100%;
+  min-height: 100vh;
+  padding: 12px;
   font-family: Arial, sans-serif;
   background: #001f3f;
   color: white;
-}
-
-body {
-  min-height: 100vh;
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 12px;
+  align-items: center;
 }
 
 #wallet {
   width: 100%;
-  max-width: 440px;
-  padding: 16px;
+  max-width: 480px;
+  padding: 18px;
   text-align: center;
   background: #001428;
   border: 1px solid #004080;
-  border-radius: 14px;
-  box-shadow: 0 0 15px rgba(0,0,0,.45);
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.5);
 }
 
-.hawk {
+.hawk-logo {
   display: block;
-  width: 66px;
-  height: 66px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
-  margin: 0 auto 6px;
+  margin: 0 auto 8px;
 }
 
 .winter-header {
   color: #00f0ff;
-  font-size: 23px;
+  font-size: clamp(20px, 5vw, 26px);
   font-weight: bold;
+  text-transform: uppercase;
   letter-spacing: 2px;
-  margin-bottom: 14px;
-  text-shadow: 0 0 10px rgba(0,240,255,.5);
+  margin-bottom: 16px;
+  text-shadow: 0 0 10px rgba(0,240,255,0.6);
 }
 
 .tiles {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
+  align-items: stretch;
 }
 
 .tile {
   min-width: 0;
+  min-height: 83px;
   padding: 12px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   background: #003366;
-  border: 1px solid #07518b;
-  border-radius: 9px;
-  font-size: 16px;
+  border: 1px solid #004080;
+  border-radius: 8px;
+  font-size: clamp(14px, 3.5vw, 18px);
   font-weight: bold;
   overflow-wrap: anywhere;
 }
@@ -80,110 +84,151 @@ body {
 }
 
 .tile-label {
-  display: block;
   font-size: 11px;
-  color: #c7eaff;
-  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+  color: #c8eaff;
 }
 
-.tile-value {
-  display: block;
-  font-size: clamp(14px, 4vw, 19px);
+.buy-tile {
+  padding: 6px 3px;
+  background: #064c70;
+  border: 1px solid #00f0ff;
+  color: #00f0ff;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
 }
 
-.buy-section {
-  background: #002244;
-  border: 1px solid #0055a5;
-  border-radius: 10px;
-  padding: 14px;
-  margin-bottom: 14px;
+.buy-tile:hover {
+  background: #08648e;
 }
 
-.buy-title {
-  color: #ffcc00;
-  font-size: 19px;
-  font-weight: bold;
-  margin-bottom: 5px;
+.buy-tile:active {
+  transform: scale(0.97);
+}
+
+.buy-tile:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.buy-word {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 1px;
 }
 
 .buy-cost {
-  font-size: 13px;
-  color: #d8eaff;
-  margin-bottom: 12px;
+  font-size: 10px;
+  line-height: 1.3;
+  color: #ffffff;
+  font-weight: normal;
 }
 
-button {
-  font-family: inherit;
-  cursor: pointer;
+.lives-tile {
+  border-color: #e75d83;
+  color: #ffffff;
 }
 
-.buy-btn, .submit-btn {
-  width: 100%;
-  border: 0;
-  border-radius: 7px;
-  padding: 12px;
-  font-size: 15px;
-  font-weight: bold;
-  background: #00f0ff;
-  color: #001f3f;
-}
-
-.buy-btn:hover, .submit-btn:hover {
-  background: #00c4d4;
-}
-
-button:disabled {
-  opacity: .6;
-  cursor: not-allowed;
-}
-
-#buyMessage, #depositMessage {
-  font-size: 13px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-  margin-top: 9px;
+.life-number {
+  color: #ff668e;
+  font-size: 22px;
 }
 
 .deposit-card {
   background: #002244;
   border: 1px solid #0055a5;
-  border-radius: 10px;
-  padding: 14px;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 12px;
   text-align: center;
 }
 
 .deposit-card h3 {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   color: #ffcc00;
-  font-size: 16px;
+  font-size: 17px;
 }
 
 .form-group {
-  margin-bottom: 11px;
+  margin-bottom: 12px;
   text-align: left;
 }
 
 .form-group label {
   display: block;
   font-size: 12px;
-  color: #ddd;
+  color: #ccc;
   margin-bottom: 5px;
 }
 
 .form-group input {
+  display: block;
   width: 100%;
   min-width: 0;
   padding: 11px;
-  border-radius: 6px;
-  border: 1px solid #07518b;
+  border-radius: 5px;
+  border: 1px solid #004080;
   background: #001020;
-  color: white;
+  color: #fff;
   font-size: 16px;
 }
 
-@media (max-width: 350px) {
+.submit-btn {
+  width: 100%;
+  padding: 12px 8px;
+  background: #00f0ff;
+  color: #001f3f;
+  font-weight: bold;
+  font-size: 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.submit-btn:hover {
+  background: #00c4d4;
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+#message {
+  display: none;
+  margin: 10px 0 0;
+  padding: 9px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+#message.success {
+  display: block;
+  color: #a8ffbf;
+  background: #103b2a;
+}
+
+#message.error {
+  display: block;
+  color: #ffb3b3;
+  background: #451d27;
+}
+
+#message.info {
+  display: block;
+  color: #b8edff;
+  background: #12344b;
+}
+
+@media (max-width: 360px) {
+  body {
+    padding: 7px;
+  }
+
   #wallet {
-    padding: 10px;
+    padding: 12px;
   }
 
   .tiles {
@@ -191,11 +236,24 @@ button:disabled {
   }
 
   .tile {
-    padding: 10px 2px;
+    padding: 9px 2px;
+    min-height: 78px;
   }
 
-  .winter-header {
-    font-size: 20px;
+  .buy-word {
+    font-size: 17px;
+  }
+
+  .buy-cost {
+    font-size: 9px;
+  }
+
+  .tile-label {
+    font-size: 10px;
+  }
+
+  .deposit-card {
+    padding: 12px;
   }
 }
 </style>
@@ -204,37 +262,39 @@ button:disabled {
 <body>
 <div id="wallet">
 
-  <img class="hawk" src="hawk.png" alt="Muustandi Hawk">
+  <img
+    class="hawk-logo"
+    src="hawk.png"
+    alt="Muustandi Hawk"
+  >
 
   <div class="winter-header">WINTER SPECIAL</div>
 
   <div class="tiles">
+
     <div class="tile balance-tile">
       <span class="tile-label">CASH BALANCE</span>
-      <span class="tile-value">R<span id="cashBalance">0.00</span></span>
+      <span>R <span id="cashBalance">0.00</span></span>
     </div>
 
-    <div class="tile">
-      <span class="tile-label">GEMS</span>
-      <span class="tile-value">💎 <span id="gems">0</span></span>
-    </div>
+    <button
+      type="button"
+      class="tile buy-tile"
+      id="buyLife"
+      aria-label="Buy one life for 50 cents"
+    >
+      <span class="buy-word">BUY</span>
+      <span class="buy-cost">1 Life Cost<br>50 cent</span>
+    </button>
 
-    <div class="tile">
+    <div class="tile lives-tile">
       <span class="tile-label">LIVES</span>
-      <span class="tile-value">❤️ <span id="lives">0</span></span>
+      <span class="life-number">❤️ <span id="lives">0</span></span>
     </div>
+
   </div>
 
-  <section class="buy-section">
-    <div class="buy-title">BUY</div>
-    <div class="buy-cost">1 Life Cost 50 cent</div>
-    <button class="buy-btn" id="buyLifeBtn" type="button">
-      BUY 1 LIFE — R0.50
-    </button>
-    <div id="buyMessage" role="status" aria-live="polite"></div>
-  </section>
-
-  <section class="deposit-card">
+  <div class="deposit-card">
     <h3>TOP UP VIA 1VOUCHER</h3>
 
     <div class="form-group">
@@ -245,32 +305,41 @@ button:disabled {
         value="20"
         min="5"
         step="0.01"
-        placeholder="Minimum R5"
+        placeholder="e.g. 20"
       >
     </div>
 
-    <button class="submit-btn" id="submitVoucherBtn" type="button">
+    <button class="submit-btn" id="submitVoucherBtn">
       CONTINUE TO 1VOUCHER PAYMENT
     </button>
+  </div>
 
-    <div id="depositMessage" role="status" aria-live="polite"></div>
-  </section>
+  <div id="message" role="status" aria-live="polite"></div>
 
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { initializeApp } from
+  "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+
 import {
   getDatabase,
   ref,
   runTransaction,
   onValue,
   get
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+} from
+  "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
 import {
   getAuth,
   onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+} from
+  "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+/* =====================================================
+   FIREBASE CONFIGURATION
+   ===================================================== */
 
 const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
@@ -284,170 +353,304 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-let currentUid = null;
-let stopWalletListener = null;
-let purchaseInProgress = false;
-let depositInProgress = false;
+/* =====================================================
+   WALLET STATE
+   ===================================================== */
 
-const cashBalanceEl = document.getElementById("cashBalance");
-const gemsEl = document.getElementById("gems");
-const livesEl = document.getElementById("lives");
-const buyBtn = document.getElementById("buyLifeBtn");
-const buyMessage = document.getElementById("buyMessage");
-const depositBtn = document.getElementById("submitVoucherBtn");
-const depositMessage = document.getElementById("depositMessage");
+let currentUid = null;
+let walletListenerStartedFor = null;
+let walletData = {};
+let purchaseInProgress = false;
+
+const cashBalanceElement =
+  document.getElementById("cashBalance");
+
+const livesElement =
+  document.getElementById("lives");
+
+const buyLifeButton =
+  document.getElementById("buyLife");
+
+const depositButton =
+  document.getElementById("submitVoucherBtn");
+
+const messageElement =
+  document.getElementById("message");
+
+function showMessage(message, type = "info") {
+  messageElement.textContent = message;
+  messageElement.className = type;
+}
+
+function clearMessage() {
+  messageElement.textContent = "";
+  messageElement.className = "";
+}
 
 function money(value) {
-  const number = Number(value);
-  return (Number.isFinite(number) ? number : 0).toFixed(2);
+  const amount = Number(value);
+
+  return Number.isFinite(amount)
+    ? amount.toFixed(2)
+    : "0.00";
 }
+
+function renderWallet(data = {}) {
+  walletData = data;
+
+  cashBalanceElement.textContent =
+    money(data.cashBalance);
+
+  livesElement.textContent =
+    String(Math.max(0, Number(data.lives) || 0));
+}
+
+/* =====================================================
+   AUTHENTICATION AND LIVE WALLET UPDATES
+   ===================================================== */
 
 onAuthStateChanged(auth, (user) => {
   currentUid = user ? user.uid : null;
 
-  if (stopWalletListener) {
-    stopWalletListener();
-    stopWalletListener = null;
-  }
-
   if (!currentUid) {
-    cashBalanceEl.textContent = "0.00";
-    gemsEl.textContent = "0";
-    livesEl.textContent = "0";
-    buyBtn.disabled = true;
-    depositBtn.disabled = true;
-    buyMessage.textContent = "Please log in to use your wallet.";
-    depositMessage.textContent = "";
+    walletListenerStartedFor = null;
+    renderWallet({});
+    buyLifeButton.disabled = true;
+    depositButton.disabled = true;
+
+    showMessage(
+      "Please log in to view and use your wallet.",
+      "info"
+    );
+
     return;
   }
 
-  buyBtn.disabled = false;
-  depositBtn.disabled = false;
-  buyMessage.textContent = "";
+  buyLifeButton.disabled = false;
+  depositButton.disabled = false;
+
+  if (walletListenerStartedFor === currentUid) {
+    return;
+  }
+
+  walletListenerStartedFor = currentUid;
+
   listenToWalletUpdates(currentUid);
 });
 
 function listenToWalletUpdates(uid) {
-  stopWalletListener = onValue(
+  onValue(
     ref(db, "wallet/" + uid),
     (snapshot) => {
       const data = snapshot.val() || {};
 
-      cashBalanceEl.textContent = money(data.cashBalance);
-      gemsEl.textContent = String(Number(data.gems || 0));
-      livesEl.textContent = String(Number(data.lives || 0));
+      renderWallet(data);
+
+      if (!purchaseInProgress) {
+        clearMessage();
+      }
     },
     (error) => {
       console.error("Wallet listener error:", error);
-      buyMessage.textContent = "Unable to load your wallet. Please refresh.";
+
+      showMessage(
+        "Unable to load your wallet. Please refresh and try again.",
+        "error"
+      );
     }
   );
 }
 
-buyBtn.addEventListener("click", async () => {
-  if (purchaseInProgress) return;
+/* =====================================================
+   BUY ONE LIFE FOR R0.50
+   ===================================================== */
 
+/*
+ * The purchase uses a Firebase transaction on wallet/{uid}.
+ *
+ * It checks cashBalance and deducts exactly R0.50 while
+ * adding one life in the same atomic wallet update.
+ *
+ * If the balance is insufficient, the transaction aborts.
+ * The wallet listener then displays the latest wallet values.
+ */
+
+buyLifeButton.addEventListener("click", async () => {
   if (!currentUid) {
-    buyMessage.textContent = "Please log in first.";
+    showMessage(
+      "Please log in before buying a life.",
+      "error"
+    );
+    return;
+  }
+
+  if (purchaseInProgress) {
     return;
   }
 
   purchaseInProgress = true;
-  buyBtn.disabled = true;
-  buyBtn.textContent = "PROCESSING...";
-  buyMessage.textContent = "";
+  buyLifeButton.disabled = true;
+
+  const originalButtonHTML = buyLifeButton.innerHTML;
+
+  buyLifeButton.innerHTML =
+    '<span class="buy-word">BUY...</span><span class="buy-cost">Please wait</span>';
+
+  showMessage("Processing your life purchase...", "info");
 
   try {
-    const walletRef = ref(db, "wallet/" + currentUid);
-    let purchaseResult = "failed";
+    const uid = currentUid;
+    const walletRef = ref(db, "wallet/" + uid);
 
-    const result = await runTransaction(walletRef, (wallet) => {
-      if (!wallet || typeof wallet !== "object") {
-        purchaseResult = "missing-wallet";
-        return;
+    let insufficientBalance = false;
+    let purchaseCommitted = false;
+
+    const result = await runTransaction(
+      walletRef,
+      (currentData) => {
+        insufficientBalance = false;
+
+        if (
+          !currentData ||
+          typeof currentData !== "object"
+        ) {
+          insufficientBalance = true;
+          return;
+        }
+
+        const cash = Number(currentData.cashBalance);
+
+        if (!Number.isFinite(cash) || cash < 0.50) {
+          insufficientBalance = true;
+          return;
+        }
+
+        const currentLives = Number(currentData.lives || 0);
+
+        if (
+          !Number.isFinite(currentLives) ||
+          currentLives < 0
+        ) {
+          return;
+        }
+
+        /*
+         * Round to cents to avoid floating-point
+         * balance errors such as 1.2 - 0.5.
+         */
+        const cashCents = Math.round(cash * 100);
+
+        if (cashCents < 50) {
+          insufficientBalance = true;
+          return;
+        }
+
+        purchaseCommitted = true;
+
+        return {
+          ...currentData,
+          cashBalance: (cashCents - 50) / 100,
+          lives: currentLives + 1,
+          updatedAt: new Date().toISOString()
+        };
+      },
+      {
+        applyLocally: false
+      }
+    );
+
+    if (!result.committed || !purchaseCommitted) {
+      if (insufficientBalance) {
+        showMessage(
+          "Insufficient cash balance. You need at least R0.50 to buy one life.",
+          "error"
+        );
+      } else {
+        showMessage(
+          "The purchase was not completed. Please check your balance and try again.",
+          "error"
+        );
       }
 
-      const balance = Number(wallet.cashBalance ?? 0);
-      const lives = Number(wallet.lives ?? 0);
-
-      if (!Number.isFinite(balance) || !Number.isFinite(lives)) {
-        purchaseResult = "invalid-wallet";
-        return;
-      }
-
-      // Work in cents to avoid floating-point currency errors.
-      const balanceCents = Math.round(balance * 100);
-
-      if (balanceCents < 50) {
-        purchaseResult = "insufficient";
-        return;
-      }
-
-      purchaseResult = "success";
-
-      return {
-        ...wallet,
-        cashBalance: (balanceCents - 50) / 100,
-        lives: lives + 1,
-        updatedAt: new Date().toISOString()
-      };
-    }, { applyLocally: false });
-
-    if (!result.committed || purchaseResult !== "success") {
-      const messages = {
-        "missing-wallet": "Your wallet was not found. Please contact support.",
-        "invalid-wallet": "Your wallet balance is invalid. No money was deducted.",
-        "insufficient": "Insufficient cash balance. You need at least R0.50."
-      };
-
-      buyMessage.textContent =
-        messages[purchaseResult] ||
-        "Purchase was not completed. No life was added.";
       return;
     }
 
-    buyMessage.textContent = "Success! One life was added for R0.50.";
+    const updatedWallet = result.snapshot.val() || {};
+
+    renderWallet(updatedWallet);
+
+    showMessage(
+      "Success! R0.50 was deducted and 1 life was added to your wallet.",
+      "success"
+    );
+
   } catch (error) {
     console.error("Buy life error:", error);
-    buyMessage.textContent =
-      "Purchase failed. Please check your connection and wallet.";
+
+    showMessage(
+      "Unable to complete the purchase. Please check your connection and wallet balance.",
+      "error"
+    );
   } finally {
     purchaseInProgress = false;
-    buyBtn.disabled = !currentUid;
-    buyBtn.textContent = "BUY 1 LIFE — R0.50";
+    buyLifeButton.disabled = !currentUid;
+    buyLifeButton.innerHTML = originalButtonHTML;
   }
 });
 
-depositBtn.addEventListener("click", async () => {
-  if (depositInProgress) return;
+/* =====================================================
+   1VOUCHER DEPOSIT
+   ===================================================== */
 
-  const amountRand = Number(
-    document.getElementById("depositAmount").value
-  );
+depositButton.addEventListener("click", async () => {
+  const amountInput =
+    document.getElementById("depositAmount");
 
-  if (!Number.isFinite(amountRand) || amountRand < 5) {
-    depositMessage.textContent = "Minimum deposit is R5.00.";
+  const amountRand = Number(amountInput.value);
+
+  if (
+    !Number.isFinite(amountRand) ||
+    amountRand < 5
+  ) {
+    showMessage(
+      "Please enter a valid deposit amount. The minimum is R5.",
+      "error"
+    );
     return;
   }
 
   if (!currentUid) {
-    depositMessage.textContent = "Please log in to make a deposit.";
+    showMessage(
+      "Please log in to make a deposit.",
+      "error"
+    );
     return;
   }
 
-  depositInProgress = true;
-  depositBtn.disabled = true;
-  depositBtn.textContent = "CONNECTING TO PAYM8...";
-  depositMessage.textContent = "";
+  const amountInCents = Math.round(amountRand * 100);
+
+  depositButton.disabled = true;
+
+  const originalButtonText = depositButton.textContent;
+
+  depositButton.textContent =
+    "REDIRECTING TO PAYMENT...";
+
+  showMessage(
+    "Connecting to the 1Voucher payment gateway...",
+    "info"
+  );
 
   try {
     let userFirstName = "Gamer";
     let userLastName = "Customer";
 
-    const userSnap = await get(ref(db, "users/" + currentUid));
+    const userSnapshot =
+      await get(ref(db, "users/" + currentUid));
 
-    if (userSnap.exists()) {
-      const userData = userSnap.val() || {};
+    if (userSnapshot.exists()) {
+      const userData = userSnapshot.val();
+
       userFirstName = userData.name || "Gamer";
       userLastName = userData.surname || "Customer";
     }
@@ -456,9 +659,11 @@ depositBtn.addEventListener("click", async () => {
       "https://muustandibackend.onrender.com/deposit/1voucher",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
-          amountInCents: Math.round(amountRand * 100),
+          amountInCents,
           userId: currentUid,
           firstName: userFirstName,
           lastName: userLastName
@@ -472,26 +677,32 @@ depositBtn.addEventListener("click", async () => {
       throw new Error(
         result.message ||
         result.error ||
-        "Failed to initialize payment."
+        "Failed to initialize the payment."
       );
     }
 
     if (!result.redirectUri) {
-      throw new Error("PayM8 did not return a payment link.");
+      throw new Error(
+        "The payment gateway did not return a redirect link."
+      );
     }
 
-    window.location.assign(result.redirectUri);
+    window.location.href = result.redirectUri;
+
   } catch (error) {
     console.error("1Voucher deposit error:", error);
-    depositMessage.textContent =
-      "Payment could not be started: " + error.message;
-  } finally {
-    depositInProgress = false;
-    depositBtn.disabled = !currentUid;
-    depositBtn.textContent = "CONTINUE TO 1VOUCHER PAYMENT";
+
+    showMessage(
+      "Deposit could not be started: " + error.message,
+      "error"
+    );
+
+    depositButton.disabled = false;
+    depositButton.textContent = originalButtonText;
   }
 });
 </script>
+
 </body>
 </html>
 ```
