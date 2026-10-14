@@ -1,199 +1,276 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>WALLET</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Muustandi Wallet</title>
+
 <style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #001f3f;
-    color: white;
-    display: flex;
-    flex-direction: column; 
-    justify-content: center;
-    align-items: center; 
-    min-height: 100vh;
-    padding: 20px 0;
-  }
+* {
+  box-sizing: border-box;
+}
 
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: Arial, sans-serif;
+  background: #001f3f;
+  color: white;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+#wallet {
+  width: 100%;
+  max-width: 440px;
+  padding: 16px;
+  text-align: center;
+  background: #001428;
+  border: 1px solid #004080;
+  border-radius: 14px;
+  box-shadow: 0 0 15px rgba(0,0,0,.45);
+}
+
+.hawk {
+  display: block;
+  width: 66px;
+  height: 66px;
+  object-fit: contain;
+  margin: 0 auto 6px;
+}
+
+.winter-header {
+  color: #00f0ff;
+  font-size: 23px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 14px;
+  text-shadow: 0 0 10px rgba(0,240,255,.5);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.tile {
+  min-width: 0;
+  padding: 12px 4px;
+  background: #003366;
+  border: 1px solid #07518b;
+  border-radius: 9px;
+  font-size: 16px;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.balance-tile {
+  background: #004080;
+  border-color: #00f0ff;
+  color: #00f0ff;
+}
+
+.tile-label {
+  display: block;
+  font-size: 11px;
+  color: #c7eaff;
+  margin-bottom: 6px;
+}
+
+.tile-value {
+  display: block;
+  font-size: clamp(14px, 4vw, 19px);
+}
+
+.buy-section {
+  background: #002244;
+  border: 1px solid #0055a5;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.buy-title {
+  color: #ffcc00;
+  font-size: 19px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.buy-cost {
+  font-size: 13px;
+  color: #d8eaff;
+  margin-bottom: 12px;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.buy-btn, .submit-btn {
+  width: 100%;
+  border: 0;
+  border-radius: 7px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: bold;
+  background: #00f0ff;
+  color: #001f3f;
+}
+
+.buy-btn:hover, .submit-btn:hover {
+  background: #00c4d4;
+}
+
+button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+#buyMessage, #depositMessage {
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  margin-top: 9px;
+}
+
+.deposit-card {
+  background: #002244;
+  border: 1px solid #0055a5;
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+
+.deposit-card h3 {
+  margin: 0 0 12px;
+  color: #ffcc00;
+  font-size: 16px;
+}
+
+.form-group {
+  margin-bottom: 11px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  color: #ddd;
+  margin-bottom: 5px;
+}
+
+.form-group input {
+  width: 100%;
+  min-width: 0;
+  padding: 11px;
+  border-radius: 6px;
+  border: 1px solid #07518b;
+  background: #001020;
+  color: white;
+  font-size: 16px;
+}
+
+@media (max-width: 350px) {
   #wallet {
-    width: 480px; 
-    padding: 20px;
-    text-align: center; 
-    background: #001428;
-    border-radius: 12px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
-  }
-
-  .winter-header {
-    color: #00f0ff;
-    font-size: 26px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 10px;
-    text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+    padding: 10px;
   }
 
   .tiles {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 5px;
   }
 
   .tile {
-    background: #003366;
-    padding: 15px 5px; 
-    text-align: center;
-    border-radius: 8px;
-    font-size: 18px; 
-    font-weight: bold;
+    padding: 10px 2px;
   }
 
-  .balance-tile {
-    background: #004080;
-    border: 1px solid #00f0ff;
-    color: #00f0ff;
+  .winter-header {
+    font-size: 20px;
   }
-
-  .deposit-card {
-    background: #002244;
-    border: 1px solid #0055a5;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    text-align: left;
-  }
-
-  .deposit-card h3 {
-    margin-top: 0;
-    color: #ffcc00;
-    font-size: 18px;
-    text-align: center;
-  }
-
-  .form-group {
-    margin-bottom: 12px;
-  }
-
-  .form-group label {
-    display: block;
-    font-size: 12px;
-    color: #ccc;
-    margin-bottom: 4px;
-  }
-
-  .form-group input {
-    width: 95%;
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid #004080;
-    background: #001020;
-    color: #fff;
-    font-size: 16px;
-  }
-
-  .submit-btn {
-    width: 100%;
-    padding: 12px;
-    background: #00f0ff;
-    color: #001f3f;
-    font-weight: bold;
-    font-size: 16px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .submit-btn:hover { background: #00c4d4; }
-
-  .tab-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 10px;
-    background: #001f5c;
-    padding: 12px 15px;
-    border-radius: 8px;
-    border: 1px solid #004080;
-  }
-
-  .click-count {
-    font-size: 16px;
-    font-weight: bold;
-    color: #00f0ff;
-    background: rgba(0, 240, 255, 0.1);
-    padding: 4px 10px;
-    border-radius: 5px;
-  }
-
-  .tab-btn {
-    flex-grow: 1;
-    text-align: center;
-    cursor: pointer;
-    font-size: 14px;      
-    font-weight: bold;   
-  }
-
-  .ikhokha-link {
-    display: block;
-    margin-top: 15px;
-    color: #ffcc00;
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 14px;
-    padding: 10px;
-    border: 1px dashed #ffcc00;
-    border-radius: 5px;
-  }
+}
 </style>
 </head>
 
 <body>
-
 <div id="wallet">
+
+  <img class="hawk" src="hawk.png" alt="Muustandi Hawk">
+
   <div class="winter-header">WINTER SPECIAL</div>
 
   <div class="tiles">
-    <div class="tile balance-tile">💵 R <span id="cashBalance">0.00</span></div>
-    <div class="tile">💎 <span id="gems">0</span></div>
-    <div class="tile" id="buyLife" style="cursor:pointer;">❤️ <span id="lives">0</span></div>
-  </div>
-
-  <div class="deposit-card">
-    <h3>TOP UP VIA 1VOUCHER</h3>
-    <div class="form-group">
-      <label>Deposit Amount (Rand):</label>
-      <input type="number" id="depositAmount" value="20" min="5" placeholder="e.g. 20">
+    <div class="tile balance-tile">
+      <span class="tile-label">CASH BALANCE</span>
+      <span class="tile-value">R<span id="cashBalance">0.00</span></span>
     </div>
-    <button class="submit-btn" id="submitVoucherBtn">CONTINUE TO 1VOUCHER PAYMENT</button>
+
+    <div class="tile">
+      <span class="tile-label">GEMS</span>
+      <span class="tile-value">💎 <span id="gems">0</span></span>
+    </div>
+
+    <div class="tile">
+      <span class="tile-label">LIVES</span>
+      <span class="tile-value">❤️ <span id="lives">0</span></span>
+    </div>
   </div>
 
-  <div class="tab-container" id="container-tier1">
-    <div class="click-count" id="count-tier1">2</div>
-    <div class="tab-btn" onclick="processInstantPromo('tier1', 150, 1)">R0.50 (1❤️+150💎) LOAD PROMO</div>
-  </div>
+  <section class="buy-section">
+    <div class="buy-title">BUY</div>
+    <div class="buy-cost">1 Life Cost 50 cent</div>
+    <button class="buy-btn" id="buyLifeBtn" type="button">
+      BUY 1 LIFE — R0.50
+    </button>
+    <div id="buyMessage" role="status" aria-live="polite"></div>
+  </section>
 
-  <div class="tab-container" id="container-tier2">
-    <div class="click-count" id="count-tier2">2</div>
-    <div class="tab-btn" onclick="processInstantPromo('tier2', 350, 2)">R1.50 (2❤️+350💎) LOAD PROMO</div>
-  </div>
+  <section class="deposit-card">
+    <h3>TOP UP VIA 1VOUCHER</h3>
 
-  <div class="tab-container" id="container-tier3">
-    <div class="click-count" id="count-tier3">2</div>
-    <div class="tab-btn" onclick="processInstantPromo('tier3', 400, 5)">R3.00 (5❤️+400💎) LOAD PROMO</div>
-  </div>
+    <div class="form-group">
+      <label for="depositAmount">Deposit Amount (Rand):</label>
+      <input
+        type="number"
+        id="depositAmount"
+        value="20"
+        min="5"
+        step="0.01"
+        placeholder="Minimum R5"
+      >
+    </div>
 
-  <a href="https://pay.ikhokha.com" target="_blank" class="ikhokha-link">ALTERNATIVE: PAY WITH IKHOKHA LINK</a>
+    <button class="submit-btn" id="submitVoucherBtn" type="button">
+      CONTINUE TO 1VOUCHER PAYMENT
+    </button>
+
+    <div id="depositMessage" role="status" aria-live="polite"></div>
+  </section>
+
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, runTransaction, onValue, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import {
+  getDatabase,
+  ref,
+  runTransaction,
+  onValue,
+  get
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
@@ -208,102 +285,213 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 let currentUid = null;
+let stopWalletListener = null;
+let purchaseInProgress = false;
+let depositInProgress = false;
+
+const cashBalanceEl = document.getElementById("cashBalance");
+const gemsEl = document.getElementById("gems");
+const livesEl = document.getElementById("lives");
+const buyBtn = document.getElementById("buyLifeBtn");
+const buyMessage = document.getElementById("buyMessage");
+const depositBtn = document.getElementById("submitVoucherBtn");
+const depositMessage = document.getElementById("depositMessage");
+
+function money(value) {
+  const number = Number(value);
+  return (Number.isFinite(number) ? number : 0).toFixed(2);
+}
 
 onAuthStateChanged(auth, (user) => {
-  if (user) {
-    currentUid = user.uid;
-    listenToWalletUpdates(currentUid);
+  currentUid = user ? user.uid : null;
+
+  if (stopWalletListener) {
+    stopWalletListener();
+    stopWalletListener = null;
   }
+
+  if (!currentUid) {
+    cashBalanceEl.textContent = "0.00";
+    gemsEl.textContent = "0";
+    livesEl.textContent = "0";
+    buyBtn.disabled = true;
+    depositBtn.disabled = true;
+    buyMessage.textContent = "Please log in to use your wallet.";
+    depositMessage.textContent = "";
+    return;
+  }
+
+  buyBtn.disabled = false;
+  depositBtn.disabled = false;
+  buyMessage.textContent = "";
+  listenToWalletUpdates(currentUid);
 });
 
 function listenToWalletUpdates(uid) {
-  onValue(ref(db, "wallet/" + uid), (snap) => {
-    const data = snap.val() || {};
-    document.getElementById("cashBalance").innerText = (data.cashBalance || 0).toFixed(2);
-    document.getElementById("gems").innerText = data.gems || 0;
-    document.getElementById("lives").innerText = data.lives || 0;
-  });
+  stopWalletListener = onValue(
+    ref(db, "wallet/" + uid),
+    (snapshot) => {
+      const data = snapshot.val() || {};
+
+      cashBalanceEl.textContent = money(data.cashBalance);
+      gemsEl.textContent = String(Number(data.gems || 0));
+      livesEl.textContent = String(Number(data.lives || 0));
+    },
+    (error) => {
+      console.error("Wallet listener error:", error);
+      buyMessage.textContent = "Unable to load your wallet. Please refresh.";
+    }
+  );
 }
 
-window.processInstantPromo = async function(tierId, gemsToAdd, livesToAdd) {
+buyBtn.addEventListener("click", async () => {
+  if (purchaseInProgress) return;
+
   if (!currentUid) {
-    alert("Please log in to redeem promos.");
+    buyMessage.textContent = "Please log in first.";
     return;
   }
 
-  const userWalletRef = ref(db, "wallet/" + currentUid);
+  purchaseInProgress = true;
+  buyBtn.disabled = true;
+  buyBtn.textContent = "PROCESSING...";
+  buyMessage.textContent = "";
 
   try {
-    await runTransaction(userWalletRef, (currentData) => {
-      if (!currentData) {
-        currentData = { cashBalance: 0, gems: 0, lives: 0 };
+    const walletRef = ref(db, "wallet/" + currentUid);
+    let purchaseResult = "failed";
+
+    const result = await runTransaction(walletRef, (wallet) => {
+      if (!wallet || typeof wallet !== "object") {
+        purchaseResult = "missing-wallet";
+        return;
       }
-      currentData.gems = (currentData.gems || 0) + gemsToAdd;
-      currentData.lives = (currentData.lives || 0) + livesToAdd;
-      return currentData;
-    });
 
-    alert(`Promo claimed successfully! Added ${gemsToAdd} Gems and ${livesToAdd} Lives.`);
-  } catch (err) {
-    alert("Failed to claim promo: " + err.message);
+      const balance = Number(wallet.cashBalance ?? 0);
+      const lives = Number(wallet.lives ?? 0);
+
+      if (!Number.isFinite(balance) || !Number.isFinite(lives)) {
+        purchaseResult = "invalid-wallet";
+        return;
+      }
+
+      // Work in cents to avoid floating-point currency errors.
+      const balanceCents = Math.round(balance * 100);
+
+      if (balanceCents < 50) {
+        purchaseResult = "insufficient";
+        return;
+      }
+
+      purchaseResult = "success";
+
+      return {
+        ...wallet,
+        cashBalance: (balanceCents - 50) / 100,
+        lives: lives + 1,
+        updatedAt: new Date().toISOString()
+      };
+    }, { applyLocally: false });
+
+    if (!result.committed || purchaseResult !== "success") {
+      const messages = {
+        "missing-wallet": "Your wallet was not found. Please contact support.",
+        "invalid-wallet": "Your wallet balance is invalid. No money was deducted.",
+        "insufficient": "Insufficient cash balance. You need at least R0.50."
+      };
+
+      buyMessage.textContent =
+        messages[purchaseResult] ||
+        "Purchase was not completed. No life was added.";
+      return;
+    }
+
+    buyMessage.textContent = "Success! One life was added for R0.50.";
+  } catch (error) {
+    console.error("Buy life error:", error);
+    buyMessage.textContent =
+      "Purchase failed. Please check your connection and wallet.";
+  } finally {
+    purchaseInProgress = false;
+    buyBtn.disabled = !currentUid;
+    buyBtn.textContent = "BUY 1 LIFE — R0.50";
   }
-};
+});
 
-document.getElementById("submitVoucherBtn").onclick = async () => {
-  const amountRand = document.getElementById("depositAmount").value;
+depositBtn.addEventListener("click", async () => {
+  if (depositInProgress) return;
 
-  if (!amountRand || amountRand < 5) {
-    alert("Please enter a valid amount (Minimum R5)");
+  const amountRand = Number(
+    document.getElementById("depositAmount").value
+  );
+
+  if (!Number.isFinite(amountRand) || amountRand < 5) {
+    depositMessage.textContent = "Minimum deposit is R5.00.";
     return;
   }
 
   if (!currentUid) {
-    alert("Please log in to make a deposit.");
+    depositMessage.textContent = "Please log in to make a deposit.";
     return;
   }
 
-  const btn = document.getElementById("submitVoucherBtn");
-  btn.disabled = true;
-  btn.innerText = "Redirecting to Gateway...";
+  depositInProgress = true;
+  depositBtn.disabled = true;
+  depositBtn.textContent = "CONNECTING TO PAYM8...";
+  depositMessage.textContent = "";
 
   try {
-    // Fetch real name and surname from Firebase Realtime DB
     let userFirstName = "Gamer";
     let userLastName = "Customer";
 
     const userSnap = await get(ref(db, "users/" + currentUid));
+
     if (userSnap.exists()) {
-      const userData = userSnap.val();
+      const userData = userSnap.val() || {};
       userFirstName = userData.name || "Gamer";
       userLastName = userData.surname || "Customer";
     }
 
-    const res = await fetch("https://muustandibackend.onrender.com/deposit/1voucher", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amountInCents: Math.round(amountRand * 100),
-        userId: currentUid,
-        firstName: userFirstName,
-        lastName: userLastName
-      })
-    });
+    const response = await fetch(
+      "https://muustandibackend.onrender.com/deposit/1voucher",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amountInCents: Math.round(amountRand * 100),
+          userId: currentUid,
+          firstName: userFirstName,
+          lastName: userLastName
+        })
+      }
+    );
 
-    const result = await res.json();
+    const result = await response.json();
 
-    if (result.success && result.redirectUri) {
-      window.location.href = result.redirectUri;
-    } else {
-      alert("Error: " + (result.error || "Failed to initialize payment."));
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.message ||
+        result.error ||
+        "Failed to initialize payment."
+      );
     }
-  } catch (err) {
-    alert("Network Connection Error: " + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerText = "CONTINUE TO 1VOUCHER PAYMENT";
-  }
-};
-</script>
 
+    if (!result.redirectUri) {
+      throw new Error("PayM8 did not return a payment link.");
+    }
+
+    window.location.assign(result.redirectUri);
+  } catch (error) {
+    console.error("1Voucher deposit error:", error);
+    depositMessage.textContent =
+      "Payment could not be started: " + error.message;
+  } finally {
+    depositInProgress = false;
+    depositBtn.disabled = !currentUid;
+    depositBtn.textContent = "CONTINUE TO 1VOUCHER PAYMENT";
+  }
+});
+</script>
 </body>
 </html>
+```
