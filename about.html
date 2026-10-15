@@ -17,11 +17,10 @@
   header {   
     display: flex;   
     justify-content: space-between;   
-    padding: 15px 25px;   
+    padding: 15px;   
     font-weight: bold;   
     font-size: 20px;   
-    background: rgba(255,255,255,0.3);   
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    background: rgba(255,255,255,0.2);   
   }  
   #game-zone {   
     flex: 1;   
@@ -38,23 +37,18 @@
     background: none;   
     border: none;   
     color: #004d00;   
-    transition: transform 0.2s;
   }  
-  #start-btn:hover {
-    transform: scale(1.1);
-  }
   #display-box {   
     width: 100%;   
     max-width: 500px;   
-    height: 320px;   
+    height: 300px;   
     background: #000;   
-    border-radius: 12px;   
+    border-radius: 8px;   
     display: none;   
     justify-content: center;   
     align-items: center;   
     overflow: hidden;   
     position: relative;   
-    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
   }  
   #display-box img, #display-box video {   
     width: 100%;   
@@ -73,41 +67,45 @@
     min-height: 30px;   
   }  
 
-  /* 🔹 Navigation Controls Below Media File */
+  /* File Navigation Container below file display */
   #nav-controls {
     display: none;
     width: 100%;
     max-width: 500px;
     justify-content: space-between;
     align-items: center;
-    margin-top: 15px;
+    margin-top: 20px;
+    box-sizing: border-box;
+    padding: 0 10px;
   }
+
   .nav-btn {
-    background-color: #228B22;
+    background-color: #004d00;
     color: white;
     border: none;
+    border-radius: 50px;
     padding: 12px 24px;
     font-size: 22px;
-    border-radius: 8px;
+    font-weight: bold;
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    gap: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     transition: background-color 0.2s, transform 0.1s;
-    user-select: none;
   }
+
   .nav-btn:hover {
-    background-color: #1e7b1e;
-    transform: translateY(-2px);
+    background-color: #006600;
   }
+
   .nav-btn:active {
-    transform: translateY(0);
+    transform: scale(0.95);
   }
+
   .nav-btn:disabled {
-    background-color: #a0a0a0;
+    background-color: #888888;
     cursor: not-allowed;
-    transform: none;
     opacity: 0.6;
   }
 
@@ -115,16 +113,15 @@
     position: absolute;   
     bottom: 10px;   
     right: 10px;   
-    background: #d9534f;   
+    background: red;   
     color: white;   
     border: none;   
-    padding: 8px 14px;   
+    padding: 5px 10px;   
     font-weight: bold;   
     cursor: pointer;   
     display: none;   
-    border-radius: 6px;   
+    border-radius: 4px;   
     z-index: 10;   
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
   }  
   
   /* POPUP CONTAINER MODAL */
@@ -142,7 +139,7 @@
     padding: 30px;
     border-radius: 12px;
     text-align: center;
-    max-width: 320px;
+    max-width: 340px;
     width: 90%;
     box-sizing: border-box;
   }
@@ -171,64 +168,71 @@
     font-size: 24px;
     font-weight: bold;
     color: #333;
-    margin: 15px 0;
+    margin: 15px 0 10px 0;
     padding: 10px;
     background: #e6f7e6;
     border-radius: 6px;
     border: 1px dashed #228B22;
   }
+  .popup-timer-text {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 15px;
+  }
 </style>
 
 </head>  
 <body>  
-<header>  
-  <div>Score: <span id="score">0</span></div>  
-  <div id="lives-display">Lives: </div>  
-</header>  
-
-<div id="game-zone">  
-  <button id="start-btn">▶</button>   
-  <div id="question-text"></div>  
+  <header>  
+    <div>Score: <span id="score">0</span></div>  
+    <div id="lives-display">Lives: </div>  
+  </header>  
   
-  <div id="display-box">  
-    <button id="replay-btn">replay</button>  
-    <img id="game-img" style="display:none;" alt="Quiz Element">  
-    <video id="game-video" style="display:none;"></video>  
-    <div id="audio-icon" style="display:none;">🔊</div>  
+  <div id="game-zone">  
+    <button id="start-btn">▶</button>    
+    <div id="question-text"></div>  
+    
+    <div id="display-box">  
+      <button id="replay-btn">replay</button>  
+      <img id="game-img" style="display:none;" alt="Quiz Element">  
+      <video id="game-video" style="display:none;"></video>  
+      <div id="audio-icon" style="display:none;">🔊</div>  
+    </div>  
+
+    <!-- File Navigation Buttons -->
+    <div id="nav-controls">
+      <button id="prev-btn" class="nav-btn">◀ Prev</button>
+      <button id="next-btn" class="nav-btn">Next ▶</button>
+    </div>
   </div>  
 
-  <!-- Left/Right navigation buttons directly below the display file box -->
-  <div id="nav-controls">
-    <button class="nav-btn" id="prev-btn" title="Previous File">◀ Previous</button>
-    <button class="nav-btn" id="next-btn" title="Next File">Next ▶</button>
-  </div>
-</div>  
-
-<div class="game-popup" id="correctAnswerPopup">  
-  <div class="popup-content">  
-    <h2>💡 CORRECT ANSWER</h2>  
-    <p>The right answer was:</p>
-    <div class="revealed-answer" id="revealedAnswerText">---</div>  
-    <button class="btn-continue" id="correctPopNextBtn">NEXT</button>  
+  <!-- Reveal Answer Popup on Nav Transition -->
+  <div class="game-popup" id="correctAnswerPopup">  
+    <div class="popup-content">  
+      <h2>💡 REVEALED ANSWER</h2>  
+      <p>The answer for this item was:</p>
+      <div class="revealed-answer" id="revealedAnswerText">---</div>  
+      <div class="popup-timer-text">Proceeding in <span id="popupCountdown">5</span>s...</div>
+      <button class="btn-continue" id="correctPopNextBtn">SKIP & CONTINUE</button>  
+    </div>  
   </div>  
-</div>  
 
-<div class="game-popup" id="lifePopup">  
-  <div class="popup-content">  
-    <h2>❌ YOU DIED</h2>  
-    <p id="life-popup-msg">You lost a life! Would you like to continue?</p>  
-    <button class="btn-continue" id="popContinueBtn">CONTINUE</button>  
-    <button class="btn-exit" id="popExitBtn">EXIT</button>  
+  <div class="game-popup" id="lifePopup">  
+    <div class="popup-content">  
+      <h2>❌ OUT OF LIVES</h2>  
+      <p id="life-popup-msg">Would you like to continue?</p>  
+      <button class="btn-continue" id="popContinueBtn">CONTINUE</button>  
+      <button class="btn-exit" id="popExitBtn">EXIT</button>  
+    </div>  
   </div>  
-</div>  
 
-<div class="game-popup" id="gameOverPopup">  
-  <div class="popup-content">  
-    <h2 style="color: #004d00;">🎉 GAME OVER</h2>  
-    <p style="font-size: 18px; font-weight: bold;">Final Score: <span id="finalScoreLabel">0</span></p>  
-    <button class="btn-exit" onclick="location.href='muustandigamin.html'">OK</button>  
+  <div class="game-popup" id="gameOverPopup">  
+    <div class="popup-content">  
+      <h2 style="color: #004d00;">🎉 GAME OVER</h2>  
+      <p style="font-size: 18px; font-weight: bold;">Final Score: <span id="finalScoreLabel">0</span></p>  
+      <button class="btn-exit" onclick="location.href='muustandigamin.html'">OK</button>  
+    </div>  
   </div>  
-</div>  
 
 <script type="module">  
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";  
@@ -248,15 +252,18 @@
   const auth = getAuth(app);  
   
   let uid, lives, score = 0;  
-  let itemsList = []; // Flattened array of available question items
-  let currentIndex = 0;  
+  let pool = []; 
+  let historyStack = []; // Remembers indices of items shown so far
+  let historyPointer = -1; // Current index within historyStack
   let activeAudio = null;  
-  
+  let revealTimer = null;
+  let revealCount = 5;
+  let pendingDirection = null; // Stores 'next' or 'prev' during modal reveal
+
   onAuthStateChanged(auth, async (user) => {  
     if(!user) { location.href = "login.html"; return; }  
     uid = user.uid;  
     
-    // READ SELECTED LIVES LOCALLY ONLY
     lives = parseInt(localStorage.getItem("selectedLives")) || 0;  
     updateLivesDisplay();  
     
@@ -271,133 +278,179 @@
     updateLivesDisplay();  
       
     document.getElementById('display-box').style.display = 'flex';  
-    document.getElementById('nav-controls').style.display = 'flex';  
+    document.getElementById('nav-controls').style.display = 'flex';
       
     await loadMediaPool();  
-    if(itemsList.length > 0) {
-      renderCurrentItem();
+    if(pool.length > 0) {
+      navigateToNewItem();
     }
   };  
   
+  // Shuffles and loads all media items into flattened question pairs
   async function loadMediaPool() {  
     const types = ['audio', 'video', 'image'];  
-    let rawPool = [];  
+    pool = [];  
     for(let t of types){  
       let snap = await get(ref(db, "quizMedia/" + t));  
       let val = snap.val() || {};  
       for(let key in val){  
-        rawPool.push({id: key, ...val[key]});  
+        let item = {id: key, ...val[key]};
+        if(item.questions) {
+          for(let i = 0; i < item.questions.length; i++) {
+            if(item.questions[i] !== undefined && item.questions[i] !== "") {
+              pool.push({
+                parentItem: item,
+                questionIdx: i,
+                question: item.questions[i],
+                answer: item.answers ? item.answers[i] : "N/A",
+                type: item.type,
+                data: item.data
+              });
+            }
+          }
+        }
       }  
     }  
 
-    itemsList = [];
-    // Unpack media questions into an ordered sequence
-    for(let item of rawPool) {
-      if(item.questions && Array.isArray(item.questions)) {
-        for(let i = 0; i < item.questions.length; i++) {
-          if(item.questions[i] !== undefined && item.questions[i] !== "") {
-            itemsList.push({
-              item: item,
-              questionIdx: i,
-              questionText: item.questions[i],
-              answer: item.answers ? item.answers[i] : ""
-            });
-          }
-        }
-      }
-    }
-
-    if(itemsList.length === 0) {
-      alert("No challenges loaded inside Firebase database paths!");
-      return;
-    }
-
-    currentIndex = 0;
+    // Randomize / Shuffle the media pool array
+    pool.sort(() => Math.random() - 0.5);
   }  
 
-  function renderCurrentItem() {
-    stopCurrentMedia();
+  // Load a new random item onto history stack
+  function navigateToNewItem() {
+    if(pool.length === 0) {
+      alert("No quiz items available in database!");
+      return;
+    }
+    
+    // Pick next index from pool (wrapping or picking sequentially from shuffled array)
+    let nextPoolIdx = Math.floor(Math.random() * pool.length);
+    historyStack.push(nextPoolIdx);
+    historyPointer = historyStack.length - 1;
+    
+    renderCurrentItem();
+  }
 
-    if (itemsList.length === 0) return;
-    if (lives <= 0) { showEndGameModal(); return; }
-
-    const entry = itemsList[currentIndex];
-    const item = entry.item;
-
-    document.getElementById('question-text').innerText = entry.questionText;
-
+  // Display current item based on history pointer
+  function renderCurrentItem() {  
+    if(activeAudio) { activeAudio.pause(); activeAudio = null; }  
+      
     document.getElementById('game-img').style.display = 'none';  
     document.getElementById('game-video').style.display = 'none';  
     document.getElementById('audio-icon').style.display = 'none';  
     document.getElementById('replay-btn').style.display = 'none';  
-
-    if(item.type === 'image'){  
+  
+    if(historyPointer < 0 || historyPointer >= historyStack.length) return;
+    
+    let currentData = pool[historyStack[historyPointer]];  
+    if(!currentData) return;
+  
+    document.getElementById('question-text').innerText = currentData.question;  
+      
+    if(currentData.type === 'image'){  
       const img = document.getElementById('game-img');  
-      img.src = item.data;  
+      img.src = currentData.data;  
       img.style.display = 'block';  
-    } else if(item.type === 'video'){  
+    } else if(currentData.type === 'video'){  
       const vid = document.getElementById('game-video');  
-      vid.src = item.data;  
+      vid.src = currentData.data;  
       vid.style.display = 'block';  
       vid.play().catch(e => console.log("Autoplay caught, user interaction needed."));  
       document.getElementById('replay-btn').style.display = 'block';  
-    } else if(item.type === 'audio'){  
+    } else if(currentData.type === 'audio'){  
       document.getElementById('audio-icon').style.display = 'block';  
-      activeAudio = new Audio(item.data);  
+      activeAudio = new Audio(currentData.data);  
       activeAudio.play().catch(e => console.log("Autoplay caught, user interaction needed."));  
       document.getElementById('replay-btn').style.display = 'block';  
-    }
+    }  
 
-    // Update button states
-    document.getElementById('prev-btn').disabled = (currentIndex === 0);
-    document.getElementById('next-btn').disabled = (currentIndex === itemsList.length - 1);
-  }
-
-  function stopCurrentMedia() {
-    if (activeAudio) {
-      activeAudio.pause();
-      activeAudio = null;
-    }
-    const vid = document.getElementById('game-video');
-    if (vid) {
-      vid.pause();
-    }
-  }
-
-  // Next & Previous Navigation
-  document.getElementById('next-btn').onclick = function() {
-    if (currentIndex < itemsList.length - 1) {
-      score += 10;
-      document.getElementById('score').innerText = score;
-      currentIndex++;
-      renderCurrentItem();
-    }
-  };
-
-  document.getElementById('prev-btn').onclick = function() {
-    if (currentIndex > 0) {
-      currentIndex--;
-      renderCurrentItem();
-    }
-  };
+    // Update navigation button states
+    document.getElementById('prev-btn').disabled = (historyPointer <= 0);
+  }  
 
   document.getElementById('replay-btn').onclick = function() {  
-    if (itemsList.length === 0) return;
-    const item = itemsList[currentIndex].item;
-
-    if(item.type === 'video') {  
+    if(historyPointer < 0) return;
+    let currentData = pool[historyStack[historyPointer]];
+    if(currentData.type === 'video') {  
       const vid = document.getElementById('game-video');  
       vid.currentTime = 0;  
       vid.play();  
-    } else if(item.type === 'audio' && activeAudio) {  
+    } else if(currentData.type === 'audio' && activeAudio) {  
       activeAudio.currentTime = 0;  
       activeAudio.play();  
     }  
   };  
-  
+
+  // Trigger Navigation with Answer Reveal popup
+  document.getElementById('prev-btn').onclick = function() {
+    if(historyPointer > 0) {
+      triggerAnswerReveal('prev');
+    }
+  };
+
+  document.getElementById('next-btn').onclick = function() {
+    triggerAnswerReveal('next');
+  };
+
+  function triggerAnswerReveal(direction) {
+    if(historyPointer < 0 || historyPointer >= historyStack.length) return;
+    
+    if(activeAudio) activeAudio.pause();
+    
+    pendingDirection = direction;
+    let currentData = pool[historyStack[historyPointer]];
+    let ans = currentData ? (currentData.answer || "N/A") : "N/A";
+
+    document.getElementById('revealedAnswerText').innerText = ans;
+    document.getElementById('correctAnswerPopup').style.display = 'flex';
+
+    // Start 5 second countdown for auto-close
+    revealCount = 5;
+    document.getElementById('popupCountdown').innerText = revealCount;
+    clearInterval(revealTimer);
+    
+    revealTimer = setInterval(() => {
+      revealCount--;
+      document.getElementById('popupCountdown').innerText = revealCount;
+      if(revealCount <= 0) {
+        clearInterval(revealTimer);
+        confirmRevealAndProceed();
+      }
+    }, 1000);
+  }
+
+  function confirmRevealAndProceed() {
+    clearInterval(revealTimer);
+    document.getElementById('correctAnswerPopup').style.display = 'none';
+
+    // Award score upon navigating forward
+    if(pendingDirection === 'next') {
+      score += 10;
+      document.getElementById('score').innerText = score;
+    }
+
+    if(pendingDirection === 'prev') {
+      if(historyPointer > 0) {
+        historyPointer--;
+        renderCurrentItem();
+      }
+    } else if(pendingDirection === 'next') {
+      if(historyPointer < historyStack.length - 1) {
+        historyPointer++;
+        renderCurrentItem();
+      } else {
+        navigateToNewItem();
+      }
+    }
+    pendingDirection = null;
+  }
+
+  document.getElementById('correctPopNextBtn').onclick = function() {  
+    confirmRevealAndProceed();
+  };
+
   document.getElementById('popContinueBtn').onclick = function() {  
     document.getElementById('lifePopup').style.display = 'none';  
-    renderCurrentItem();  
   };  
   
   document.getElementById('popExitBtn').onclick = function() {  
@@ -411,7 +464,7 @@
   }  
   
   async function showEndGameModal() {  
-    stopCurrentMedia();
+    if(activeAudio) activeAudio.pause();  
     document.getElementById('lifePopup').style.display = 'none';  
     document.getElementById('correctAnswerPopup').style.display = 'none'; 
     document.getElementById('finalScoreLabel').innerText = score;  
@@ -436,5 +489,6 @@
       }  
     }  
   }  
-</script> </body>  
+</script>  
+</body>  
 </html>
