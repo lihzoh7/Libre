@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>muustandigamin</title>
+    <title>muustandigaming</title>
     <style>
         /* Reset and Base Styles */
         * {
@@ -22,26 +22,62 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px;
+            padding: 20px 20px 40px;
+        }
+
+        /* Top Bar Container for Header and Transactions Link */
+        .top-header-bar {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            position: relative;
         }
 
         /* Heading Style */
         h1 {
-            font-size: 3rem;
-            margin-bottom: 40px;
+            font-size: 2.8rem;
             text-transform: uppercase;
             letter-spacing: 2px;
             text-shadow: 0 0 10px rgba(0, 150, 255, 0.7);
+            margin: 0;
+            flex-grow: 1;
             text-align: center;
+        }
+
+        /* Top Right Transactions Tab Link */
+        .transactions-top-tab {
+            text-decoration: none;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 1rem;
+            padding: 10px 18px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .transactions-top-tab:hover {
+            background-color: #ffffff;
+            color: #000000;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
         }
 
         /* Container for the tiles */
         .tile-container {
             width: 100%;
-            max-width: 1000px; /* Limits maximum width on large screens for better look */
+            max-width: 1000px;
             display: flex;
             flex-direction: column;
-            gap: 25px; /* Space between the tiles */
+            gap: 25px;
         }
 
         /* Tile Link Wrapper */
@@ -56,7 +92,7 @@
         .tile {
             position: relative;
             width: 100%;
-            height: 180px; /* Height of each tile */
+            height: 180px;
             border-radius: 12px;
             overflow: hidden;
             border: 2px solid #1e3a8a;
@@ -68,34 +104,31 @@
             justify-content: center;
         }
 
-        /* Hover effects for the tiles */
         .tile-link:hover .tile {
             transform: translateY(-5px);
             border-color: #3b82f6;
             box-shadow: 0 12px 25px rgba(59, 130, 246, 0.4);
         }
 
-        /* Background Image Styling inside the tiles */
         .tile-bg {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Ensures image covers the tile nicely without distorting */
-            opacity: 0.6; /* Slight transparency so text stands out */
+            object-fit: cover;
+            opacity: 0.6;
             transition: opacity 0.3s ease;
             z-index: 1;
         }
 
         .tile-link:hover .tile-bg {
-            opacity: 0.85; /* Brightens the image on hover */
+            opacity: 0.85;
         }
 
-        /* Tile Text Styling */
         .tile-title {
             position: relative;
-            z-index: 2; /* Sits on top of the image */
+            z-index: 2;
             font-size: 2.2rem;
             font-weight: bold;
             text-transform: uppercase;
@@ -103,10 +136,7 @@
             text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
         }
 
-        /* ==========================================================================
-           🎨 CUSTOM LIVE ANIMATIONS FOR TOP-UP AND BANK BACKGROUNDS
-           ========================================================================== */
-        
+        /* Custom Live Animations */
         .animated-bg {
             position: absolute;
             top: 0;
@@ -118,11 +148,11 @@
             opacity: 0.5;
             transition: opacity 0.3s ease;
         }
+
         .tile-link:hover .animated-bg {
             opacity: 0.8;
         }
 
-        /* --- 💼 TOP-UP WALLET ANIMATION PANEL --- */
         .wallet-container {
             position: absolute;
             bottom: 10px;
@@ -130,6 +160,7 @@
             font-size: 70px;
             animation: pulseWallet 2.5s ease-in-out infinite;
         }
+
         .smiley-heart {
             position: absolute;
             font-size: 32px;
@@ -138,7 +169,7 @@
             opacity: 0;
             animation: floatHearts 3s linear infinite;
         }
-        /* Staggering the 5 variant heart delays */
+
         .h1 { animation-delay: 0.0s; left: 16%; }
         .h2 { animation-delay: 0.6s; left: 19%; font-size: 26px; }
         .h3 { animation-delay: 1.2s; left: 15%; font-size: 36px; }
@@ -149,6 +180,7 @@
             0%, 100% { transform: scale(1) rotate(0deg); }
             50% { transform: scale(1.08) rotate(-3deg); }
         }
+
         @keyframes floatHearts {
             0% { transform: translateY(20px) translateX(0) scale(0.5); opacity: 0; }
             15% { opacity: 1; }
@@ -156,7 +188,6 @@
             100% { transform: translateY(-140px) translateX(-30px) scale(1.2); opacity: 0; }
         }
 
-        /* --- 🏧 BANK ATM DEPOSIT ANIMATION PANEL --- */
         .atm-machine {
             position: absolute;
             right: 15%;
@@ -165,6 +196,7 @@
             font-size: 65px;
             border-bottom: 4px solid #3b82f6;
         }
+
         .flying-money {
             position: absolute;
             font-size: 45px;
@@ -173,6 +205,7 @@
             opacity: 0;
             animation: depositMoney 2s linear infinite;
         }
+
         .m1 { animation-delay: 0s; }
         .m2 { animation-delay: 0.6s; }
         .m3 { animation-delay: 1.2s; }
@@ -183,11 +216,24 @@
             85% { opacity: 1; }
             100% { transform: translateX(160px) translateY(-5px) rotate(15deg) scale(0.4); opacity: 0; }
         }
+
+        @media (max-width: 600px) {
+            .top-header-bar {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .transactions-top-tab {
+                align-self: flex-end;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <h1>muustandi gaming</h1>
+    <div class="top-header-bar">
+        <h1>muustandi gaming</h1>
+        <a href="transactions.html" class="transactions-top-tab">Transactions</a>
+    </div>
 
     <div class="tile-container">
 
