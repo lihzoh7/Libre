@@ -3,375 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Muustandi Gaming Wallet & Transactions</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Denied Wallet Credits - Muustandi</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        navyDark: '#001428',
-                        navyBlue: '#001f3f',
-                        cyanNeon: '#00f0ff',
-                        pinkNeon: '#ff668e',
-                        cardBg: '#002855'
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
-            background-color: #001428;
+            background-color: #001f3f;
             color: #ffffff;
-            font-family: 'Inter', sans-serif;
-        }
-        /* Custom scrollbars */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #001f3f;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #00f0ff;
-            border-radius: 4px;
+            font-family: Arial, sans-serif;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between text-slate-100">
+<body class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
 
-    <!-- HEADER / NAVIGATION BAR -->
-    <header class="bg-navyBlue border-b border-cyan-500/30 px-4 py-3 sm:px-8 flex flex-wrap justify-between items-center shadow-lg sticky top-0 z-50">
-        <!-- Logo / Brand Title -->
-        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('wallet')">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyanNeon to-blue-600 flex items-center justify-center text-navyDark font-black text-xl shadow-md">
-                M
+    <div class="w-full max-w-5xl bg-[#001428] border border-[#004080] rounded-xl p-6 shadow-2xl">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row items-center justify-between border-b border-[#004080] pb-5 mb-6 gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-3 h-8 bg-rose-500 rounded-full"></div>
+                <h1 class="text-2xl font-bold tracking-wide text-rose-400">DENIED TRANSACTIONS</h1>
             </div>
-            <div>
-                <h1 class="text-xl font-bold tracking-wider text-white uppercase flex items-center gap-2">
-                    MUUSTANDI GAMING
-                    <span class="text-xs bg-cyanNeon/20 text-cyanNeon px-2 py-0.5 rounded-full font-mono font-normal">PRO</span>
-                </h1>
-                <p class="text-xs text-cyan-300/70">Master Wallet & Transaction Portal</p>
+            <span class="bg-rose-950 text-rose-300 border border-rose-500 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
+                Status: Rejected / Uncredited
+            </span>
+        </div>
+
+        <!-- Summary Statistics Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div class="bg-[#003366] border border-[#004080] p-4 rounded-lg text-center">
+                <span class="text-xs text-[#c8eaff] block font-semibold mb-1 uppercase tracking-wider">Total Attempted</span>
+                <span class="text-2xl font-bold text-white">R <span id="totalAttempted">170.00</span></span>
+            </div>
+            <div class="bg-rose-950/40 border border-rose-500/50 p-4 rounded-lg text-center">
+                <span class="text-xs text-rose-300 block font-semibold mb-1 uppercase tracking-wider">Total Uncredited</span>
+                <span class="text-2xl font-bold text-rose-400">R <span id="totalUncredited">0.00</span></span>
+            </div>
+            <div class="bg-[#003366] border border-[#004080] p-4 rounded-lg text-center">
+                <span class="text-xs text-[#c8eaff] block font-semibold mb-1 uppercase tracking-wider">Failed Attempts</span>
+                <span class="text-2xl font-bold text-rose-400">3</span>
             </div>
         </div>
 
-        <!-- Right Side Controls & White Transactions Tab -->
-        <div class="flex items-center space-x-3 mt-2 sm:mt-0">
-            <!-- Navigation Switcher Buttons -->
-            <button onclick="switchView('wallet')" id="nav-wallet-btn" class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 border border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700">
-                <i class="fa-solid fa-wallet mr-1.5"></i> Wallet
-            </button>
-            
-            <!-- Mandatory White Transactions Tab on Upper Right -->
-            <button onclick="switchView('transactions')" id="nav-trans-btn" class="px-4 py-2 rounded-lg text-sm font-bold bg-white text-navyDark shadow-md hover:bg-cyan-100 transition-all duration-200 flex items-center gap-2">
-                <i class="fa-solid fa-arrow-right-arrow-left text-navyBlue"></i> Transactions
-            </button>
+        <!-- Transactions Table -->
+        <div class="overflow-x-auto rounded-lg border border-[#004080]">
+            <table class="w-full text-left text-sm text-gray-200">
+                <thead class="bg-[#2c0d15] text-rose-300 uppercase text-xs font-bold border-b border-rose-900">
+                    <tr>
+                        <th scope="col" class="py-3 px-4">User ID</th>
+                        <th scope="col" class="py-3 px-4">First Name</th>
+                        <th scope="col" class="py-3 px-4">Last Name</th>
+                        <th scope="col" class="py-3 px-4 text-right">Amount Requested</th>
+                        <th scope="col" class="py-3 px-4 text-right">Amount Credited</th>
+                        <th scope="col" class="py-3 px-4 text-center">Time Requested</th>
+                        <th scope="col" class="py-3 px-4 text-center">Time Denied</th>
+                        <th scope="col" class="py-3 px-4">Reason for Denial</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#003366] bg-[#001020]" id="deniedTableBody">
+                    <tr class="hover:bg-[#002244] transition">
+                        <td class="py-3.5 px-4 font-mono text-xs">USR006</td>
+                        <td class="py-3.5 px-4 font-medium">Kagiso</td>
+                        <td class="py-3.5 px-4 font-medium">Zuma</td>
+                        <td class="py-3.5 px-4 text-right font-mono text-gray-300">R 50.00</td>
+                        <td class="py-3.5 px-4 text-right font-mono text-rose-400 font-bold">R 0.00</td>
+                        <td class="py-3.5 px-4 text-center text-xs text-gray-400">2026-10-15 09:10:00</td>
+                        <td class="py-3.5 px-4 text-center text-xs text-gray-400">2026-10-15 09:10:15</td>
+                        <td class="py-3.5 px-4">
+                            <span class="text-xs bg-rose-950/80 border border-rose-800 text-rose-200 px-2 py-1 rounded">Invalid Voucher Pin</span>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-[#002244] transition">
+                        <td class="py-3.5 px-4 font-mono text-xs">USR007</td>
+                        <td class="py-3.5 px-4 font-medium">Sarah</td>
+                        <td class="py-3.5 px-4 font-medium">Jenkins</td>
+                        <td class="py-3.5 px-4 text-right font-mono text-gray-300">R 100.00</td>
+                        <td class="py-3.5 px-4 text-right font-mono text-rose-400 font-bold">R 0.00</td>
+                        <td class="py-3.5 px-4 text-center text-xs text-gray-400">2026-10-15 12:30:22</td>
+                        <td class="py-3.5 px-4 text-center text-xs text-gray-400">2026-10-15 12:31:00</td>
+                        <td class="py-3.5 px-4">
+                            <span class="text-xs bg-amber-950/80 border border-amber-800 text-amber-200 px-2 py-1 rounded">Gateway Timeout</span>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-[#002244] transition">
+                        <td class="py-3.5 px-4 font-mono text-xs">USR008</td>
+                        <td class="py-3.5 px-4 font-medium">Bongani</td>
+                        <td class="py-3.5 px-4 font-medium">Khoza</td>
+                        <td class="py-3.5 px-4 text-right font-mono text-gray-300">R 20.00</td>
+                        <td class="py-3.5 px-4 text-right font-mono text-rose-400 font-bold">R 0.00</td>
+                        <td class="py-3.5 px-4 text-center text-xs text-gray-400">2026-10-15 15:12:05</td>
+                        <td class="py-3.5 px-4 text-center text-xs text-gray-400">2026-10-15 15:12:10</td>
+                        <td class="py-3.5 px-4">
+                            <span class="text-xs bg-gray-800 border border-gray-600 text-gray-300 px-2 py-1 rounded">Aborted by User</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-    </header>
+    </div>
 
-    <!-- MAIN VIEW CONTAINER -->
-    <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-
-        <!-- ================= PAGE 1: WALLET INTERFACE ================= -->
-        <div id="wallet-view" class="space-y-6">
-            <!-- Welcome Bar -->
-            <div class="bg-cardBg/80 backdrop-blur-md rounded-2xl p-6 border border-cyan-500/20 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-white">Player Overview</h2>
-                    <p class="text-slate-300 text-sm">Welcome back, <span class="text-cyanNeon font-semibold">Gamer#8492</span></p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <button class="bg-cyanNeon hover:bg-cyan-400 text-navyDark px-4 py-2 rounded-xl font-bold text-sm shadow-lg transition duration-200">
-                        <i class="fa-solid fa-plus mr-1"></i> Add Funds
-                    </button>
-                    <button class="bg-navyBlue border border-cyan-500/30 hover:border-cyanNeon text-white px-4 py-2 rounded-xl font-bold text-sm transition duration-200">
-                        <i class="fa-solid fa-gift mr-1"></i> Redeem Code
-                    </button>
-                </div>
-            </div>
-
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Total Balance -->
-                <div class="bg-gradient-to-br from-navyBlue to-cardBg p-6 rounded-2xl border border-cyan-500/30 shadow-lg relative overflow-hidden group">
-                    <div class="absolute -right-4 -bottom-4 text-cyanNeon/10 text-8xl transition-transform group-hover:scale-110">
-                        <i class="fa-solid fa-coins"></i>
-                    </div>
-                    <p class="text-slate-400 text-sm font-medium">Available Balance</p>
-                    <h3 class="text-3xl font-extrabold text-white mt-1">$1,485.50</h3>
-                    <div class="mt-4 flex items-center text-xs text-emerald-400">
-                        <i class="fa-solid fa-arrow-trend-up mr-1"></i> +$240.00 this week
-                    </div>
-                </div>
-
-                <!-- Reward Points -->
-                <div class="bg-gradient-to-br from-navyBlue to-cardBg p-6 rounded-2xl border border-cyan-500/30 shadow-lg relative overflow-hidden group">
-                    <div class="absolute -right-4 -bottom-4 text-cyanNeon/10 text-8xl transition-transform group-hover:scale-110">
-                        <i class="fa-solid fa-trophy"></i>
-                    </div>
-                    <p class="text-slate-400 text-sm font-medium">Muustandi Points</p>
-                    <h3 class="text-3xl font-extrabold text-cyanNeon mt-1">12,450 PTS</h3>
-                    <div class="mt-4 flex items-center text-xs text-cyan-300">
-                        <i class="fa-solid fa-bolt mr-1"></i> VIP Tier 3 Activated
-                    </div>
-                </div>
-
-                <!-- Pending Actions -->
-                <div class="bg-gradient-to-br from-navyBlue to-cardBg p-6 rounded-2xl border border-pinkNeon/30 shadow-lg relative overflow-hidden group">
-                    <div class="absolute -right-4 -bottom-4 text-pinkNeon/10 text-8xl transition-transform group-hover:scale-110">
-                        <i class="fa-solid fa-clock-rotate-left"></i>
-                    </div>
-                    <p class="text-slate-400 text-sm font-medium">Recent Activity Summary</p>
-                    <h3 class="text-3xl font-extrabold text-pinkNeon mt-1">4 Requests</h3>
-                    <div class="mt-4 flex items-center text-xs text-pink-300">
-                        <button onclick="switchView('transactions')" class="underline hover:text-white">View status in Transactions &rarr;</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Dashboard Card -->
-            <div class="bg-cardBg/60 rounded-2xl border border-cyan-500/20 p-6 shadow-xl">
-                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                    <i class="fa-solid fa-gamepad text-cyanNeon"></i> Quick Shortcuts
-                </h3>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <button onclick="switchView('transactions')" class="p-4 bg-navyBlue/80 hover:bg-navyBlue rounded-xl border border-slate-700 hover:border-cyanNeon text-center transition">
-                        <i class="fa-solid fa-circle-check text-2xl text-emerald-400 mb-2"></i>
-                        <div class="text-sm font-semibold">Granted Tokens</div>
-                    </button>
-                    <button onclick="switchView('transactions')" class="p-4 bg-navyBlue/80 hover:bg-navyBlue rounded-xl border border-slate-700 hover:border-pinkNeon text-center transition">
-                        <i class="fa-solid fa-circle-xmark text-2xl text-pinkNeon mb-2"></i>
-                        <div class="text-sm font-semibold">Denied Log</div>
-                    </button>
-                    <button class="p-4 bg-navyBlue/80 hover:bg-navyBlue rounded-xl border border-slate-700 hover:border-cyanNeon text-center transition">
-                        <i class="fa-solid fa-shield-halved text-2xl text-cyanNeon mb-2"></i>
-                        <div class="text-sm font-semibold">Security Settings</div>
-                    </button>
-                    <button class="p-4 bg-navyBlue/80 hover:bg-navyBlue rounded-xl border border-slate-700 hover:border-cyanNeon text-center transition">
-                        <i class="fa-solid fa-headset text-2xl text-indigo-400 mb-2"></i>
-                        <div class="text-sm font-semibold">Support Center</div>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= PAGE 2: TRANSACTIONS PAGE (transactions.html view) ================= -->
-        <div id="transactions-view" class="hidden space-y-6">
-            
-            <!-- Page Header Bar -->
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-cardBg/90 border border-cyan-500/30 p-5 rounded-2xl shadow-xl gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-list-check text-cyanNeon"></i> Transactions Ledger
-                    </h2>
-                    <p class="text-slate-300 text-sm">Real-time status of granted redemptions and rejected claims</p>
-                </div>
-                <div class="flex items-center gap-2 text-xs bg-navyBlue px-3 py-2 rounded-lg border border-slate-700">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>Live Sync Active</span>
-                </div>
-            </div>
-
-            <!-- TWO COLUMNS (HALF SCREEN EACH RESPONSIVE GRID) -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[550px]">
-                
-                <!-- COLUMN 1: REDEEMED TAB / EMBEDDED granted.html -->
-                <div class="bg-cardBg/80 border border-emerald-500/30 rounded-2xl p-4 flex flex-col shadow-2xl">
-                    <!-- Column Tab Header -->
-                    <div class="flex items-center justify-between pb-3 mb-3 border-b border-emerald-500/20">
-                        <div class="flex items-center space-x-2">
-                            <span class="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg">
-                                <i class="fa-solid fa-circle-check text-lg"></i>
-                            </span>
-                            <div>
-                                <h3 class="font-bold text-white text-lg">Redeemed</h3>
-                                <p class="text-xs text-emerald-300/80">Approved Requests (`granted.html`)</p>
-                            </div>
-                        </div>
-                        <span class="bg-emerald-500/20 text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-500/30">
-                            3 Approved
-                        </span>
-                    </div>
-
-                    <!-- Embed Container for granted.html -->
-                    <div class="flex-1 bg-navyDark rounded-xl overflow-hidden border border-emerald-500/20 shadow-inner">
-                        <iframe id="iframe-granted" class="w-full h-full min-h-[420px] border-0" title="Granted Transactions"></iframe>
-                    </div>
-                </div>
-
-                <!-- COLUMN 2: REJECTED TAB / EMBEDDED denied.html -->
-                <div class="bg-cardBg/80 border border-pinkNeon/30 rounded-2xl p-4 flex flex-col shadow-2xl">
-                    <!-- Column Tab Header -->
-                    <div class="flex items-center justify-between pb-3 mb-3 border-b border-pinkNeon/20">
-                        <div class="flex items-center space-x-2">
-                            <span class="p-2 bg-pinkNeon/20 text-pinkNeon rounded-lg">
-                                <i class="fa-solid fa-circle-xmark text-lg"></i>
-                            </span>
-                            <div>
-                                <h3 class="font-bold text-white text-lg">Rejected</h3>
-                                <p class="text-xs text-pink-300/80">Denied Requests (`denied.html`)</p>
-                            </div>
-                        </div>
-                        <span class="bg-pinkNeon/20 text-pinkNeon text-xs font-semibold px-2.5 py-1 rounded-full border border-pinkNeon/30">
-                            2 Denied
-                        </span>
-                    </div>
-
-                    <!-- Embed Container for denied.html -->
-                    <div class="flex-1 bg-navyDark rounded-xl overflow-hidden border border-pinkNeon/20 shadow-inner">
-                        <iframe id="iframe-denied" class="w-full h-full min-h-[420px] border-0" title="Denied Transactions"></iframe>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-    </main>
-
-    <!-- FOOTER -->
-    <footer class="bg-navyBlue border-t border-cyan-500/20 py-4 px-6 text-center text-xs text-slate-400 mt-8">
-        <p>&copy; 2026 Muustandi Gaming Infrastructure. All rights reserved.</p>
-    </footer>
-
-    <!-- INTERACTIVE JAVASCRIPT & VIRTUAL FILE EMBEDDING -->
-    <script>
-        // Virtual content generation for granted.html and denied.html
-        const grantedHtmlContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <script src="https://cdn.tailwindcss.com"><\/script>
-                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                <style>
-                    body { background-color: #001428; color: #fff; font-family: sans-serif; padding: 1rem; }
-                </style>
-            </head>
-            <body>
-                <div class="space-y-3">
-                    <div class="bg-slate-900/80 p-3.5 rounded-xl border-l-4 border-emerald-400 shadow-md">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="font-bold text-emerald-400 text-sm">500 Gold Coins Package</div>
-                                <div class="text-xs text-slate-400">TXID: #GR-984210</div>
-                            </div>
-                            <span class="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded font-mono">+ $50.00</span>
-                        </div>
-                        <div class="mt-2 text-xs text-slate-300 flex justify-between">
-                            <span>Status: Verified</span>
-                            <span class="text-slate-500">Today, 14:32</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-900/80 p-3.5 rounded-xl border-l-4 border-emerald-400 shadow-md">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="font-bold text-emerald-400 text-sm">Battle Pass Season 4</div>
-                                <div class="text-xs text-slate-400">TXID: #GR-773109</div>
-                            </div>
-                            <span class="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded font-mono">Claimed</span>
-                        </div>
-                        <div class="mt-2 text-xs text-slate-300 flex justify-between">
-                            <span>Status: Redefined</span>
-                            <span class="text-slate-500">Yesterday, 09:15</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-900/80 p-3.5 rounded-xl border-l-4 border-emerald-400 shadow-md">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="font-bold text-emerald-400 text-sm">Mythic Weapon Skin</div>
-                                <div class="text-xs text-slate-400">TXID: #GR-401122</div>
-                            </div>
-                            <span class="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded font-mono">+ 2,500 PTS</span>
-                        </div>
-                        <div class="mt-2 text-xs text-slate-300 flex justify-between">
-                            <span>Status: Delivered</span>
-                            <span class="text-slate-500">Oct 12, 2026</span>
-                        </div>
-                    </div>
-                </div>
-            </body>
-            </html>
-        `;
-
-        const deniedHtmlContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <script src="https://cdn.tailwindcss.com"><\/script>
-                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                <style>
-                    body { background-color: #001428; color: #fff; font-family: sans-serif; padding: 1rem; }
-                </style>
-            </head>
-            <body>
-                <div class="space-y-3">
-                    <div class="bg-slate-900/80 p-3.5 rounded-xl border-l-4 border-pink-500 shadow-md">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="font-bold text-pink-400 text-sm">Expired Promo Code</div>
-                                <div class="text-xs text-slate-400">Code: WINTER2025</div>
-                            </div>
-                            <span class="bg-pink-500/20 text-pink-300 text-[10px] px-2 py-0.5 rounded font-mono">Invalid</span>
-                        </div>
-                        <p class="mt-2 text-xs text-slate-300">Reason: Promotional period ended.</p>
-                        <div class="mt-1 text-[10px] text-slate-500">Oct 15, 2026</div>
-                    </div>
-
-                    <div class="bg-slate-900/80 p-3.5 rounded-xl border-l-4 border-pink-500 shadow-md">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="font-bold text-pink-400 text-sm">Duplicate Claims Attempt</div>
-                                <div class="text-xs text-slate-400">TXID: #DN-002381</div>
-                            </div>
-                            <span class="bg-pink-500/20 text-pink-300 text-[10px] px-2 py-0.5 rounded font-mono">Rejected</span>
-                        </div>
-                        <p class="mt-2 text-xs text-slate-300">Reason: Reward already claimed on account.</p>
-                        <div class="mt-1 text-[10px] text-slate-500">Oct 10, 2026</div>
-                    </div>
-                </div>
-            </body>
-            </html>
-        `;
-
-        // Switch View Logic (Wallet vs Transactions)
-        function switchView(viewName) {
-            const walletView = document.getElementById('wallet-view');
-            const transView = document.getElementById('transactions-view');
-            const walletBtn = document.getElementById('nav-wallet-btn');
-            const transBtn = document.getElementById('nav-trans-btn');
-
-            if (viewName === 'transactions') {
-                walletView.classList.add('hidden');
-                transView.classList.remove('hidden');
-
-                // Style active states
-                transBtn.className = "px-4 py-2 rounded-lg text-sm font-bold bg-cyanNeon text-navyDark shadow-lg border border-cyanNeon flex items-center gap-2 transition-all duration-200";
-                walletBtn.className = "px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 border border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700";
-            } else {
-                transView.classList.add('hidden');
-                walletView.classList.remove('hidden');
-
-                // Style active states
-                transBtn.className = "px-4 py-2 rounded-lg text-sm font-bold bg-white text-navyDark shadow-md hover:bg-cyan-100 transition-all duration-200 flex items-center gap-2";
-                walletBtn.className = "px-4 py-2 rounded-lg text-sm font-bold border border-cyanNeon bg-cyanNeon/10 text-cyanNeon transition-all duration-200";
-            }
-        }
-
-        // Initialize iFrames with inline document sources
-        window.addEventListener('DOMContentLoaded', () => {
-            const iframeGranted = document.getElementById('iframe-granted');
-            const iframeDenied = document.getElementById('iframe-denied');
-
-            if (iframeGranted) iframeGranted.srcdoc = grantedHtmlContent;
-            if (iframeDenied) iframeDenied.srcdoc = deniedHtmlContent;
-        });
-    </script>
 </body>
 </html>
