@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MY TRANSACTIONS - MUUSTANDI</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #001f3f;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: #001428;
+      border: 1px solid #004080;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+    h2 {
+      color: #00f0ff;
+      text-align: center;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      text-shadow: 0 0 10px rgba(0,240,255,0.5);
+    }
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th {
+      background: #003366;
+      color: #00f0ff;
+      padding: 12px 10px;
+      font-size: 14px;
+      text-transform: uppercase;
+      border: 1px solid #004080;
+      text-align: center;
+    }
+    td {
+      padding: 12px 10px;
+      font-size: 14px;
+      border: 1px solid #004080;
+      text-align: center;
+      background: #001b33;
+    }
+    tr:nth-child(even) td {
+      background: #001020;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      background: #103b2a;
+      color: #a8ffbf;
+      border: 1px solid #00ff66;
+    }
+    .empty-msg {
+      text-align: center;
+      padding: 20px;
+      color: #88aacc;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>My Wallet Top-Up Transactions</h2>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th colspan="2">REQUEST</th>
+          <th>GRANTED</th>
+          <th>STATUS</th>
+        </tr>
+        <tr>
+          <th>Amount</th>
+          <th>Date & Time</th>
+          <th>Date & Time</th>
+          <th>State</th>
+        </tr>
+      </thead>
+      <tbody id="txTableBody">
+        <tr>
+          <td colspan="4" class="empty-msg">Loading your transactions...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+    authDomain: "tose-ccf8f.firebaseapp.com",
+    databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "tose-ccf8f",
+    storageBucket: "tose-ccf8f.appspot.com"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
+  const tableBody = document.getElementById("txTableBody");
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      tableBody.innerHTML = `<tr><td colspan="4" class="empty-msg">Please log in to view transactions.</td></tr>`;
+      return;
+    }
+
+    const txRef = ref(db, `transactions/${user.uid}`);
+    onValue(txRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        tableBody.innerHTML = `<tr><td colspan="4" class="empty-msg">No credited transactions found.</td></tr>`;
+        return;
+      }
+
+      // Convert object to array and sort from NEWEST to OLDEST
+      const txList = Object.values(data).sort((a, b) => new Date(b.requestTime) - new Date(a.requestTime));
+
+      tableBody.innerHTML = txList.map(tx => `
+        <tr>
+          <td style="color: #00f0ff; font-weight: bold;">R ${(Number(tx.amount) || 0).toFixed(2)}</td>
+          <td>${tx.requestTime ? new Date(tx.requestTime).toLocaleString() : 'N/A'}</td>
+          <td>${tx.grantedTime ? new Date(tx.grantedTime).toLocaleString() : 'N/A'}</td>
+          <td><span class="status-badge">${tx.status || 'GRANTED'}</span></td>
+        </tr>
+      `).join('');
+    });
+  });
+</script>
+
+</body>
+</html>
