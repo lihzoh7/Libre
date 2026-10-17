@@ -3,119 +3,116 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPACE GLASS - Main Menu</title>
+<title>Lifeslide</title>
 
 <style>
-* {
-  box-sizing: border-box;
+body{
+  margin:0;
+  background:#0a0a0a;
+  font-family:Arial;
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
 }
 
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: url('https://images.unsplash.com/photo-1549924231-f129b911e442?auto=format&fit=crop&w=1470&q=80') no-repeat center;
-  background-size: cover;
-  min-height: 100vh;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
+.box{
+  background:#111;
+  padding:30px;
+  border-radius:16px;
+  text-align:center;
+  width:300px;
+  border:2px solid #0074D9;
 }
 
-/* NAV */
-#profile {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  color: white;
-  cursor: pointer;
-  font-size: 30px;
-  z-index: 10;
+button{
+  padding:10px;
+  margin:5px;
+  font-size:18px;
+  border:none;
+  border-radius:8px;
+  background:#0074D9;
+  color:white;
+  cursor:pointer;
 }
 
-#messages {
-  position: absolute;
-  top: 10px;
-  right: 60px;
-  color: white;
-  cursor: pointer;
-  font-size: 20px;
-  font-weight: bold;
-  z-index: 10;
+.count{
+  font-size:24px;
+  margin:10px;
 }
 
-/* TABS CONTAINER */
-.menu-container {
-  width: 100%;
-  max-width: 480px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-items: center;
-  justify-content: center;
+/* 🔥 LEADERBOARD FREEZE BREAK POPUP */
+#breakPopup{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.9);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:999;
 }
 
-/* STRETCHED TABS */
-.tab {
-  width: 100%;
-  height: 60px;
-  background: rgba(255, 255, 255, 0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  cursor: pointer;
-  color: white;
-  font-weight: bold;
-  font-size: 20px;
-  letter-spacing: 2px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s ease;
-  text-transform: uppercase;
+.popup-box{
+  background:#111;
+  padding:40px;
+  border-radius:16px;
+  text-align:center;
+  border:2px solid red;
+  max-width: 80%;
 }
 
-.tab:hover {
-  transform: scale(1.02);
-  background: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 6px 20px rgba(0, 240, 255, 0.4);
+.popup-box h2{
+  margin: 0 0 10px 0;
+  color: red;
+  font-size: 32px;
+  letter-spacing: 1px;
 }
 
-.tab:active {
-  transform: scale(0.98);
+.popup-box p {
+  color: #ccc;
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.food{
+  font-size:60px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- TOP BUTTONS -->
-<div id="messages" onclick="location.href='wallet-form.html'"></div>
-<div id="profile" onclick="location.href='profile.html'"></div>
+<div class="box">
+  <h2>Select Lives ❤️</h2>
 
-<!-- CENTERED MENU WITH THREE STRETCHED TABS -->
-<div class="menu-container">
+  <div>Wallet: <span id="wallet">0</span></div>
 
-  <div class="tab" onclick="location.href='prizes.html'">
-    PRIZES
+  <div>
+    <button onclick="dec()">➖</button>
+    <span id="count" class="count">0</span>
+    <button onclick="inc()">➕</button>
   </div>
 
-  <div class="tab" id="playBtn">
-    PLAY
-  </div>
+  <button onclick="enter()">ENTER GAME</button>
+</div>
 
-  <div class="tab" onclick="location.href='scores.html'">
-    SCORES
+<!-- 🔥 BREAK POPUP -->
+<div id="breakPopup">
+  <div class="popup-box">
+    <h2>ON THE BREAK</h2>
+    <p>Leaderboard is currently frozen. Gameplay is disabled.</p>
+    <div class="food">🍲🍱🥗</div>
   </div>
-
 </div>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -133,41 +130,90 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 let user;
+let walletLives = 0;
+let count = 0;
 
-onAuthStateChanged(auth, async (u) => {
-  if (!u) {
-    location.href = "index.html";
-    return;
-  }
-
-  const adminSnap = await get(ref(db, "admins/" + u.uid));
-  if (adminSnap.exists()) {
-    alert("Admin must use admin panel");
-    location.href = "admin.html";
+/* 🔐 AUTH */
+onAuthStateChanged(auth, async (u)=>{
+  if(!u){
+    location.href="index.html";
     return;
   }
 
   user = u;
-});
 
-/* PLAY BUTTON -> REDIRECTS TO life-selector.html */
-document.getElementById("playBtn").onclick = async () => {
-  if (!user) {
-    alert("Loading...");
-    return;
-  }
-
-  const snap = await get(ref(db, "wallet/" + user.uid));
+  const snap = await get(ref(db,"wallet/"+user.uid));
   const data = snap.val() || {};
 
-  if ((data.lives || 0) <= 0) {
-    alert("NO LIVES");
+  walletLives = data.lives || 0;
+
+  document.getElementById("wallet").innerText = walletLives;
+});
+
+/* ➕➖ CONTROLS */
+window.inc = ()=>{
+  if(count < walletLives && count < 5){
+    count++;
+    document.getElementById("count").innerText = count;
+  }
+};
+
+window.dec = ()=>{
+  if(count > 0){
+    count--;
+    document.getElementById("count").innerText = count;
+  }
+};
+
+/* ⏰ LEADERBOARD FREEZE ALIGNED CHECK */
+function isBreakTime(){
+  let now = new Date();
+  let hrs = now.getHours();
+
+  // Freeze from 13:00 up to 14:00 (13:00 - 13:59)
+  if (hrs >= 13 && hrs < 14) return true;
+
+  // Freeze from 20:00 overnight up to 07:00 (20:00 - 06:59)
+  if (hrs >= 20 || hrs < 7) return true;
+
+  return false;
+}
+
+/* 🚀 ENTER GAME */
+window.enter = async ()=>{
+
+  // 🔥 BLOCK ENTRY IF MATCHING LEADERBOARD FREEZE WINDOW
+  if(isBreakTime()){
+    document.getElementById("breakPopup").style.display = "flex";
     return;
   }
 
-  // Target filename updated to life-selector.html
-  location.href = "life-selector.html";
+  if(count <= 0){
+    alert("SELECT LIVES");
+    return;
+  }
+
+  if(count > walletLives){
+    alert("NOT ENOUGH LIVES");
+    return;
+  }
+
+  await set(ref(db,"wallet/"+user.uid+"/lives"), walletLives - count);
+
+  localStorage.setItem("selectedLives", count);
+
+  location.href = "game.html";
 };
+
+/* 🔄 AUTO BREAK DETECT LOOP */
+setInterval(()=>{
+  if(isBreakTime()){
+    document.getElementById("breakPopup").style.display = "flex";
+  } else {
+    document.getElementById("breakPopup").style.display = "none";
+  }
+},1000);
+
 </script>
 
 </body>
