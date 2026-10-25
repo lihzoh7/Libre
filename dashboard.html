@@ -17,7 +17,6 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    /* Black background with light blue repeating stripes */
     background-color: #000000;
     background-image: repeating-linear-gradient(
       45deg,
@@ -27,6 +26,28 @@
       #0b1d2d 30px
     );
     color: #ffffff;
+    position: relative;
+  }
+
+  /* TOP RIGHT WINNERS TAB */
+  .winners-tab {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: #00adb5;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 173, 181, 0.4);
+    display: none; /* Controlled by admin open eye */
+    z-index: 100;
+    letter-spacing: 1px;
+  }
+  .winners-tab:hover {
+    background: #008c94;
   }
 
   .dashboard-container {
@@ -60,10 +81,6 @@
     box-shadow: 0 12px 30px rgba(0, 173, 181, 0.3);
   }
 
-  .tile:active {
-    transform: translateY(-1px);
-  }
-
   .tile-text {
     font-size: 28px;
     font-weight: 800;
@@ -72,7 +89,6 @@
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
   }
 
-  /* --- LEADERBOARD VISUAL: 5 bars of different colors one lower than the other --- */
   .bars-icon {
     display: flex;
     align-items: flex-end;
@@ -84,13 +100,12 @@
     border-radius: 3px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
   }
-  .bar-1 { height: 50px; background-color: #ff4136; } /* Highest */
+  .bar-1 { height: 50px; background-color: #ff4136; }
   .bar-2 { height: 41px; background-color: #ff851b; }
   .bar-3 { height: 32px; background-color: #ffdc00; }
   .bar-4 { height: 23px; background-color: #2ecc40; }
-  .bar-5 { height: 14px; background-color: #0074d9; } /* Lowest */
+  .bar-5 { height: 14px; background-color: #0074d9; }
 
-  /* --- START VISUAL: Center Play Icon --- */
   .play-icon {
     font-size: 44px;
     color: #00adb5;
@@ -105,7 +120,6 @@
     transform: scale(1.2);
   }
 
-  /* --- PRIZES VISUAL: Gold, silver, and bronze coins --- */
   .coins-icon {
     display: flex;
     align-items: center;
@@ -150,38 +164,147 @@
     right: 0px;
     top: 12px;
   }
+
+  /* WINNERS FULLSCREEN MODAL VIEW */
+  #winnerModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  #winnerModal img {
+    max-width: 90%;
+    max-height: 75vh;
+    border-radius: 10px;
+    border: 2px solid #00adb5;
+    box-shadow: 0 0 20px rgba(0, 173, 181, 0.5);
+  }
+  .winner-date-display {
+    font-size: 20px;
+    color: #00adb5;
+    margin-bottom: 15px;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+  .close-modal-btn {
+    margin-top: 25px;
+    background: #ff4136;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+  }
 </style>
 </head>
 <body>
 
-<div class="dashboard-container">
+  <!-- WINNERS TAB IN UPPER RIGHT -->
+  <div id="winnersTab" class="winners-tab" onclick="openWinnerModal()">Winners</div>
 
-  <a href="quizerleaderboard.html" class="tile">
-    <span class="tile-text">Leaderboard</span>
-    <div class="bars-icon">
-      <div class="bar bar-1"></div>
-      <div class="bar bar-2"></div>
-      <div class="bar bar-3"></div>
-      <div class="bar bar-4"></div>
-      <div class="bar bar-5"></div>
-    </div>
-  </a>
+  <div class="dashboard-container">
+    <a href="quizerleaderboard.html" class="tile">
+      <span class="tile-text">Leaderboard</span>
+      <div class="bars-icon">
+        <div class="bar bar-1"></div>
+        <div class="bar bar-2"></div>
+        <div class="bar bar-3"></div>
+        <div class="bar bar-4"></div>
+        <div class="bar bar-5"></div>
+      </div>
+    </a>
 
-  <a href="lifequizer.html" class="tile">
-    <span class="tile-text">Start</span>
-    <div class="play-icon">▶</div>
-  </a>
+    <a href="lifequizer.html" class="tile">
+      <span class="tile-text">Start</span>
+      <div class="play-icon">▶</div>
+    </a>
 
-  <a href="quizerprizes.html" class="tile">
-    <span class="tile-text">Prizes</span>
-    <div class="coins-icon">
-      <div class="coin coin-silver">S</div>
-      <div class="coin coin-gold">G</div>
-      <div class="coin coin-bronze">B</div>
-    </div>
-  </a>
+    <a href="quizerprizes.html" class="tile">
+      <span class="tile-text">Prizes</span>
+      <div class="coins-icon">
+        <div class="coin coin-silver">S</div>
+        <div class="coin coin-gold">G</div>
+        <div class="coin coin-bronze">B</div>
+      </div>
+    </a>
+  </div>
 
-</div>
+  <!-- WINNERS FULLSCREEN MODAL -->
+  <div id="winnerModal">
+    <div id="modalDateText" class="winner-date-display"></div>
+    <img id="modalWinnerImg" src="" alt="Winner Image">
+    <button class="close-modal-btn" onclick="closeWinnerModal()">Back</button>
+  </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const winnersTab = document.getElementById("winnersTab");
+const winnerModal = document.getElementById("winnerModal");
+const modalWinnerImg = document.getElementById("modalWinnerImg");
+const modalDateText = document.getElementById("modalDateText");
+
+let activeWinnerData = null;
+
+// Listen to slideWinners state in Firebase
+onValue(ref(db, "slideWinners"), (snapshot) => {
+  if (snapshot.exists()) {
+    const data = snapshot.val();
+    let foundActive = false;
+
+    Object.values(data).forEach(item => {
+      if (item.active === true) {
+        activeWinnerData = item;
+        foundActive = true;
+      }
+    });
+
+    if (foundActive) {
+      winnersTab.style.display = "block";
+    } else {
+      winnersTab.style.display = "none";
+      activeWinnerData = null;
+    }
+  } else {
+    winnersTab.style.display = "none";
+    activeWinnerData = null;
+  }
+});
+
+window.openWinnerModal = function() {
+  if (activeWinnerData) {
+    modalDateText.innerText = activeWinnerData.dateTime || "";
+    modalWinnerImg.src = activeWinnerData.imageUrl || "";
+    winnerModal.style.display = "flex";
+  }
+};
+
+window.closeWinnerModal = function() {
+  winnerModal.style.display = "none";
+};
+</script>
 
 </body>
 </html>
