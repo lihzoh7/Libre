@@ -93,31 +93,6 @@
     cursor: pointer;  
     text-align: center;  
   }  
-  
-  /* NAVIGATION BUTTONS BAR */
-  #nav-controls {
-    display: none;
-    gap: 15px;
-    margin-top: 15px;
-    width: 80%;
-    max-width: 400px;
-  }
-  .nav-btn {
-    flex: 1;
-    padding: 12px;
-    background-color: #333;
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    text-align: center;
-  }
-  .nav-btn:hover {
-    background-color: #555;
-  }
-
   #replay-btn {   
     position: absolute;   
     bottom: 10px;   
@@ -132,6 +107,29 @@
     border-radius: 4px;   
     z-index: 10;   
   }  
+
+  /*  NAVIGATION CONTROLS */
+  #nav-controls {
+    display: none;
+    justify-content: space-between;
+    width: 80%;
+    max-width: 400px;
+    margin-top: 15px;
+  }
+  .nav-btn {
+    background-color: #004d00;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 24px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .nav-btn:hover {
+    background-color: #007700;
+  }
   
   /* POPUP CONTAINER MODAL */
   .game-popup {
@@ -153,8 +151,18 @@
     box-sizing: border-box;
   }
   .popup-content h2 { margin-top: 0; color: #cc0000; }
+  .popup-content button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
 
-  /* 🔥 GREEN CORRECT ANSWER POPUP STYLE */
+  /* GREEN CORRECT ANSWER POPUP STYLE */
   #correctAnswerPopup .popup-content {
     border: 4px solid #228B22;
   }
@@ -172,12 +180,12 @@
     border: 1px dashed #228B22;
   }
 </style>
+
 </head>  
 <body>  
 <header>  
   <div>Score: <span id="score">0</span></div>  
-  <div>Mode: Browse</div>  
-  <div>Quizer</div>  
+  <div>Quizer Game</div>  
 </header>  
 
 <div id="game-zone">  
@@ -192,26 +200,18 @@
   <input type="text" id="answer-input" placeholder="Type your answer here...">  
   <button id="submit-ans-btn">SUBMIT</button>  
 
-  <!-- PREVIOUS & NEXT NAVIGATION BAR -->
   <div id="nav-controls">
-    <button class="nav-btn" id="prev-btn">⬅ Previous</button>
-    <button class="nav-btn" id="next-btn">Next ➡</button>
+    <button class="nav-btn" id="prev-btn">◀</button>
+    <button class="nav-btn" id="next-btn">▶</button>
   </div>
 </div>  
 
 <div class="game-popup" id="correctAnswerPopup">  
   <div class="popup-content">  
-    <h2>💡 CORRECT ANSWER</h2>  
-    <p>The right answer was:</p>
+    <h2>💡 REVEALED ANSWER</h2>  
+    <p>The correct answer is:</p>
     <div class="revealed-answer" id="revealedAnswerText">---</div>  
-  </div>  
-</div>  
-
-<div class="game-popup" id="gameOverPopup">  
-  <div class="popup-content">  
-    <h2 style="color: #004d00;">🎉 COMPLETED</h2>  
-    <p style="font-size: 18px; font-weight: bold;">Final Score: <span id="finalScoreLabel">0</span></p>  
-    <button class="btn-exit" style="background:#228B22; color:white; padding:12px; width:100%; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="location.href='muustandigamin.html'">OK</button>  
+    <p style="font-size:12px; color:#666;">Moving to next challenge in 5s...</p>
   </div>  
 </div>  
 
@@ -233,9 +233,10 @@
   const auth = getAuth(app);  
   
   let uid, score = 0;  
-  let pool = [], currentIndex = 0;  
+  let flatQuestionsList = []; 
+  let currentPointer = -1;  
   let activeAudio = null;  
-  let isNavigating = false;
+  let revealTimeout = null;
   
   onAuthStateChanged(auth, async (user) => {  
     if(!user) { location.href = "login.html"; return; }  
@@ -248,39 +249,54 @@
     document.getElementById('display-box').style.display = 'flex';  
     document.getElementById('answer-input').style.display = 'block';  
     document.getElementById('submit-ans-btn').style.display = 'block';  
-    document.getElementById('nav-controls').style.display = 'flex';
+    document.getElementById('nav-controls').style.display = 'flex';  
       
-    await loadMediaPool();  
-    loadRound(currentIndex);  
+    await loadAndShuffleMediaPool();  
+    if(flatQuestionsList.length > 0) {
+      currentPointer = 0;
+      renderCurrentChallenge();
+    } else {
+      alert("No challenges found in the database!");
+    }
   };  
   
-  async function loadMediaPool() {  
+  // Load media and shuffle all individual questions into a random sequence
+  async function loadAndShuffleMediaPool() {  
     const types = ['audio', 'video', 'image'];  
-    pool = [];  
+    let rawPool = [];  
     for(let t of types){  
       let snap = await get(ref(db, "quizMedia/" + t));  
       let val = snap.val() || {};  
       for(let key in val){  
-        let item = val[key];
-        if(item.questions) {
-          for(let i = 0; i < item.questions.length; i++) {
-            if(item.questions[i] !== undefined && item.questions[i] !== "") {
-              pool.push({
-                id: key,
-                type: item.type,
-                data: item.data,
-                question: item.questions[i],
-                answer: item.answers[i],
-                questionIdx: i
-              });
-            }
-          }
-        }
+        rawPool.push({id: key, ...val[key]});  
       }  
     }  
+
+    // Flatten into individual question items
+    flatQuestionsList = [];
+    for(let item of rawPool) {
+      if(item.questions && Array.isArray(item.questions)) {
+        for(let qIdx = 0; qIdx < item.questions.length; qIdx++) {
+          if(item.questions[qIdx] !== undefined && item.questions[qIdx] !== "") {
+            flatQuestionsList.push({
+              itemData: item,
+              questionIdx: qIdx,
+              question: item.questions[qIdx],
+              answer: item.answers ? item.answers[qIdx] : ""
+            });
+          }
+        }
+      }
+    }
+
+    // Shuffle the entire pool
+    flatQuestionsList.sort(() => Math.random() - 0.5);
   }  
   
-  function loadRound(index) {  
+  function renderCurrentChallenge() {  
+    if(revealTimeout) clearTimeout(revealTimeout);
+    document.getElementById('correctAnswerPopup').style.display = 'none';
+
     if(activeAudio) { activeAudio.pause(); activeAudio = null; }  
       
     document.getElementById('game-img').style.display = 'none';  
@@ -288,126 +304,106 @@
     document.getElementById('audio-icon').style.display = 'none';  
     document.getElementById('replay-btn').style.display = 'none';  
     document.getElementById('answer-input').value = '';  
-  
-    if(pool.length === 0) { alert("No challenges loaded inside Firebase database paths!"); return; }  
-    if(index < 0) { currentIndex = 0; return; }
-    if(index >= pool.length) { showEndGameModal(); return; }
 
-    let currentItem = pool[currentIndex];  
-  
-    document.getElementById('question-text').innerText = currentItem.question;  
+    if(currentPointer < 0 || currentPointer >= flatQuestionsList.length) return;
+
+    const currentEntry = flatQuestionsList[currentPointer];
+    const item = currentEntry.itemData;
+
+    document.getElementById('question-text').innerText = currentEntry.question;  
       
-    if(currentItem.type === 'image'){  
+    if(item.type === 'image'){  
       const img = document.getElementById('game-img');  
-      img.src = currentItem.data;  
+      img.src = item.data;  
       img.style.display = 'block';  
-    } else if(currentItem.type === 'video'){  
+    } else if(item.type === 'video'){  
       const vid = document.getElementById('game-video');  
-      vid.src = currentItem.data;  
+      vid.src = item.data;  
       vid.style.display = 'block';  
-      vid.play().catch(e => console.log("Autoplay caught."));  
+      vid.play().catch(e => console.log("Autoplay caught, user interaction needed."));  
       document.getElementById('replay-btn').style.display = 'block';  
-    } else if(currentItem.type === 'audio'){  
+    } else if(item.type === 'audio'){  
       document.getElementById('audio-icon').style.display = 'block';  
-      activeAudio = new Audio(currentItem.data);  
-      activeAudio.play().catch(e => console.log("Autoplay caught."));  
+      activeAudio = new Audio(item.data);  
+      activeAudio.play().catch(e => console.log("Autoplay caught, user interaction needed."));  
       document.getElementById('replay-btn').style.display = 'block';  
     }  
   }  
   
   document.getElementById('replay-btn').onclick = function() {  
-    if(pool.length === 0) return;
-    let currentItem = pool[currentIndex];
-    if(currentItem.type === 'video') {  
+    if(currentPointer < 0) return;
+    const item = flatQuestionsList[currentPointer].itemData;
+    if(item.type === 'video') {  
       const vid = document.getElementById('game-video');  
       vid.currentTime = 0;  
       vid.play();  
-    } else if(currentItem.type === 'audio' && activeAudio) {  
+    } else if(item.type === 'audio' && activeAudio) {  
       activeAudio.currentTime = 0;  
       activeAudio.play();  
     }  
   };  
-  
-  document.getElementById('submit-ans-btn').onclick = function() {  
-    validateUserResponse();  
-  };  
 
+  // Next and Previous Button Navigation Handlers
   document.getElementById('prev-btn').onclick = function() {
-    if(isNavigating) return;
-    revealAndNavigate(-1);
+    if(flatQuestionsList.length === 0) return;
+    revealAnswerAndNavigate(-1);
   };
 
   document.getElementById('next-btn').onclick = function() {
-    if(isNavigating) return;
-    revealAndNavigate(1);
+    if(flatQuestionsList.length === 0) return;
+    revealAnswerAndNavigate(1);
   };
 
+  function revealAnswerAndNavigate(step) {
+    if(activeAudio) activeAudio.pause();
+    
+    // Show current answer
+    const currentEntry = flatQuestionsList[currentPointer];
+    const correctAns = (currentEntry.answer || "").toString().trim();
+    
+    document.getElementById('revealedAnswerText').innerText = correctAns;
+    document.getElementById('correctAnswerPopup').style.display = 'flex';
+
+    if(revealTimeout) clearTimeout(revealTimeout);
+
+    // Wait 5 seconds, reveal answer, then move to requested index
+    revealTimeout = setTimeout(() => {
+      document.getElementById('correctAnswerPopup').style.display = 'none';
+      currentPointer = (currentPointer + step + flatQuestionsList.length) % flatQuestionsList.length;
+      renderCurrentChallenge();
+    }, 5000);
+  }
+
+  document.getElementById('submit-ans-btn').onclick = function() {  
+    validateUserResponse();  
+  };  
+  
   function normalizeText(str) {
     if (!str) return "";
     return str.toString()
               .toLowerCase()
-              .replace(/[^a-z0-9]/g, "") 
+              .replace(/[^a-z0-9]/g, "")
               .trim();
   }
 
   async function validateUserResponse() {  
-    if(pool.length === 0) return;  
-    let currentItem = pool[currentIndex];
+    if(currentPointer < 0 || currentPointer >= flatQuestionsList.length) return;  
       
     let userAnsRaw = document.getElementById('answer-input').value;  
-    let correctAnsRaw = currentItem.answer;  
+    let currentEntry = flatQuestionsList[currentPointer];
+    let correctAnsRaw = currentEntry.answer;  
   
     if(normalizeText(userAnsRaw) === normalizeText(correctAnsRaw)) {  
       score += 10;   
       document.getElementById('score').innerText = score;  
-      await set(ref(db, `history/${uid}/${currentItem.id}/${currentItem.questionIdx}`), true);  
-    }  
+        
+      await set(ref(db, `history/${uid}/${currentEntry.itemData.id}/${currentEntry.questionIdx}`), true);  
       
-    revealAndNavigate(1);
-  }  
-
-  function revealAndNavigate(direction) {
-    if(pool.length === 0 || isNavigating) return;
-    isNavigating = true;
-
-    let currentItem = pool[currentIndex];
-    let correctAns = currentItem.answer.toString().trim();
-    document.getElementById('revealedAnswerText').innerText = correctAns;
-    document.getElementById('correctAnswerPopup').style.display = 'flex';
-
-    if(activeAudio) activeAudio.pause();
-
-    setTimeout(() => {
-      document.getElementById('correctAnswerPopup').style.display = 'none';
-      currentIndex += direction;
-      isNavigating = false;
-      loadRound(currentIndex);
-    }, 5000); // 5 seconds display duration
-  }
-  
-  async function showEndGameModal() {  
-    if(activeAudio) activeAudio.pause();  
-    document.getElementById('correctAnswerPopup').style.display = 'none'; 
-    document.getElementById('finalScoreLabel').innerText = score;  
-    document.getElementById('gameOverPopup').style.display = 'flex';  
-  
-    if (uid) {  
-      const userProfileSnap = await get(ref(db, "users/" + uid));  
-      const userProfile = userProfileSnap.val();  
-      const realName = userProfile?.name   
-        ? userProfile.name + " " + (userProfile.surname || "")  
-        : "Player";  
-  
-      const currentSnap = await get(ref(db, "leaderboard/quizer/" + uid));  
-      const currentData = currentSnap.val();  
-
-      if(!currentData || score > (currentData.score || 0)) {  
-        await set(ref(db, "leaderboard/quizer/" + uid), {  
-          name: realName,  
-          score: score,  
-          timestamp: Date.now()  
-        });  
-      }  
+      currentPointer = (currentPointer + 1) % flatQuestionsList.length;
+      renderCurrentChallenge();  
+    } else {  
+      // Show revealed answer modal on wrong submission, wait 5s then advance
+      revealAnswerAndNavigate(1);
     }  
   }  
 </script>  
