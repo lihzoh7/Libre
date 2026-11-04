@@ -166,14 +166,13 @@ const app = initializeApp({
 
 const db = getDatabase(app);
 
-// Keep global assignments for visual styling tags matching leaderboard rankings
+// Updated color classes based on your new tier brackets (7500, 5000, 4500, 2500)
 function getCardClass(score) {
-  if (score >= 7500) return "gold-c";    // Diamond/Gold level scores
-  if (score >= 5000) return "silver-c";  // Silver level scores
-  if (score >= 2500) return "bronze-c";  // Bronze level scores
-  return "normal-c";                     // Below bronze
+  if (score >= 7500) return "gold-c";
+  if (score >= 5000) return "silver-c";
+  if (score >= 4500) return "bronze-c";
+  return "normal-c";
 }
-
 
 function makePlayerCard(p) {
   let date = new Date(p.time).toLocaleString();
@@ -211,12 +210,12 @@ onValue(ref(db, "leaderboard/current"), snap => {
   let silverPlayers = [];
   let bronzePlayers = [];
 
-  // Relegation Filtering logic loop
+  // Relegation Filtering logic loop with updated minimum tier thresholds:
+  // Diamond: 7500+ | Gold: 5000+ | Silver: 4500+ | Bronze: 2500+
   masterArr.forEach(player => {
     let score = player.score;
 
-    // Check Diamond Qualifications
-    if (score >= 3500) {
+    if (score >= 7500) {
       if (!diamondPlayer) {
         diamondPlayer = player;
       } else if (!goldPlayer) {
@@ -227,8 +226,7 @@ onValue(ref(db, "leaderboard/current"), snap => {
         bronzePlayers.push(player); // Relegated to bronze
       }
     } 
-    // Check Gold Qualifications
-    else if (score >= 2500) {
+    else if (score >= 5000) {
       if (!goldPlayer) {
         goldPlayer = player;
       } else if (silverPlayers.length < 3) {
@@ -237,16 +235,14 @@ onValue(ref(db, "leaderboard/current"), snap => {
         bronzePlayers.push(player); // Relegated to bronze
       }
     } 
-    // Check Silver Qualifications
-    else if (score >= 1500) {
+    else if (score >= 4500) {
       if (silverPlayers.length < 3) {
         silverPlayers.push(player);
       } else if (bronzePlayers.length < 3) {
         bronzePlayers.push(player); // Relegated to bronze
       }
     } 
-    // Check Bronze Qualifications
-    else if (score >= 1000) {
+    else if (score >= 2500) {
       if (bronzePlayers.length < 3) {
         bronzePlayers.push(player);
       }
