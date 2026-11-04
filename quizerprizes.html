@@ -206,31 +206,27 @@ onValue(ref(db, "leaderboard/quizer"), snap => {
     });
   }
 
-  // 2. Sort explicitly matching standard Leaderboard (Highest scores top, handles time ties cleanly)
+  // 2. Sort explicitly highest scores top, handles time ties cleanly
   players.sort((a, b) => b.score - a.score || a.time - b.time);
 
-  // Lists to hold targeted filtered occupants for prize processing allocations
   let diamondWinner = null;
   let goldWinner = null;
   let silverWinners = [];
   let bronzeWinners = [];
 
-  // 3. Distribute cascading down down based on rules constraints limits
+  // 3. Cascading Distribution Engine
   players.forEach(player => {
-    // Check Diamond Criteria
     if (player.score >= 7500) {
       if (!diamondWinner) {
         diamondWinner = player;
       } else if (!goldWinner) {
-        goldWinner = player; // Relegated to gold spot
+        goldWinner = player;
       } else if (silverWinners.length < 3) {
-        silverWinners.push(player); // Relegated to silver rows
+        silverWinners.push(player);
       } else if (bronzeWinners.length < 3) {
-        bronzeWinners.push(player); // Relegated to bronze rows
+        bronzeWinners.push(player);
       }
-    } 
-    // Check Gold Criteria
-    else if (player.score >= 5000) {
+    } else if (player.score >= 5000) {
       if (!goldWinner) {
         goldWinner = player;
       } else if (silverWinners.length < 3) {
@@ -238,17 +234,13 @@ onValue(ref(db, "leaderboard/quizer"), snap => {
       } else if (bronzeWinners.length < 3) {
         bronzeWinners.push(player);
       }
-    } 
-    // Check Silver Criteria
-    else if (player.score >= 4500) {
+    } else if (player.score >= 4500) {
       if (silverWinners.length < 3) {
         silverWinners.push(player);
       } else if (bronzeWinners.length < 3) {
         bronzeWinners.push(player);
       }
-    } 
-    // Check Bronze Criteria
-    else if (player.score >= 2500) {
+    } else if (player.score >= 2500) {
       if (bronzeWinners.length < 3) {
         bronzeWinners.push(player);
       }
@@ -291,4 +283,4 @@ onValue(ref(db, "leaderboard/quizer"), snap => {
 });
 </script>
 </body>
-  </html>
+</html>
