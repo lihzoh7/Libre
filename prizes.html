@@ -168,11 +168,12 @@ const db = getDatabase(app);
 
 // Keep global assignments for visual styling tags matching leaderboard rankings
 function getCardClass(score) {
-  if (score >= 2500) return "gold-c";
-  if (score >= 1500) return "silver-c";
-  if (score >= 900) return "bronze-c";
-  return "normal-c";
+  if (score >= 7500) return "gold-c";    // Diamond/Gold level scores
+  if (score >= 5000) return "silver-c";  // Silver level scores
+  if (score >= 2500) return "bronze-c";  // Bronze level scores
+  return "normal-c";                     // Below bronze
 }
+
 
 function makePlayerCard(p) {
   let date = new Date(p.time).toLocaleString();
