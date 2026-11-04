@@ -171,7 +171,7 @@ function isBreakTime(){
   let hrs = now.getHours();
 
   // Freeze from 17:00 (5:00 PM) overnight up to 06:00 (6:00 AM)
-  if (hrs >= 17 || hrs < 6) return true;
+  if (hrs >= 20 || hrs < 6) return true;
 
   return false;
 }
