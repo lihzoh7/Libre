@@ -105,17 +105,6 @@ body{
   position:absolute;
   font-size:30px;
 }
-
-/* LASER TARGETING LINE */
-.laser-line {
-  position: absolute;
-  height: 2px;
-  background-color: rgba(255, 0, 0, 0.7);
-  box-shadow: 0 0 8px red;
-  transform-origin: left center;
-  z-index: 5;
-  pointer-events: none;
-}
 </style>
 </head>
 
@@ -634,113 +623,197 @@ function spawnRockets() {
 }
 
 /* =====================
-   🥊 BOXING GLOVE ENEMY
+   🥊 BOXING GLOVE ENEMY (LASER TARGET + GLOVE PUNCH)
+   Appears every 16 seconds.
 ===================== */
 function spawnGlove() {
-  setInterval(() => {
-    if (!running) return;
+  const launchInterval = 16000; // 16 seconds loop trigger
 
-    const startX = window.innerWidth;
-    const startY = window.innerHeight - 100; // spawn from bottom right edge
-    
-    // Create Laser Line element
+  function triggerGloveCycle() {
+    if (!running) {
+      setTimeout(triggerGloveCycle, 1000);
+      return;
+    }
+
+    // 1. Create Laser Line element pointing from right side tracking the player for 5 seconds
     let laser = document.createElement("div");
-    laser.className = "laser-line";
-    laser.style.left = startX + "px";
-    laser.style.top = startY + "px";
+    laser.style.position = "absolute";
+    laser.style.height = "2px";
+    laser.style.backgroundColor = "red";
+    laser.style.boxShadow = "0 0 8px red";
+    laser.style.zIndex = "40";
     game.appendChild(laser);
 
-    let targetX = player.offsetLeft;
-    let targetY = player.offsetTop;
-    let aimTime = 0;
-    const maxAimTime = 5000; // 5 seconds aiming duration
+    let targetX = 0;
+    let targetY = 0;
+    let laserStartTime = Date.now();
+    const laserDuration = 5000; // 5 Seconds tracking
 
-    // 1. Aiming phase (tracking player for 5 seconds)
-    let aimInterval = setInterval(() => {
+    let trackingInterval = setInterval(() => {
       if (!running) {
         laser.remove();
-        clearInterval(aimInterval);
+        clearInterval(trackingInterval);
         return;
       }
 
-      aimTime += 50;
-      targetX = player.offsetLeft + 20;
-      targetY = player.offsetTop + 20;
+      let elapsed = Date.now() - laserStartTime;
+      if (elapsed < laserDuration) {
+        // Track the current center position of the player's glass element
+        let pRect = player.getBoundingClientRect();
+        targetX = pRect.left + pRect.width / 2;
+        targetY = pRect.top + pRect.height / 2;
 
-      // Update laser visual tracking
+        // Draw laser from the right edge of the screen to the glass position
+        let startX = window.innerWidth;
+        let startY = targetY; // Point horizontally or straight from right edge
+        
+        let dx = targetX - startX;
+        let dy = targetY - startY;
+        let distance = Math.sqrt(dx * dx + dy * dy);
+        let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+        laser.style.width = distance + "px";
+        laser.style.left = startX + "px";
+        laser.style.top = startY + "px";
+        laser.style.transformOrigin = "0 0";
+        laser.style.transform = `rotate(${angle}deg)`;
+      } else {
+        // Laser tracking complete, remove laser line and fire glove punch
+        laser.remove();
+        clearInterval(trackingInterval);
+        launchGlovePunch(targetX, targetY);
+      }
+    }, 16);
+  }
+
+  // Initial trigger after 16 seconds
+  setTimeout(triggerGloveCycle, launchInterval);
+}
+
+function launchGlovePunch(finalTargetX, finalTargetY) {
+  if (!running) return;
+
+  let g = document.createElement("div");
+  g.className = "enemy";
+  g.innerText = "🥊";
+  g.style.position = "absolute";
+  g.style.fontSize = "30px"; // base size
+
+  // Start from the right edge of the screen, aligned vertically with target position
+  const startX = window.innerWidth;
+  const startY = finalTargetY;
+
+  g.style.left = startX + "px";
+  g.style.top = startY + "px";
+  game.appendChild(g);
+
+  let startTime = Date.now();
+  // Speed matched to rocket (~3.7 seconds duration)
+  const duration = 3700; 
+
+  let punchInterval = setInterval(() => {
+    if (!running) {
+      g.remove();
+      clearInterval(punchInterval);
+      return;
+    }
+
+    let elapsed = Date.now() - startTime;
+    let progress = elapsed / duration;
+
+    if (progress >= 1 || g.offsetLeft < -100 || g.offsetTop < -100 || g.offsetTop > window.innerHeight + 100) {
+      g.remove();
+      clearInterval(punchInterval);
+      // Schedule next glove appearance exactly 16 seconds after this one disappears
+      setTimeout(spawnGloveNextCycle, 16000);
+      return;
+    }
+
+    // Linear interpolation from right edge start to locked target position
+    let currentX = startX + (finalTargetX - startX) * progress;
+    let currentY = startY + (finalTargetY - startY) * progress;
+
+    g.style.left = currentX + "px";
+    g.style.top = currentY + "px";
+
+    // Directional orientation: Point top/fingers toward heading direction
+    let dx = finalTargetX - startX;
+    let dy = finalTargetY - startY;
+    let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90; // +90 aligns emoji's top upward orientation
+
+    // Size expansion: expand twice its size (scale factor 1 -> 2) at every quarter (25%, 50%, 75%, 100%)
+    // Let's scale up smoothly or step-wise based on progress quarters
+    let scaleMultiplier = 1 + Math.floor(progress * 4) * 0.35; 
+    if(scaleMultiplier > 2) scaleMultiplier = 2; // cap maximum expansion at twice size
+
+    g.style.transform = `rotate(${angle}deg) scale(${scaleMultiplier})`;
+
+    // Collision check
+    if (hit(g)) {
+      g.innerText = "💥";
+      setTimeout(() => g.remove(), 200);
+      clearInterval(punchInterval);
+      if (typeof boostActive !== 'undefined' && !boostActive) {
+        lose();
+      } else {
+        setTimeout(spawnGloveNextCycle, 16000);
+      }
+    }
+  }, 16);
+}
+
+// Wrapper to allow cyclic restarting of the 16s timer after disappearance
+function spawnGloveNextCycle() {
+  if (!running) return;
+  
+  // Re-run the tracking and launch sequence
+  let laser = document.createElement("div");
+  laser.style.position = "absolute";
+  laser.style.height = "2px";
+  laser.style.backgroundColor = "red";
+  laser.style.boxShadow = "0 0 8px red";
+  laser.style.zIndex = "40";
+  game.appendChild(laser);
+
+  let targetX = 0;
+  let targetY = 0;
+  let laserStartTime = Date.now();
+  const laserDuration = 5000;
+
+  let trackingInterval = setInterval(() => {
+    if (!running) {
+      laser.remove();
+      clearInterval(trackingInterval);
+      return;
+    }
+
+    let elapsed = Date.now() - laserStartTime;
+    if (elapsed < laserDuration) {
+      let pRect = player.getBoundingClientRect();
+      targetX = pRect.left + pRect.width / 2;
+      targetY = pRect.top + pRect.height / 2;
+
+      let startX = window.innerWidth;
+      let startY = targetY;
+      
       let dx = targetX - startX;
       let dy = targetY - startY;
       let distance = Math.sqrt(dx * dx + dy * dy);
       let angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
       laser.style.width = distance + "px";
+      laser.style.left = startX + "px";
+      laser.style.top = startY + "px";
+      laser.style.transformOrigin = "0 0";
       laser.style.transform = `rotate(${angle}deg)`;
-
-      if (aimTime >= maxAimTime) {
-        clearInterval(aimInterval);
-        laser.remove();
-        launchGlove(startX, startY, targetX, targetY);
-      }
-    }, 50);
-
-  }, 22000); // Spawns every 22 seconds
-}
-
-function launchGlove(startX, startY, targetX, targetY) {
-  if (!running) return;
-
-  let g = document.createElement("div");
-  g.className = "enemy";
-  g.innerText = "🥊";
-  g.style.left = startX + "px";
-  g.style.top = startY + "px";
-  g.style.position = "absolute";
-  game.appendChild(g);
-
-  let startTime = Date.now();
-  const duration = 3700; // Same speed as rocket (~3.7 seconds total travel time)
-
-  let dx = targetX - startX;
-  let dy = targetY - startY;
-  let baseAngle = Math.atan2(dy, dx) * (180 / Math.PI) + 90; // Top points toward trajectory
-
-  let move = setInterval(() => {
-    let elapsed = Date.now() - startTime;
-    let progress = elapsed / duration;
-
-    if (progress >= 1 || g.offsetLeft < -100 || g.offsetTop < -100 || g.offsetTop > window.innerHeight + 100) {
-      g.remove();
-      clearInterval(move);
-      return;
-    }
-
-    // Linear interpolation toward the locked target destination
-    let currentX = startX + dx * progress;
-    let currentY = startY + dy * progress;
-
-    g.style.left = currentX + "px";
-    g.style.top = currentY + "px";
-
-    // Expand twice its size every quarter (25%, 50%, 75%, 100%)
-    let quarterStage = Math.floor(progress * 4);
-    let scaleMultiplier = Math.pow(2, quarterStage); // doubles each quarter
-    let baseFontSize = 30;
-    g.style.fontSize = (baseFontSize * scaleMultiplier) + "px";
-
-    // Point top fingers forward along heading direction
-    g.style.transform = `rotate(${baseAngle}deg)`;
-
-    // Collision check
-    if (hit(g)) {
-      g.innerText = "💥";
-      setTimeout(() => g.remove(), 200);
-      clearInterval(move);
-      if (!boostActive) {
-        lose();
-      }
+    } else {
+      laser.remove();
+      clearInterval(trackingInterval);
+      launchGlovePunch(targetX, targetY);
     }
   }, 16);
 }
+
   
 /* =====================
    💥 COLLISION
