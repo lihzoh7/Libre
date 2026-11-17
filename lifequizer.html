@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lifequizer</title>
+<title>Lifeslide</title>
 
 <style>
 body{
@@ -133,6 +133,29 @@ let user;
 let walletLives = 0;
 let count = 0;
 
+/* ⏰ LEADERBOARD FREEZE ALIGNED CHECK */
+function isBreakTime(){
+  let now = new Date();
+  let hrs = now.getHours();
+  // Freeze from 17:00 (5 PM) overnight until 06:00 (6 AM)
+  return (hrs >= 17 || hrs < 6);
+}
+
+// 🛡️ Update UI state efficiently without constant forced reflows
+function updateBreakUI() {
+  const popup = document.getElementById("breakPopup");
+  const shouldShow = isBreakTime();
+  const currentDisplay = popup.style.display;
+  
+  const targetDisplay = shouldShow ? "flex" : "none";
+  if (currentDisplay !== targetDisplay) {
+    popup.style.display = targetDisplay;
+  }
+}
+
+// Run once on load
+updateBreakUI();
+
 /* 🔐 AUTH */
 onAuthStateChanged(auth, async (u)=>{
   if(!u){
@@ -165,17 +188,6 @@ window.dec = ()=>{
   }
 };
 
-/* ⏰ LEADERBOARD FREEZE ALIGNED CHECK */
-function isBreakTime(){
-  let now = new Date();
-  let hrs = now.getHours();
-
-  // Freeze from 17:00 (5:00 PM) overnight up to 06:00 (6:00 AM)
-  if (hrs >= 17 || hrs < 6) return true;
-
-  return false;
-}
-
 /* 🚀 ENTER GAME */
 window.enter = async ()=>{
 
@@ -199,17 +211,11 @@ window.enter = async ()=>{
 
   localStorage.setItem("selectedLives", count);
 
-  location.href = "quizer.html";
+  location.href = "game.html";
 };
 
-/* 🔄 AUTO BREAK DETECT LOOP */
-setInterval(()=>{
-  if(isBreakTime()){
-    document.getElementById("breakPopup").style.display = "flex";
-  } else {
-    document.getElementById("breakPopup").style.display = "none";
-  }
-},1000);
+/* 🔄 OPTIMIZED CHECK INTERVAL (Every 30 seconds instead of every 1 second) */
+setInterval(updateBreakUI, 30000);
 
 </script>
 
