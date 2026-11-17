@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Leaderboard - Player Claims</title>
+
+<style>
+body{
+  margin:0;
+  background:#001f3f;
+  color:white;
+  font-family:Arial;
+  text-align:center;
+}
+
+/* ✅ SAME AS ADMIN */
+#date, #timer{
+  font-size:42px;
+  margin:10px;
+  font-weight:bold;
+}
+
+#content{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:10px;
+  padding:10px;
+}
+
+.card{
+  background:#002b55;
+  padding:15px;
+  border-radius:10px;
+  font-size:20px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+}
+
+.score-text{
+  color: gold;
+  font-weight: bold;
+  font-size: 22px;
+}
+
+/* CLAIM BUTTONS */
+.claim-btn{
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+.claim-btn:hover{
+  background: #218838;
+}
+
+.claimed-btn{
+  background: #6c757d;
+  color: #d6d6d6;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: not-allowed;
+  font-size: 14px;
+}
+
+.insufficient-lbl{
+  color: #adb5bd;
+  font-size: 14px;
+  font-style: italic;
+  font-weight: bold;
+  padding: 4px;
+}
+
+#popup{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:white;
+  color:green;
+  padding:40px;
+  font-size:30px;
+  display:none;
+  border-radius:10px;
+  z-index: 1000;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+#rank{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  font-size:20px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ✅ MATCHES ADMIN -->
+<div id="date"></div>
+<div id="timer"></div>
+
+<div id="content"></div>
+<div id="rank">RANK: N/A</div>
+<div id="popup"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, get, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+});
+
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+let currentUser = null;
+let resetLock = false;
+
+onAuthStateChanged(auth,(u)=>{
+  if(!u) {
+    location.href="index.html";
+    return;
+  }
+  currentUser = u;
+  initPlayerLeaderboard(u.uid);
+});
+
+/* ✅ FULL DATE + TIMER */
+function updateTime(){
+  let now = new Date();
+
+  document.getElementById("date").innerText =
+    now.toLocaleDateString() + " " + now.toLocaleTimeString();
+
+  let end = new Date();
+
+  if(now.getHours() < 17){
+    end.setHours(17,30,0,0);
+  } else {
+    end.setDate(end.getDate()+1);
+    end.setHours(5,30,0,0);
+  }
+
+  let diff = end - now;
+
+  let h = Math.floor(diff/1000/60/60);
+  let m = Math.floor((diff/1000/60)%60);
+
+  document.getElementById("timer").innerText = `${h}H:${m}M`;
+}
+setInterval(updateTime,1000);
+
+/* 🔥 RESET SYSTEM */
+async function checkReset(){
+  let now = new Date();
+  let h = now.getHours();
+  let m = now.getMinutes();
+
+  let isResetTime =
+    (h === 5 && m === 30) ||
+    (h === 17 && m === 30);
+
+  if(!isResetTime){
+    resetLock = false;
+    return;
+  }
+
+  if(resetLock) return;
+  resetLock = true;
+
+  const lastResetSnap = await get(ref(db,"admin/lastReset"));
+  const lastReset = lastResetSnap.val();
+  const currentKey = `${h}:${m}`;
+
+  if(lastReset === currentKey) return;
+
+  const snap = await get(ref(db,"leaderboard/ringmaster"));
+  const data = snap.val();
+
+  if(data){
+    await set(ref(db,"leaderboard/adminHistory/"+Date.now()), data);
+  }
+
+  await set(ref(db,"leaderboard/current"), null);
+  await set(ref(db,"admin/lastReset"), currentKey);
+
+  let popupEl = document.getElementById("popup");
+  popupEl.innerText="RESET!";
+  popupEl.style.display="block";
+
+  setTimeout(()=>{
+    popupEl.style.display="none";
+  },2000);
+}
+setInterval(checkReset,1000);
+
+/* 📊 PERSONALIZED PLAYER LEADERBOARD & CLAIM SYSTEM */
+function initPlayerLeaderboard(uid){
+  const content = document.getElementById("content");
+  const rankEl = document.getElementById("rank");
+
+  // Listen to the user's high score history / entries or specific path
+  onValue(ref(db, "highScores/ringmaster/" + uid), snap => {
+    const data = snap.val() || {};
+    let arr = [];
+
+    for(let entryId in data){
+      arr.push({
+        id: entryId,
+        score: Number(data[entryId].score || 0),
+        time: data[entryId].timestamp || Date.now(),
+        claimed: data[entryId].claimed || false
+      });
+    }
+
+    // Sort newest or highest first
+    arr.sort((a,b) => b.time - a.time);
+
+    content.innerHTML = "";
+
+    if(arr.length === 0){
+      content.innerHTML = "<div class='card' style='grid-column: span 3;'>No game scores recorded yet. Play a game to see your scores here!</div>";
+      rankEl.innerText = "RANK: N/A";
+      return;
+    }
+
+    rankEl.innerText = "TOTAL RECORDED SCORES: " + arr.length;
+
+    arr.forEach((item, i)=>{
+      let date = new Date(item.time).toLocaleString();
+      let div = document.createElement("div");
+      div.className = "card";
+
+      let actionHTML = "";
+
+      if(item.score > 0){
+        if(item.claimed){
+          actionHTML = `<button class="claimed-btn" disabled>CLAIMED</button>`;
+        } else {
+          actionHTML = `<button class="claim-btn" data-id="${item.id}" data-score="${item.score}">CLAIM</button>`;
+        }
+      } else {
+        actionHTML = `<span class="insufficient-lbl">INSUFFICIENT</span>`;
+      }
+
+      div.innerHTML = `
+        <div class="score-text">R ${item.score.toFixed(2)}</div>
+        <small>${date}</small>
+        ${actionHTML}
+      `;
+
+      content.appendChild(div);
+    });
+
+    // Attach click listeners to claim buttons
+    document.querySelectorAll(".claim-btn").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        let entryId = e.target.getAttribute("data-id");
+        let claimAmount = parseFloat(e.target.getAttribute("data-score"));
+
+        if(isNaN(claimAmount) || claimAmount <= 0) return;
+
+        btn.disabled = true;
+        btn.textContent = "CLAIMING...";
+
+        try {
+          // 1. Mark score as claimed in highScores history
+          await set(ref(db, `highScores/ringmaster/${uid}/${entryId}/claimed`), true);
+
+          // 2. Add amount to wallet cash balance securely via transaction
+          const walletRef = ref(db, `wallet/${uid}`);
+          await runTransaction(walletRef, (currentWallet) => {
+            if(!currentWallet) currentWallet = { cashBalance: 0, lives: 0 };
+            let currentBalance = Number(currentWallet.cashBalance || 0);
+            return {
+              ...currentWallet,
+              cashBalance: currentBalance + claimAmount,
+              updatedAt: new Date().toISOString()
+            };
+          });
+
+          // Show success feedback popup
+          let popupEl = document.getElementById("popup");
+          popupEl.innerText = `Successfully Claimed R ${claimAmount.toFixed(2)}!`;
+          popupEl.style.display = "block";
+          setTimeout(()=>{
+            popupEl.style.display = "none";
+          }, 2000);
+
+        } catch(err) {
+          console.error("Claim error:", err);
+          alert("Failed to claim amount. Please try again.");
+          btn.disabled = false;
+          btn.textContent = "CLAIM";
+        }
+      });
+    });
+
+  });
+}
+</script>
+
+</body>
+</html>
