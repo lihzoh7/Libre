@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RING-MASTER</title>
+
+<style>
+body{
+  margin:0;
+  background:black;
+  overflow:hidden;
+  font-family:Arial;
+  color:white;
+}
+
+/* GAME AREA (MOBILE FULLSCREEN) */
+#game{
+  width:100vw;
+  height:100vh;
+  position:relative;
+  overflow:hidden;
+}
+
+/* SCROLLING BACKGROUND */
+#bg{
+  position:absolute;
+  width:200%;
+  height:100%;
+  background:url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?fit=crop&w=1600&q=80');
+  background-size:cover;
+  animation:scroll 20s linear infinite;
+}
+
+@keyframes scroll{
+  from{transform:translateX(0)}
+  to{transform:translateX(-50%)}
+}
+
+/* PLAYER */
+#player{
+  position:absolute;
+  left:80px;
+  top:200px;
+  font-size:42px;
+  z-index:10;
+}
+
+/* HUD */
+#hud{
+  position:absolute;
+  top:10px;
+  left:10px;
+  z-index:50;
+}
+
+#center{
+  position:absolute;
+  top:10px;
+  width:100%;
+  text-align:center;
+  font-weight:bold;
+}
+
+/* BOTTOM-RIGHT ACCUMULATOR BAR ("T", BAR, "L") */
+#accumulatorHud{
+  position:absolute;
+  bottom:20px;
+  right:20px;
+  z-index:60;
+  text-align:center;
+  background:rgba(0, 0, 0, 0.7);
+  padding:10px 14px;
+  border-radius:12px;
+  border:2px solid #0074D9;
+}
+#tLabel{
+  font-weight:bold;
+  font-size:16px;
+  margin-bottom:4px;
+}
+#lLabel{
+  font-weight:bold;
+  font-size:16px;
+  margin-top:4px;
+}
+#progressBarContainer{
+  width:120px;
+  height:14px;
+  background:#222;
+  border-radius:7px;
+  overflow:hidden;
+  border:1px solid #555;
+}
+#progressBarFill{
+  width:0%;
+  height:100%;
+  background:#0074D9;
+  transition:width 0.1s linear;
+}
+
+.popup{
+  display:none; 
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:#111;
+  padding:30px;
+  border-radius:16px;
+  text-align:center;
+  z-index:100;
+  width:300px;
+  box-shadow:0 0 25px rgba(0,0,0,0.9);
+  border:2px solid #0074D9;
+}
+
+.popup button{
+  padding:10px 14px;
+  margin:5px;
+  font-size:18px;
+  border:none;
+  border-radius:8px;
+  background:#0074D9;
+  color:white;
+  cursor:pointer;
+}
+
+/* MISS POPUP */
+.miss{
+  position:absolute;
+  top:80px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#ff4d4d;
+  padding:8px 15px;
+  border-radius:8px;
+}
+
+/* OBJECTS */
+.ring,.fruit,.enemy{
+  position:absolute;
+  font-size:30px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<div id="bg"></div>
+
+<div id="player">🍸</div>
+
+<div id="hud">
+R: <span id="score">0.00</span><br>
+❤️ <span id="lives">0</span>
+</div>
+
+<div id="center">
+💍 <span id="rings">0</span>
+</div>
+
+<!-- BOTTOM RIGHT ACCUMULATOR BAR -->
+<div id="accumulatorHud">
+  <div id="tLabel">T</div>
+  <div id="progressBarContainer">
+    <div id="progressBarFill"></div>
+  </div>
+  <div id="lLabel">L</div>
+</div>
+
+<div id="popup" class="popup"></div>
+
+<!-- SOUND EFFECTS -->
+<audio id="bgMusic" src="slidetapper.mp3" loop></audio>
+<audio id="rocketAudio" src="rocket.mp3" preload="auto"></audio>
+<audio id="ghostAudio" src="ghost.mp3" preload="auto"></audio>
+<audio id="flyAudio" src="fly.mp3" preload="auto"></audio>
+<audio id="gloveAudio" src="glove.mp3" preload="auto"></audio>
+
+</div>
+
+<script type="module">
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) {
+    location.reload();
+  }
+});
+import { get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.appspot.com",
+  messagingSenderId: "475447495901",
+  appId: "1:475447495901:web:9189276a162a3680afdf34"
+};
+  
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+let user;
+
+async function saveScore(finalScore){
+  const uid = user.uid;
+  const time = Date.now();
+
+  const snap = await get(ref(db, "users/" + uid));
+  const userData = snap.val();
+
+  const realName = userData?.name 
+    ? userData.name + " " + (userData.surname || "")
+    : "Player";
+
+  const currentSnap = await get(ref(db, "leaderboard/current/" + uid));
+  const currentData = currentSnap.val();
+
+  if(currentData && currentData.score >= finalScore){
+    return; 
+  }
+
+  await set(ref(db, "leaderboard/current/" + uid), {
+    score: Number(finalScore.toFixed(2)),
+    name: realName,
+    timestamp: time
+  });
+
+  await push(ref(db, "highScores/ringmaster/" + uid), {
+    score: Number(finalScore.toFixed(2)),
+    timestamp: time
+  });
+}
+
+/* GAME VARIABLES */
+let y=200, velocity=0;
+let gravity=0.6, jump=-10;
+
+let score=0;        // Main Score (R)
+let barProgress=0;  // Accumulator Bar (target 0.5)
+let gameLives=0;
+
+let rings=0;
+let missed=0;
+
+let running=false;
+let boostActive = false;
+let boostOnScreen = false;
+let boostCooldown = false;
+let boostDuration = 0;
+let speedMultiplier=1;
+
+const player=document.getElementById("player");
+const popup=document.getElementById("popup");
+const game = document.getElementById("game");
+
+// AUDIO ELEMENTS
+const rocketAudio = document.getElementById("rocketAudio");
+const ghostAudio = document.getElementById("ghostAudio");
+const flyAudio = document.getElementById("flyAudio");
+const gloveAudio = document.getElementById("gloveAudio");
+
+function startGame(){
+  running=true;
+  document.getElementById("bgMusic").play().catch(e => console.log("Audio waiting for user interaction."));
+  
+  update();
+  spawnRings();
+  spawnEnemies();    // Fly
+  spawnGhost();      // Ghost
+  spawnFruits();
+  spawnBoost();     
+  spawnRockets();   
+  spawnGlove();     
+}
+
+document.addEventListener("click",(e)=>{
+  if(e.target.closest(".popup")) return; 
+  velocity = jump;
+});
+
+function update(){
+  if(!running) return;
+
+  velocity+=gravity;
+  y+=velocity;
+
+  if(y<0) y=0; 
+
+  if(y>window.innerHeight-80){
+    lose();
+    return;
+  }
+
+  player.style.top=y+"px";
+
+  requestAnimationFrame(update);
+}
+
+function spawnRings(){
+  setInterval(()=>{
+    if(!running) return;
+
+    let r=document.createElement("div");
+    r.className="ring";
+    r.innerText="💍";
+    r.style.left=window.innerWidth+"px";
+    r.style.top=Math.random()*400+"px";
+    r.style.fontSize="60px";
+
+    game.appendChild(r);
+
+    let move=setInterval(()=>{
+      let x=r.offsetLeft-(5*speedMultiplier);
+      r.style.left=x+"px";
+
+      if(hit(r)){
+        r.innerText="🟡"; 
+        addScore(10); // rings add directly or adjust as desired
+        rings++;
+        document.getElementById("rings").innerText=rings;
+
+        setTimeout(()=>r.remove(),100);
+        clearInterval(move);
+      }
+
+      if(x<0 && !boostActive){
+        missed++;
+        showMiss();
+        r.remove();
+        clearInterval(move);
+
+        if(missed>=5) lose();
+      }
+
+    },16);
+
+  },2000);
+}
+
+function showMiss(){
+  let m=document.createElement("div");
+  m.className="miss";
+  m.innerText="MISSED: "+missed;
+  game.appendChild(m);
+
+  setTimeout(()=>m.remove(),800);
+}
+
+/* ADD SCORE & ACCUMULATOR BAR LOGIC */
+function addScore(amount){
+  barProgress += amount;
+  
+  // Check if bar is full (reaches 0.5)
+  if(barProgress >= 0.5){
+    let surplus = barProgress - 0.5;
+    score += 0.5;
+    score = Number(score.toFixed(2));
+    barProgress = surplus; // carry over remaining progress
+    document.getElementById("score").innerText = score.toFixed(2);
+  }
+
+  // Update visual fill of accumulator bar (capped at 100% for 0.5 max)
+  let percentage = Math.min((barProgress / 0.5) * 100, 100);
+  document.getElementById("progressBarFill").style.width = percentage + "%";
+}
+
+/* =====================
+   🪰 FLY ENEMY (Every 9 seconds)
+===================== */
+function spawnEnemies() {
+  setInterval(() => {
+    if (!running) return;
+
+    let e = document.createElement("div");
+    e.className = "enemy";
+    e.innerText = "🪰";
+    e.style.left = window.innerWidth + "px";
+    let baseY = 200;
+    e.style.top = baseY + "px";
+    e.style.position = "absolute";
+
+    game.appendChild(e);
+
+    // Play Fly sound
+    flyAudio.currentTime = 0;
+    flyAudio.play().catch(e=>{});
+
+    let angle = 0;
+
+    let move = setInterval(() => {
+      let speed = window.innerWidth / 250; 
+      
+      e.style.left = (e.offsetLeft - speed) + "px";
+      angle += 0.15; 
+      let waveOffset = Math.sin(angle) * -100; 
+      e.style.top = (baseY + waveOffset) + "px";
+
+      let slope = Math.cos(angle) * -1; 
+      let rotation = slope * 45; 
+      let wiggle = Math.sin(Date.now() * 0.05) * 5;
+
+      e.style.transform = `rotate(${rotation + wiggle}deg)`;
+
+      if (hit(e)) {
+        if (!boostActive) {
+          lose();
+        } else {
+          e.remove();
+          clearInterval(move);
+          flyAudio.pause();
+        }
+      }
+
+      if (e.offsetLeft < -50) {
+        e.remove();
+        clearInterval(move);
+        flyAudio.pause();
+      }
+    }, 16);
+
+  }, 9000);
+}
+
+/* =====================
+   👻 GHOST ENEMY
+   - Zig-zags like the fly targeting the player
+   - When 2 seconds away from player, shoots straight to disappear on left
+   - Total duration: 4 seconds from right to left
+   - Deducts 1/3 of score above on contact
+===================== */
+function spawnGhost() {
+  setInterval(() => {
+    if (!running) return;
+
+    let g = document.createElement("div");
+    g.className = "enemy";
+    g.innerText = "👻";
+    
+    const startX = window.innerWidth;
+    let baseY = Math.random() * 300 + 100;
+    g.style.left = startX + "px";
+    g.style.top = baseY + "px";
+    g.style.position = "absolute";
+
+    game.appendChild(g);
+
+    // Play Ghost sound
+    ghostAudio.currentTime = 0;
+    ghostAudio.play().catch(e=>{});
+
+    let startTime = Date.now();
+    const duration = 4000; // 4 seconds total
+    let angle = 0;
+    let shootingStraight = false;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = startX;
+    let currentY = baseY;
+
+    let move = setInterval(() => {
+      let elapsed = Date.now() - startTime;
+      let progress = elapsed / duration;
+
+      if (progress >= 1 || currentX < -50) {
+        g.remove();
+        clearInterval(move);
+        ghostAudio.pause();
+        return;
+      }
+
+      // Check if we are within 2 seconds of the end (i.e. elapsed >= 2000ms)
+      if (!shootingStraight && elapsed >= 2000) {
+        shootingStraight = true;
+        // Lock onto player position for direct straight line exit
+        let pRect = player.getBoundingClientRect();
+        targetX = -60;
+        targetY = pRect.top;
+      }
+
+      if (!shootingStraight) {
+        // Zig-zag movement like the fly
+        currentX -= (window.innerWidth / 200);
+        angle += 0.15;
+        let waveOffset = Math.sin(angle) * 80;
+        currentY = baseY + waveOffset;
+      } else {
+        // Shoot straight toward left boundary
+        let dx = -80 - currentX;
+        let dy = targetY - currentY;
+        currentX += dx * 0.1;
+        currentY += dy * 0.1;
+      }
+
+      g.style.left = currentX + "px";
+      g.style.top = currentY + "px";
+
+      if (hit(g)) {
+        // Deduct 1/3 of score above (can go negative)
+        score -= (score / 3);
+        score = Number(score.toFixed(2));
+        document.getElementById("score").innerText = score.toFixed(2);
+
+        g.innerText = "💥";
+        setTimeout(() => g.remove(), 200);
+        clearInterval(move);
+        ghostAudio.pause();
+      }
+    }, 16);
+
+  }, 12000); // interval frequency for ghost spawn
+}
+
+/* =====================
+   🍓 FRUITS (Berry, Strawberry, Banana, Watermelon)
+===================== */
+function spawnFruits(){
+
+const fruits=[
+  {emoji:"🫐", points:0.01, interval:3500},
+  {emoji:"🍓", points:0.02, interval:6500},
+  {emoji:"🍌", points:0.04, interval:10000},
+  {emoji:"🍉", points:0.20, interval:15000}
+];
+
+fruits.forEach(f=>{
+  setInterval(()=>{
+    if(!running) return;
+
+    let el=document.createElement("div");
+    el.className="fruit";
+    el.innerText=f.emoji;
+    el.style.left=window.innerWidth+"px";
+    el.style.top=Math.random()*350+"px";
+
+    game.appendChild(el);
+
+    let move=setInterval(()=>{
+
+      if(boostActive){
+        let px = player.offsetLeft;
+        let py = player.offsetTop;
+
+        let dx = px - el.offsetLeft;
+        let dy = py - el.offsetTop;
+
+        el.style.left = (el.offsetLeft + dx * 0.1) + "px";
+        el.style.top  = (el.offsetTop + dy * 0.1) + "px";
+      }else{
+        el.style.left=(el.offsetLeft-(3*speedMultiplier))+"px";
+      }
+
+      if(hit(el)){
+        addScore(f.points);
+        el.remove();
+        clearInterval(move);
+      }
+
+      if(el.offsetLeft<0){
+        el.remove();
+        clearInterval(move);
+      }
+
+    },16);
+
+  },f.interval);
+});
+
+}
+  
+function spawnBoost(){
+  setInterval(()=>{
+    if(!running) return;
+    if(boostActive || boostOnScreen || boostCooldown) return;
+
+    let rand = Math.random();
+    let type;
+    if(rand < 0.6) type = "red";   
+    else if(rand < 0.9) type = "blue";  
+    else type = "gold";  
+
+    let config = {
+      red:  {emoji:"🔴", duration:7000},
+      blue: {emoji:"🔵", duration:14000},
+      gold: {emoji:"🟡", duration:25000}
+    };
+
+    let b=document.createElement("div");
+    b.innerText=config[type].emoji;
+    b.className="fruit";
+    b.style.left=window.innerWidth+"px";
+    b.style.top=Math.random()*300+"px";
+
+    game.appendChild(b);
+    boostOnScreen = true;
+
+    let move=setInterval(()=>{
+      b.style.left=(b.offsetLeft-4)+"px";
+
+      if(hit(b)){
+        activateBoost(config[type].duration);
+        b.remove();
+        boostOnScreen = false;
+        clearInterval(move);
+      }
+
+      if(b.offsetLeft<0){
+        b.remove();
+        boostOnScreen = false;
+        clearInterval(move);
+      }
+
+    },16);
+
+  },18000);
+}
+
+function activateBoost(duration){
+  if(boostActive) return;
+
+  boostActive = true;
+  boostCooldown = true;
+  boostDuration = duration;
+  missed = 0;
+  player.innerText="🦅";
+  speedMultiplier = 2;
+
+  setTimeout(()=>{
+    boostActive = false;
+    player.innerText="🍸";
+    speedMultiplier = 1;
+
+    setTimeout(()=>{
+      boostCooldown = false;
+    },20000);
+
+  },boostDuration);
+}
+
+/* =====================
+   🚀 ROCKET (Every 7 seconds)
+===================== */
+function spawnRockets() {
+  setInterval(() => {
+    if (!running) return;
+
+    let r = document.createElement("div");
+    r.className = "enemy";
+    r.innerText = "🚀";
+    
+    const startX = window.innerWidth;
+    const bottomY = window.innerHeight - 150; 
+    const peakHeight = 400; 
+    
+    r.style.left = startX + "px";
+    r.style.top = bottomY + "px";
+    r.style.position = "absolute"; 
+    game.appendChild(r);
+
+    // Play Rocket sound
+    rocketAudio.currentTime = 0;
+    rocketAudio.play().catch(e=>{});
+
+    let startTime = Date.now();
+    const duration = 3700; 
+
+    let move = setInterval(() => {
+      let elapsed = Date.now() - startTime;
+      let progress = elapsed / duration; 
+
+      if (progress >= 1) {
+        r.remove();
+        clearInterval(move);
+        rocketAudio.pause();
+        return;
+      }
+
+      let currentX = startX - (progress * (startX + 100));
+      r.style.left = currentX + "px";
+
+      let curve = 4 * progress * (1 - progress); 
+      let currentY = bottomY - (curve * peakHeight);
+      r.style.top = currentY + "px";
+
+      let tilt = (progress < 0.5) ? -45 : 45; 
+      let wiggle = Math.sin(Date.now() * 0.02) * 10; 
+
+      r.style.transform = `scaleX(-1) rotate(${tilt + wiggle}deg)`;
+
+      if (hit(r)) {
+        r.innerText = "💥";
+        setTimeout(() => r.remove(), 200);
+        clearInterval(move);
+        rocketAudio.pause();
+        if (!boostActive) {
+          lose();
+        }
+      }
+    }, 16);
+  }, 7000);
+}
+
+/* =====================
+   🥊 BOXING GLOVE ENEMY (Every 10 seconds)
+===================== */
+function spawnGlove() {
+  const launchInterval = 10000; // 10 seconds loop trigger
+
+  function triggerGloveCycle() {
+    if (!running) {
+      setTimeout(triggerGloveCycle, 1000);
+      return;
+    }
+
+    let laser = document.createElement("div");
+    laser.style.position = "absolute";
+    laser.style.height = "2px";
+    laser.style.backgroundColor = "red";
+    laser.style.boxShadow = "0 0 8px red";
+    laser.style.zIndex = "40";
+    game.appendChild(laser);
+
+    let targetX = 0;
+    let targetY = 0;
+    let laserStartTime = Date.now();
+    const laserDuration = 3000; 
+
+    let trackingInterval = setInterval(() => {
+      if (!running) {
+        laser.remove();
+        clearInterval(trackingInterval);
+        return;
+      }
+
+      let elapsed = Date.now() - laserStartTime;
+      if (elapsed < laserDuration) {
+        let pRect = player.getBoundingClientRect();
+        targetX = pRect.left + pRect.width / 2;
+        targetY = pRect.top + pRect.height / 2;
+
+        let startX = window.innerWidth;
+        let startY = targetY;
+        
+        let dx = targetX - startX;
+        let dy = targetY - startY;
+        let distance = Math.sqrt(dx * dx + dy * dy);
+        let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+        laser.style.width = distance + "px";
+        laser.style.left = startX + "px";
+        laser.style.top = startY + "px";
+        laser.style.transformOrigin = "0 0";
+        laser.style.transform = `rotate(${angle}deg)`;
+      } else {
+        laser.remove();
+        clearInterval(trackingInterval);
+        launchGlovePunch(targetX, targetY);
+      }
+    }, 16);
+  }
+
+  setTimeout(triggerGloveCycle, launchInterval);
+}
+
+function launchGlovePunch(finalTargetX, finalTargetY) {
+  if (!running) return;
+
+  let g = document.createElement("div");
+  g.className = "enemy";
+  g.innerText = "🥊";
+  g.style.position = "absolute";
+  g.style.fontSize = "30px"; 
+
+  const startX = window.innerWidth;
+  const startY = finalTargetY;
+
+  g.style.left = startX + "px";
+  g.style.top = startY + "px";
+  game.appendChild(g);
+
+  // Play Glove sound
+  gloveAudio.currentTime = 0;
+  gloveAudio.play().catch(e=>{});
+
+  let startTime = Date.now();
+  const duration = 3700; 
+
+  let punchInterval = setInterval(() => {
+    if (!running) {
+      g.remove();
+      clearInterval(punchInterval);
+      gloveAudio.pause();
+      return;
+    }
+
+    let elapsed = Date.now() - startTime;
+    let progress = elapsed / duration;
+
+    if (progress >= 1 || g.offsetLeft < -100 || g.offsetTop < -100 || g.offsetTop > window.innerHeight + 100) {
+      g.remove();
+      clearInterval(punchInterval);
+      gloveAudio.pause();
+      setTimeout(spawnGloveNextCycle, 10000);
+      return;
+    }
+
+    let currentX = startX + (finalTargetX - startX) * progress;
+    let currentY = startY + (finalTargetY - startY) * progress;
+
+    g.style.left = currentX + "px";
+    g.style.top = currentY + "px";
+
+    let dx = finalTargetX - startX;
+    let dy = finalTargetY - startY;
+    let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90; 
+
+    let scaleMultiplier = 1 + Math.floor(progress * 4) * 0.35; 
+    if(scaleMultiplier > 2) scaleMultiplier = 2; 
+
+    g.style.transform = `rotate(${angle}deg) scale(${scaleMultiplier})`;
+
+    if (hit(g)) {
+      g.innerText = "💥";
+      setTimeout(() => g.remove(), 200);
+      clearInterval(punchInterval);
+      gloveAudio.pause();
+      if (!boostActive) {
+        lose();
+      } else {
+        setTimeout(spawnGloveNextCycle, 10000);
+      }
+    }
+  }, 16);
+}
+
+function spawnGloveNextCycle() {
+  if (!running) return;
+  
+  let laser = document.createElement("div");
+  laser.style.position = "absolute";
+  laser.style.height = "2px";
+  laser.style.backgroundColor = "red";
+  laser.style.boxShadow = "0 0 8px red";
+  laser.style.zIndex = "40";
+  game.appendChild(laser);
+
+  let targetX = 0;
+  let targetY = 0;
+  let laserStartTime = Date.now();
+  const laserDuration = 3000;
+
+  let trackingInterval = setInterval(() => {
+    if (!running) {
+      laser.remove();
+      clearInterval(trackingInterval);
+      return;
+    }
+
+    let elapsed = Date.now() - laserStartTime;
+    if (elapsed < laserDuration) {
+      let pRect = player.getBoundingClientRect();
+      targetX = pRect.left + pRect.width / 2;
+      targetY = pRect.top + pRect.height / 2;
+
+      let startX = window.innerWidth;
+      let startY = targetY;
+      
+      let dx = targetX - startX;
+      let dy = targetY - startY;
+      let distance = Math.sqrt(dx * dx + dy * dy);
+      let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+      laser.style.width = distance + "px";
+      laser.style.left = startX + "px";
+      laser.style.top = startY + "px";
+      laser.style.transformOrigin = "0 0";
+      laser.style.transform = `rotate(${angle}deg)`;
+    } else {
+      laser.remove();
+      clearInterval(trackingInterval);
+      launchGlovePunch(targetX, targetY);
+    }
+  }, 16);
+}
+
+function hit(el){
+  let a=player.getBoundingClientRect();
+  let b=el.getBoundingClientRect();
+
+  return !(a.right<b.left||a.left>b.right||a.bottom<b.top||a.top>b.bottom);
+}
+
+function lose(){
+  running=false;
+
+  if(gameLives>0){
+    popup.style.display="block";
+    popup.innerHTML=`
+      <h2>💔 Continue?</h2>
+      <button onclick="cont()">YES (-1)</button>
+      <button onclick="exit()">EXIT</button>
+    `;
+  }else{
+    endGame();
+  }
+}
+
+window.cont=()=>{
+  gameLives--;
+  missed=0; 
+  document.getElementById("lives").innerText=gameLives;
+  popup.style.display="none";
+  y=200;
+  velocity=0;
+  running=true;
+  update();
+};
+
+window.exit=()=>endGame();
+
+async function endGame(){
+  await saveScore(score); 
+
+  popup.style.display="block";
+  popup.innerHTML=`
+    <h2>FINAL SCORE</h2>
+    <h1>${score.toFixed(2)}</h1>
+    <button onclick="goMenu()">OK</button>
+  `;
+}
+
+window.goMenu = ()=>{
+  location.href="slide.html";
+};
+
+onAuthStateChanged(auth, (u)=>{
+  if(!u){
+    location.href="index.html";
+    return;
+  }
+
+  user = u;
+
+  let selected = parseInt(localStorage.getItem("selectedLives")) || 0;
+  localStorage.removeItem("selectedLives");
+
+  if(selected <= 0){
+    location.href = "slide.html";
+    return;
+  }
+
+  gameLives = selected - 1;
+  document.getElementById("lives").innerText = gameLives;
+
+  startGame();
+});
+</script>
+
+</body>
+</html>
