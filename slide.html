@@ -6,7 +6,7 @@
 <title>SPACE GLASS - Main Menu</title>
 
 <style>
-- {
+* {
   box-sizing: border-box;
 }
 
@@ -168,6 +168,7 @@ body {
 <div id="profile" onclick="location.href='profile.html'"></div>
 <div id="winnersTab" onclick="openActiveWinnerModal()">WINNERS</div>
   
+<div class="menu-container">
   <div class="tab" id="playBtn">
     PLAY
   </div>
@@ -259,7 +260,6 @@ document.getElementById("playBtn").onclick = async ()=>{
     return;
   }
 
-  // Lives check removed – navigates straight to life-selector.html
   location.href = "life-selector.html";
 };
 </script>
