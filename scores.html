@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Leaderboard - Player Claims</title>
 
 <style>
@@ -11,13 +12,17 @@ body{
   color:white;
   font-family:Arial;
   text-align:center;
+  padding: 12px;
 }
 
-/* ✅ SAME AS ADMIN */
-#date, #timer{
-  font-size:42px;
-  margin:10px;
+#header-title{
+  font-size:36px;
+  margin:15px 0;
   font-weight:bold;
+  color: #00f0ff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(0,240,255,0.6);
 }
 
 #content{
@@ -25,23 +30,32 @@ body{
   grid-template-columns: repeat(3, 1fr);
   gap:10px;
   padding:10px;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .card{
   background:#002b55;
-  padding:15px;
+  padding:15px 10px;
   border-radius:10px;
-  font-size:20px;
+  border: 1px solid #004080;
   display:flex;
   flex-direction:column;
   align-items:center;
+  justify-content:space-between;
   gap:8px;
 }
 
 .score-text{
   color: gold;
   font-weight: bold;
-  font-size: 22px;
+  font-size: 20px;
+}
+
+.card small{
+  color: #c8eaff;
+  font-size: 11px;
+  line-height: 1.3;
 }
 
 /* CLAIM BUTTONS */
@@ -49,11 +63,12 @@ body{
   background: #28a745;
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 8px 12px;
   border-radius: 6px;
   font-weight: bold;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
+  width: 100%;
   transition: background 0.2s;
 }
 .claim-btn:hover{
@@ -64,19 +79,20 @@ body{
   background: #6c757d;
   color: #d6d6d6;
   border: none;
-  padding: 8px 16px;
+  padding: 8px 12px;
   border-radius: 6px;
   font-weight: bold;
   cursor: not-allowed;
-  font-size: 14px;
+  font-size: 13px;
+  width: 100%;
 }
 
 .insufficient-lbl{
   color: #adb5bd;
-  font-size: 14px;
+  font-size: 11px;
   font-style: italic;
   font-weight: bold;
-  padding: 4px;
+  padding: 6px;
 }
 
 #popup{
@@ -84,135 +100,53 @@ body{
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  background:white;
-  color:green;
-  padding:40px;
-  font-size:30px;
+  background:#111;
+  color:#a8ffbf;
+  border: 2px solid #28a745;
+  padding:30px;
+  font-size:22px;
   display:none;
-  border-radius:10px;
+  border-radius:12px;
   z-index: 1000;
-  box-shadow: 0 0 20px rgba(0,0,0,0.5);
-}
-
-#rank{
-  position:fixed;
-  bottom:10px;
-  left:10px;
-  font-size:20px;
+  box-shadow: 0 0 25px rgba(0,0,0,0.9);
 }
 </style>
 </head>
 
 <body>
 
-<!-- ✅ MATCHES ADMIN -->
-<div id="date"></div>
-<div id="timer"></div>
+<div id="header-title">EARNINGS</div>
 
 <div id="content"></div>
-<div id="rank">RANK: N/A</div>
 <div id="popup"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, get, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, onValue, set, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.appspot.com"
 });
 
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-let currentUser = null;
-let resetLock = false;
-
-onAuthStateChanged(auth,(u)=>{
+onAuthStateChanged(auth, (u) => {
   if(!u) {
-    location.href="index.html";
+    location.href = "index.html";
     return;
   }
-  currentUser = u;
-  initPlayerLeaderboard(u.uid);
+  initPlayerEarnings(u.uid);
 });
 
-/* ✅ FULL DATE + TIMER */
-function updateTime(){
-  let now = new Date();
-
-  document.getElementById("date").innerText =
-    now.toLocaleDateString() + " " + now.toLocaleTimeString();
-
-  let end = new Date();
-
-  if(now.getHours() < 17){
-    end.setHours(17,30,0,0);
-  } else {
-    end.setDate(end.getDate()+1);
-    end.setHours(5,30,0,0);
-  }
-
-  let diff = end - now;
-
-  let h = Math.floor(diff/1000/60/60);
-  let m = Math.floor((diff/1000/60)%60);
-
-  document.getElementById("timer").innerText = `${h}H:${m}M`;
-}
-setInterval(updateTime,1000);
-
-/* 🔥 RESET SYSTEM */
-async function checkReset(){
-  let now = new Date();
-  let h = now.getHours();
-  let m = now.getMinutes();
-
-  let isResetTime =
-    (h === 5 && m === 30) ||
-    (h === 17 && m === 30);
-
-  if(!isResetTime){
-    resetLock = false;
-    return;
-  }
-
-  if(resetLock) return;
-  resetLock = true;
-
-  const lastResetSnap = await get(ref(db,"admin/lastReset"));
-  const lastReset = lastResetSnap.val();
-  const currentKey = `${h}:${m}`;
-
-  if(lastReset === currentKey) return;
-
-  const snap = await get(ref(db,"leaderboard/ringmaster"));
-  const data = snap.val();
-
-  if(data){
-    await set(ref(db,"leaderboard/adminHistory/"+Date.now()), data);
-  }
-
-  await set(ref(db,"leaderboard/current"), null);
-  await set(ref(db,"admin/lastReset"), currentKey);
-
-  let popupEl = document.getElementById("popup");
-  popupEl.innerText="RESET!";
-  popupEl.style.display="block";
-
-  setTimeout(()=>{
-    popupEl.style.display="none";
-  },2000);
-}
-setInterval(checkReset,1000);
-
-/* 📊 PERSONALIZED PLAYER LEADERBOARD & CLAIM SYSTEM */
-function initPlayerLeaderboard(uid){
+function initPlayerEarnings(uid){
   const content = document.getElementById("content");
-  const rankEl = document.getElementById("rank");
 
-  // Listen to the user's high score history / entries or specific path
   onValue(ref(db, "highScores/ringmaster/" + uid), snap => {
     const data = snap.val() || {};
     let arr = [];
@@ -226,21 +160,21 @@ function initPlayerLeaderboard(uid){
       });
     }
 
-    // Sort newest or highest first
-    arr.sort((a,b) => b.time - a.time);
+    // Sort newest first
+    arr.sort((a, b) => b.time - a.time);
 
     content.innerHTML = "";
 
     if(arr.length === 0){
-      content.innerHTML = "<div class='card' style='grid-column: span 3;'>No game scores recorded yet. Play a game to see your scores here!</div>";
-      rankEl.innerText = "RANK: N/A";
+      content.innerHTML = "<div class='card' style='grid-column: span 3;'>No game scores recorded yet. Play Ring-Master to generate earnings!</div>";
       return;
     }
 
-    rankEl.innerText = "TOTAL RECORDED SCORES: " + arr.length;
+    arr.forEach((item) => {
+      let dateObj = new Date(item.time);
+      let dateStr = dateObj.toLocaleDateString();
+      let timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    arr.forEach((item, i)=>{
-      let date = new Date(item.time).toLocaleString();
       let div = document.createElement("div");
       div.className = "card";
 
@@ -253,12 +187,12 @@ function initPlayerLeaderboard(uid){
           actionHTML = `<button class="claim-btn" data-id="${item.id}" data-score="${item.score}">CLAIM</button>`;
         }
       } else {
-        actionHTML = `<span class="insufficient-lbl">INSUFFICIENT</span>`;
+        actionHTML = `<span class="insufficient-lbl">Insufficient Funds</span>`;
       }
 
       div.innerHTML = `
         <div class="score-text">R ${item.score.toFixed(2)}</div>
-        <small>${date}</small>
+        <small>${dateStr}<br>${timeStr}</small>
         ${actionHTML}
       `;
 
@@ -280,7 +214,7 @@ function initPlayerLeaderboard(uid){
           // 1. Mark score as claimed in highScores history
           await set(ref(db, `highScores/ringmaster/${uid}/${entryId}/claimed`), true);
 
-          // 2. Add amount to wallet cash balance securely via transaction
+          // 2. Add amount securely to wallet cash balance via transaction
           const walletRef = ref(db, `wallet/${uid}`);
           await runTransaction(walletRef, (currentWallet) => {
             if(!currentWallet) currentWallet = { cashBalance: 0, lives: 0 };
@@ -296,7 +230,7 @@ function initPlayerLeaderboard(uid){
           let popupEl = document.getElementById("popup");
           popupEl.innerText = `Successfully Claimed R ${claimAmount.toFixed(2)}!`;
           popupEl.style.display = "block";
-          setTimeout(()=>{
+          setTimeout(() => {
             popupEl.style.display = "none";
           }, 2000);
 
