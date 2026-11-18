@@ -125,11 +125,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebas
 import { getDatabase, ref, onValue, set, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-const app = initializeApp({
+// ✅ Config fully matched with storageBucket
+const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
-});
+  authDomain: "tose-ccf8f.firebaseapp.com",
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tose-ccf8f",
+  storageBucket: "tose-ccf8f.appspot.com",
+  messagingSenderId: "475447495901",
+  appId: "1:475447495901:web:9189276a162a3680afdf34"
+};
 
+const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
@@ -144,7 +151,7 @@ onAuthStateChanged(auth, (u) => {
 function initPlayerEarnings(uid){
   const content = document.getElementById("content");
 
-  // ✅ Listens to the player's earnings ledger where every session score is pushed
+  // ✅ Listens to player earnings path securely
   onValue(ref(db, "earnings/" + uid), snap => {
     const data = snap.val() || {};
     let arr = [];
