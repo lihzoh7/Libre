@@ -127,10 +127,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 
 const app = initializeApp({
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  authDomain: "tose-ccf8f.firebaseapp.com",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tose-ccf8f",
-  storageBucket: "tose-ccf8f.appspot.com"
+  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
 });
 
 const db = getDatabase(app);
@@ -147,7 +144,8 @@ onAuthStateChanged(auth, (u) => {
 function initPlayerEarnings(uid){
   const content = document.getElementById("content");
 
-  onValue(ref(db, "highScores/ringmaster/" + uid), snap => {
+  // ✅ Listens to the exact database path where the game writes earnings entries
+  onValue(ref(db, "earnings/" + uid), snap => {
     const data = snap.val() || {};
     let arr = [];
 
@@ -211,8 +209,8 @@ function initPlayerEarnings(uid){
         btn.textContent = "CLAIMING...";
 
         try {
-          // 1. Mark score as claimed in highScores history
-          await set(ref(db, `highScores/ringmaster/${uid}/${entryId}/claimed`), true);
+          // 1. Mark score as claimed in earnings history
+          await set(ref(db, `earnings/${uid}/${entryId}/claimed`), true);
 
           // 2. Add amount securely to wallet cash balance via transaction
           const walletRef = ref(db, `wallet/${uid}`);
