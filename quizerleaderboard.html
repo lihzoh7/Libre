@@ -3,276 +3,210 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quizer Earnings & Leaderboard</title>
-
+<title>Quizer Earnings & Claims</title>
 <style>
-body {
-  margin: 0;
-  background: radial-gradient(circle at center, #1a0000 0%, #000000 100%);
-  color: #ffffff;
-  font-family: 'Segoe UI', Arial, sans-serif;
-  text-align: center;
-  min-height: 100vh;
-  padding-bottom: 40px;
-}
-
-h1.page-title {
-  color: #ff3333;
-  margin-top: 25px;
-  font-size: 32px;
-  letter-spacing: 2px;
-  text-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
-}
-
-#content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 20px;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.card {
-  background: linear-gradient(135deg, #1f0505 0%, #0d0000 100%);
-  padding: 18px 22px;
-  border-radius: 12px;
-  font-size: 20px;
-  border: 1px solid #400000;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
-}
-
-.card-info {
-  text-align: left;
-}
-
-.card-info .score-val {
-  font-size: 24px;
-  font-weight: bold;
-  color: #ffcccc;
-}
-
-.card-info .time-val {
-  font-size: 13px;
-  color: #888;
-  margin-top: 4px;
-}
-
-/* CLAIM / INSUFFICIENT BUTTON STYLES */
-.claim-btn {
-  padding: 10px 20px;
-  font-size: 16px;
-  font-weight: bold;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-transform: uppercase;
-}
-
-.claim-btn.claimable {
-  background: #28a745;
-  color: white;
-  box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
-}
-
-.claim-btn.claimable:hover {
-  background: #218838;
-}
-
-.claim-btn.claimed {
-  background: #444;
-  color: #aaa;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.claim-btn.insufficient {
-  background: #333;
-  color: #777;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-#popup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #28a745;
-  color: white;
-  padding: 25px 40px;
-  font-size: 24px;
-  font-weight: bold;
-  display: none;
-  border-radius: 15px;
-  box-shadow: 0 0 30px rgba(40,167,69,0.8);
-  z-index: 10000;
-}
+  body {
+    margin: 0;
+    background: #001f3f;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 12px;
+  }
+  #header-title {
+    font-size: 32px;
+    margin: 15px 0;
+    font-weight: bold;
+    color: #00f0ff;
+    text-transform: uppercase;
+  }
+  #content {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 10px;
+    max-width: 650px;
+    margin: 0 auto;
+  }
+  .card {
+    background: #002b55;
+    padding: 15px 10px;
+    border-radius: 10px;
+    border: 1px solid #004080;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .score-text {
+    color: gold;
+    font-weight: bold;
+    font-size: 20px;
+  }
+  .card small {
+    color: #c8eaff;
+    font-size: 11px;
+    line-height: 1.3;
+  }
+  .claim-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 13px;
+    width: 100%;
+  }
+  .claim-btn:hover { background: #218838; }
+  .claimed-btn {
+    background: #6c757d;
+    color: #d6d6d6;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: not-allowed;
+    font-size: 13px;
+    width: 100%;
+  }
+  .insufficient-lbl {
+    color: #adb5bd;
+    font-size: 11px;
+    font-style: italic;
+    font-weight: bold;
+    padding: 6px;
+  }
+  #popup {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #111;
+    color: #a8ffbf;
+    border: 2px solid #28a745;
+    padding: 30px;
+    font-size: 20px;
+    display: none;
+    border-radius: 12px;
+    z-index: 1000;
+  }
 </style>
 </head>
-
 <body>
 
-<h1 class="page-title">EARNINGS</h1>
-
+<div id="header-title">Quizer Earnings & Claims</div>
 <div id="content"></div>
-<div id="popup">Claimed Successfully!</div>
+<div id="popup"></div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, onValue, runTransaction, get, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-const app = initializeApp({
-  apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
-  databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app"
-});
+  const firebaseConfig = {
+    apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
+    authDomain: "tose-ccf8f.firebaseapp.com",
+    databaseURL: "https://tose-ccf8f-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "tose-ccf8f",
+    storageBucket: "tose-ccf8f.appspot.com",
+  };
 
-const db = getDatabase(app);
-const auth = getAuth(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
 
-let currentUser = null;
-const content = document.getElementById("content");
-const popup = document.getElementById("popup");
-
-onAuthStateChanged(auth, (u) => {
-  if(!u) {
-    location.href = "index.html";
-    return;
-  }
-  currentUser = u;
-  loadPlayerEarnings(u.uid);
-});
-
-function showPopup(msg) {
-  popup.innerText = msg;
-  popup.style.display = "block";
-  setTimeout(() => {
-    popup.style.display = "none";
-  }, 2000);
-}
-
-function loadPlayerEarnings(uid) {
-  // Listen to the specific player's high scores log / history
-  onValue(ref(db, "highScores/ringmaster/" + uid), (snap) => {
-    const data = snap.val() || {};
-    content.innerHTML = "";
-
-    let entries = [];
-    for (let key in data) {
-      entries.push({
-        id: key,
-        score: Number(data[key].score) || 0,
-        timestamp: data[key].timestamp || Date.now(),
-        claimed: data[key].claimed || false
-      });
-    }
-
-    // Sort newest first
-    entries.sort((a, b) => b.timestamp - a.timestamp);
-
-    if (entries.length === 0) {
-      content.innerHTML = `<div style="color: #777; font-size: 18px; margin-top: 40px;">No earnings recorded yet. Play the game to generate scores!</div>`;
-      return;
-    }
-
-    entries.forEach((entry) => {
-      let card = document.createElement("div");
-      card.className = "card";
-
-      let formattedDate = new Date(entry.timestamp).toLocaleString();
-      let formattedScore = `R ${entry.score.toFixed(2)}`;
-
-      let btnClass = "";
-      let btnText = "";
-      let isDisabled = false;
-
-      if (entry.claimed) {
-        btnClass = "claimbtn claimed";
-        btnText = "Claimed";
-        isDisabled = true;
-      } else if (entry.score > 0) {
-        btnClass = "claimbtn claimable";
-        btnText = "Claim";
-        isDisabled = false;
-      } else {
-        btnClass = "claimbtn insufficient";
-        btnText = "Insufficient";
-        isDisabled = true;
-      }
-
-      card.innerHTML = `
-        <div class="card-info">
-          <div class="score-val">${formattedScore}</div>
-          <div class="time-val">${formattedDate}</div>
-        </div>
-        <div>
-          <button class="claim-btn ${btnClass}" ${isDisabled ? "disabled" : ""} data-id="${entry.id}" data-score="${entry.score}">
-            ${btnText}
-          </button>
-        </div>
-      `;
-
-      // Attach event listener for claim button
-      const btn = card.querySelector("button");
-      if (!isDisabled) {
-        btn.addEventListener("click", () => claimScore(entry.id, entry.score));
-      }
-
-      content.appendChild(card);
-    });
+  onAuthStateChanged(auth, (u) => {
+    if(!u) { location.href = "login.html"; return; }
+    loadEarnings(u.uid);
   });
-}
 
-async function claimScore(scoreKey, scoreAmount) {
-  if (!currentUser) return;
-  const uid = currentUser.uid;
+  function loadEarnings(uid) {
+    const content = document.getElementById("content");
 
-  try {
-    const scoreRef = ref(db, `highScores/ringmaster/${uid}/${scoreKey}`);
-    const walletRef = ref(db, `wallet/${uid}`);
+    onValue(ref(db, "earnings/" + uid), snap => {
+      const data = snap.val() || {};
+      let arr = [];
 
-    // Verify score is unclaimed and update wallet & claim status atomically or sequentially
-    const scoreSnap = await get(scoreRef);
-    if (!scoreSnap.exists() || scoreSnap.val().claimed) {
-      alert("This reward has already been claimed or does not exist.");
-      return;
-    }
-
-    // Update wallet cash balance
-    await runTransaction(walletRef, (walletData) => {
-      if (!walletData) {
-        walletData = { cashBalance: 0, lives: 0 };
+      for(let id in data) {
+        arr.push({ id, ...data[id] });
       }
-      let currentBalance = Number(walletData.cashBalance) || 0;
-      return {
-        ...walletData,
-        cashBalance: Number((currentBalance + scoreAmount).toFixed(2)),
-        updatedAt: new Date().toISOString()
-      };
+      arr.sort((a, b) => b.timestamp - a.timestamp);
+
+      content.innerHTML = "";
+      if(arr.length === 0) {
+        content.innerHTML = "<div class='card' style='grid-column: span 3;'>No earnings recorded yet!</div>";
+        return;
+      }
+
+      arr.forEach(item => {
+        let scoreVal = Number(item.score || 0);
+        let dateObj = new Date(item.timestamp);
+        let dateStr = dateObj.toLocaleDateString();
+        let timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        let div = document.createElement("div");
+        div.className = "card";
+
+        let actionHTML = "";
+        if (scoreVal > 0) {
+          if (item.claimed) {
+            actionHTML = `<button class="claimed-btn" disabled>CLAIMED</button>`;
+          } else {
+            actionHTML = `<button class="claim-btn" data-id="${item.id}" data-score="${scoreVal}">CLAIM</button>`;
+          }
+        } else {
+          actionHTML = `<span class="insufficient-lbl">Insufficient Funds</span>`;
+        }
+
+        div.innerHTML = `
+          <div class="score-text">R ${scoreVal.toFixed(2)}</div>
+          <small>${dateStr}<br>${timeStr}</small>
+          ${actionHTML}
+        `;
+        content.appendChild(div);
+      });
+
+      document.querySelectorAll(".claim-btn").forEach(btn => {
+        btn.onclick = async (e) => {
+          let entryId = e.target.getAttribute("data-id");
+          let claimAmount = parseFloat(e.target.getAttribute("data-score"));
+
+          btn.disabled = true;
+          btn.textContent = "CLAIMING...";
+
+          try {
+            // 1. Mark as claimed in earnings
+            await set(ref(db, `earnings/${uid}/${entryId}/claimed`), true);
+
+            // 2. Add amount to wallet balance via transaction
+            const walletRef = ref(db, `wallet/${uid}`);
+            await runTransaction(walletRef, (currentWallet) => {
+              if(!currentWallet) currentWallet = { cashBalance: 0, lives: 0 };
+              let currentBalance = Number(currentWallet.cashBalance || 0);
+              return {
+                ...currentWallet,
+                cashBalance: currentBalance + claimAmount,
+                updatedAt: new Date().toISOString()
+              };
+            });
+
+            let pop = document.getElementById("popup");
+            pop.innerText = `Claimed R${claimAmount.toFixed(2)} successfully!`;
+            pop.style.display = "block";
+            setTimeout(() => { pop.style.display = "none"; }, 2000);
+
+          } catch(err) {
+            console.error(err);
+            alert("Claim failed. Try again.");
+            btn.disabled = false;
+            btn.textContent = "CLAIM";
+          }
+        };
+      });
     });
-
-    // Mark score as claimed in database
-    await runTransaction(scoreRef, (currentData) => {
-      if (!currentData) return currentData;
-      return {
-        ...currentData,
-        claimed: true
-      };
-    });
-
-    showPopup(`Successfully claimed R ${scoreAmount.toFixed(2)} to your wallet!`);
-
-  } catch (error) {
-    console.error("Claim error:", error);
-    alert("Failed to process claim. Please try again.");
   }
-}
 </script>
 </body>
 </html>
