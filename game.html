@@ -215,17 +215,19 @@ async function saveScore(finalScore){
     const time = Date.now();
     const formattedScore = Number(finalScore.toFixed(2));
 
-    // ✅ Pushes every single session score directly to earnings ledger
+    // ✅ Explicitly push to the "earnings" root node matching your claims page
     await push(ref(db, "earnings/" + uid), {
       score: formattedScore,
       timestamp: time,
       claimed: false
     });
 
+    console.log("Score saved to earnings successfully!");
   } catch(err) {
-    console.error("Error saving score to earnings:", err);
+    console.error("Error saving score:", err);
   }
 }
+
 
 /* GAME VARIABLES */
 let y=200, velocity=0;
