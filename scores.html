@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Leaderboard - Player Claims</title>
+<title>Earnings - Claims Ledger</title>
 
 <style>
 body{
@@ -125,7 +125,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebas
 import { getDatabase, ref, onValue, set, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-// ✅ Config fully matched with storageBucket
 const firebaseConfig = {
   apiKey: "AIzaSyBqJTLjxhZBCsvjrTH_cG0fkXlElG6BqTg",
   authDomain: "tose-ccf8f.firebaseapp.com",
@@ -151,7 +150,7 @@ onAuthStateChanged(auth, (u) => {
 function initPlayerEarnings(uid){
   const content = document.getElementById("content");
 
-  // ✅ Listens to player earnings path securely
+  // ✅ Listens directly to the player's earnings path
   onValue(ref(db, "earnings/" + uid), snap => {
     const data = snap.val() || {};
     let arr = [];
@@ -216,10 +215,10 @@ function initPlayerEarnings(uid){
         btn.textContent = "CLAIMING...";
 
         try {
-          // 1. Mark this specific session score as claimed in Firebase
+          // 1. Mark this specific session score as claimed in Firebase earnings
           await set(ref(db, `earnings/${uid}/${entryId}/claimed`), true);
 
-          // 2. Safely add the amount to the user's wallet cash balance
+          // 2. Add amount securely to wallet cash balance via transaction
           const walletRef = ref(db, `wallet/${uid}`);
           await runTransaction(walletRef, (currentWallet) => {
             if(!currentWallet) currentWallet = { cashBalance: 0, lives: 0 };
@@ -231,7 +230,7 @@ function initPlayerEarnings(uid){
             };
           });
 
-          // Show success pop-up notification
+          // Show success notification popup
           let popupEl = document.getElementById("popup");
           popupEl.innerText = `Successfully Claimed R ${claimAmount.toFixed(2)}!`;
           popupEl.style.display = "block";
