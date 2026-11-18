@@ -144,7 +144,7 @@ onAuthStateChanged(auth, (u) => {
 function initPlayerEarnings(uid){
   const content = document.getElementById("content");
 
-  // ✅ Listens to the exact database path where the game writes earnings entries
+  // ✅ Listens to the player's earnings ledger where every session score is pushed
   onValue(ref(db, "earnings/" + uid), snap => {
     const data = snap.val() || {};
     let arr = [];
@@ -158,7 +158,7 @@ function initPlayerEarnings(uid){
       });
     }
 
-    // Sort newest first
+    // Sort newest games first
     arr.sort((a, b) => b.time - a.time);
 
     content.innerHTML = "";
@@ -197,7 +197,7 @@ function initPlayerEarnings(uid){
       content.appendChild(div);
     });
 
-    // Attach click listeners to claim buttons
+    // Attach click listeners to all claim buttons
     document.querySelectorAll(".claim-btn").forEach(btn => {
       btn.addEventListener("click", async (e) => {
         let entryId = e.target.getAttribute("data-id");
@@ -209,10 +209,10 @@ function initPlayerEarnings(uid){
         btn.textContent = "CLAIMING...";
 
         try {
-          // 1. Mark score as claimed in earnings history
+          // 1. Mark this specific session score as claimed in Firebase
           await set(ref(db, `earnings/${uid}/${entryId}/claimed`), true);
 
-          // 2. Add amount securely to wallet cash balance via transaction
+          // 2. Safely add the amount to the user's wallet cash balance
           const walletRef = ref(db, `wallet/${uid}`);
           await runTransaction(walletRef, (currentWallet) => {
             if(!currentWallet) currentWallet = { cashBalance: 0, lives: 0 };
@@ -224,7 +224,7 @@ function initPlayerEarnings(uid){
             };
           });
 
-          // Show success feedback popup
+          // Show success pop-up notification
           let popupEl = document.getElementById("popup");
           popupEl.innerText = `Successfully Claimed R ${claimAmount.toFixed(2)}!`;
           popupEl.style.display = "block";
@@ -234,7 +234,7 @@ function initPlayerEarnings(uid){
 
         } catch(err) {
           console.error("Claim error:", err);
-          alert("Failed to claim amount. Please try again.");
+          alert("Failed to claim amount. Please check your connection and try again.");
           btn.disabled = false;
           btn.textContent = "CLAIM";
         }
