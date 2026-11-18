@@ -232,13 +232,11 @@ async function saveScore(finalScore){
     });
   }
 
-  // Save to highScores
   await push(ref(db, "highScores/ringmaster/" + uid), {
     score: formattedScore,
     timestamp: time
   });
 
-  // Save directly to earnings node for instant player claiming
   await push(ref(db, "earnings/" + uid), {
     score: formattedScore,
     timestamp: time,
@@ -330,7 +328,7 @@ function spawnRings(){
 
       if(hit(r)){
         r.innerText="🟡"; 
-        addScore(0.0001); // rings add directly or adjust as desired
+        addScore(0.0001); 
         rings++;
         document.getElementById("rings").innerText=rings;
 
@@ -361,7 +359,6 @@ function showMiss(){
   setTimeout(()=>m.remove(),800);
 }
 
-/* ADD SCORE & ACCUMULATOR BAR LOGIC */
 function addScore(amount){
   barProgress += amount;
   
@@ -433,7 +430,7 @@ function spawnEnemies() {
 }
 
 /* =====================
-   👻 GHOST ENEMY
+   👻 GHOST ENEMY (Deducts 30% even if 0 or negative)
 ===================== */
 function spawnGhost() {
   setInterval(() => {
@@ -496,7 +493,8 @@ function spawnGhost() {
       g.style.top = currentY + "px";
 
       if (hit(g)) {
-        score -= (score / 3);
+        // Deduct 30% of current score (works for positive, zero, and negative values)
+        score -= (score * 0.30);
         score = Number(score.toFixed(2));
         document.getElementById("score").innerText = score.toFixed(2);
 
@@ -861,30 +859,32 @@ function hit(el){
 function lose(){
   running=false;
 
-  if(gameLives>0){
+  if(gameLives > 0){
     popup.style.display="block";
     popup.innerHTML=`
       <h2>💔 Continue?</h2>
       <button onclick="cont()">YES (-1)</button>
-      <button onclick="exit()">EXIT</button>
+      <button onclick="exitGame()">EXIT</button>
     `;
-  }else{
+  } else {
     endGame();
   }
 }
 
-window.cont=()=>{
+window.cont = () => {
   gameLives--;
-  missed=0; 
-  document.getElementById("lives").innerText=gameLives;
-  popup.style.display="none";
-  y=200;
-  velocity=0;
-  running=true;
+  missed = 0; 
+  document.getElementById("lives").innerText = gameLives;
+  popup.style.display = "none";
+  y = 200;
+  velocity = 0;
+  running = true;
   update();
 };
 
-window.exit=()=>endGame();
+window.exitGame = () => {
+  endGame();
+};
 
 async function endGame(){
   await saveScore(score); 
@@ -897,8 +897,8 @@ async function endGame(){
   `;
 }
 
-window.goMenu = ()=>{
-  location.href="slide.html";
+window.goMenu = () => {
+  location.href = "slide.html";
 };
 
 onAuthStateChanged(auth, (u)=>{
