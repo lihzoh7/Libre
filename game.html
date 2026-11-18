@@ -239,6 +239,7 @@ async function saveScore(finalScore){
       timestamp: time
     });
 
+    // Pushed to earnings so the earnings ledger reads it instantly
     await push(ref(db, "earnings/" + uid), {
       score: formattedScore,
       timestamp: time,
@@ -253,8 +254,8 @@ async function saveScore(finalScore){
 let y=200, velocity=0;
 let gravity=0.6, jump=-10;
 
-let score=0;        // Main Score (R)
-let barProgress=0;  // Accumulator Bar (target 0.5)
+let score=0;        
+let barProgress=0;  
 let gameLives=0;
 
 let rings=0;
@@ -271,7 +272,6 @@ const player=document.getElementById("player");
 const popup=document.getElementById("popup");
 const game = document.getElementById("game");
 
-// AUDIO ELEMENTS
 const rocketAudio = document.getElementById("rocketAudio");
 const ghostAudio = document.getElementById("ghostAudio");
 const flyAudio = document.getElementById("flyAudio");
@@ -283,8 +283,8 @@ function startGame(){
   
   update();
   spawnRings();
-  spawnEnemies();    // Fly
-  spawnGhost();      // Ghost
+  spawnEnemies();    
+  spawnGhost();      
   spawnFruits();
   spawnBoost();     
   spawnRockets();   
@@ -372,9 +372,9 @@ function addScore(amount){
     score += 0.5;
     score = Number(score.toFixed(2));
     barProgress = surplus; 
-    document.getElementById("score").innerText = score.toFixed(2);
   }
 
+  document.getElementById("score").innerText = score.toFixed(2);
   let percentage = Math.min((barProgress / 0.5) * 100, 100);
   document.getElementById("progressBarFill").style.width = percentage + "%";
 }
@@ -435,7 +435,7 @@ function spawnEnemies() {
 }
 
 /* =====================
-   👻 GHOST ENEMY (Deducts 30% even if 0 or negative)
+   👻 GHOST ENEMY (Deducts 30% from the bar on contact)
 ===================== */
 function spawnGhost() {
   setInterval(() => {
@@ -498,9 +498,11 @@ function spawnGhost() {
       g.style.top = currentY + "px";
 
       if (hit(g)) {
-        score -= (score * 0.30);
-        score = Number(score.toFixed(2));
-        document.getElementById("score").innerText = score.toFixed(2);
+        // Deduct 30% from accumulator bar progress
+        barProgress -= (barProgress * 0.30);
+        if(barProgress < 0) barProgress = 0;
+        let percentage = Math.min((barProgress / 0.5) * 100, 100);
+        document.getElementById("progressBarFill").style.width = percentage + "%";
 
         g.innerText = "💥";
         setTimeout(() => g.remove(), 200);
@@ -623,9 +625,6 @@ function activateBoost(duration){
   },boostDuration);
 }
 
-/* =====================
-   🚀 ROCKET
-===================== */
 function spawnRockets() {
   setInterval(() => {
     if (!running) return;
@@ -682,9 +681,6 @@ function spawnRockets() {
   }, 7000);
 }
 
-/* =====================
-   🥊 GLOVE
-===================== */
 function spawnGlove() {
   const launchInterval = 10000;
 
@@ -891,7 +887,7 @@ window.exitGame = () => {
 };
 
 async function endGame(){
-  // Show pop-up immediately so the player always sees their final score without waiting for Firebase network responses
+  // 🔥 SHOW POPUP INSTANTLY FIRST before awaiting firebase network calls
   popup.style.display="block";
   popup.innerHTML=`
     <h2>FINAL SCORE</h2>
@@ -899,7 +895,6 @@ async function endGame(){
     <button onclick="goMenu()">OK</button>
   `;
 
-  // Save the score in the background
   await saveScore(score); 
 }
 
