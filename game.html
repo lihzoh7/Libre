@@ -210,38 +210,43 @@ const auth = getAuth(app);
 let user;
 
 async function saveScore(finalScore){
-  const uid = user.uid;
-  const time = Date.now();
-  const formattedScore = Number(finalScore.toFixed(2));
+  if(!user) return;
+  try {
+    const uid = user.uid;
+    const time = Date.now();
+    const formattedScore = Number(finalScore.toFixed(2));
 
-  const snap = await get(ref(db, "users/" + uid));
-  const userData = snap.val();
+    const snap = await get(ref(db, "users/" + uid));
+    const userData = snap.val();
 
-  const realName = userData?.name 
-    ? userData.name + " " + (userData.surname || "")
-    : "Player";
+    const realName = userData?.name 
+      ? userData.name + " " + (userData.surname || "")
+      : "Player";
 
-  const currentSnap = await get(ref(db, "leaderboard/current/" + uid));
-  const currentData = currentSnap.val();
+    const currentSnap = await get(ref(db, "leaderboard/current/" + uid));
+    const currentData = currentSnap.val();
 
-  if(!currentData || currentData.score < formattedScore){
-    await set(ref(db, "leaderboard/current/" + uid), {
+    if(!currentData || currentData.score < formattedScore){
+      await set(ref(db, "leaderboard/current/" + uid), {
+        score: formattedScore,
+        name: realName,
+        timestamp: time
+      });
+    }
+
+    await push(ref(db, "highScores/ringmaster/" + uid), {
       score: formattedScore,
-      name: realName,
       timestamp: time
     });
+
+    await push(ref(db, "earnings/" + uid), {
+      score: formattedScore,
+      timestamp: time,
+      claimed: false
+    });
+  } catch(err) {
+    console.error("Error saving score:", err);
   }
-
-  await push(ref(db, "highScores/ringmaster/" + uid), {
-    score: formattedScore,
-    timestamp: time
-  });
-
-  await push(ref(db, "earnings/" + uid), {
-    score: formattedScore,
-    timestamp: time,
-    claimed: false
-  });
 }
 
 /* GAME VARIABLES */
@@ -493,7 +498,6 @@ function spawnGhost() {
       g.style.top = currentY + "px";
 
       if (hit(g)) {
-        // Deduct 30% of current score (works for positive, zero, and negative values)
         score -= (score * 0.30);
         score = Number(score.toFixed(2));
         document.getElementById("score").innerText = score.toFixed(2);
@@ -887,14 +891,16 @@ window.exitGame = () => {
 };
 
 async function endGame(){
-  await saveScore(score); 
-
+  // Show pop-up immediately so the player always sees their final score without waiting for Firebase network responses
   popup.style.display="block";
   popup.innerHTML=`
     <h2>FINAL SCORE</h2>
     <h1>${score.toFixed(2)}</h1>
     <button onclick="goMenu()">OK</button>
   `;
+
+  // Save the score in the background
+  await saveScore(score); 
 }
 
 window.goMenu = () => {
