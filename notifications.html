@@ -30,7 +30,6 @@ body {
   letter-spacing: 1px;
 }
 
-/* BACK BUTTON */
 .back-btn {
   background: green;
   color: white;
@@ -44,7 +43,6 @@ body {
   background: #006400;
 }
 
-/* NOTIFICATIONS CONTAINER & ITEMS */
 #notificationsContainer {
   max-width: 800px;
   margin: 0 auto;
@@ -98,7 +96,6 @@ body {
   color: #777;
 }
 
-/* TRASH ICON BUTTON */
 .trash-btn {
   background: none;
   border: none;
@@ -111,7 +108,6 @@ body {
   color: #ff1a1a;
 }
 
-/* FULL SCREEN MESSAGE VIEW */
 #fullMessageView {
   display: none;
   max-width: 800px;
@@ -131,6 +127,15 @@ body {
   white-space: pre-wrap;
 }
 
+#fullMessageProof {
+  display: none;
+  max-width: 100%;
+  max-height: 360px;
+  border-radius: 8px;
+  margin-top: 16px;
+  border: 1px solid #333;
+}
+
 #fullMessageTime {
   font-size: 13px;
   color: #888;
@@ -147,15 +152,14 @@ body {
     <a href="dashboard.html" class="back-btn" id="headerBackBtn" style="display: none;" onclick="showListView(event)">Back</a>
   </div>
 
-  <!-- LIST VIEW -->
   <div id="notificationsContainer">
     <div style="text-align:center; color:#777;">Loading notifications...</div>
   </div>
 
-  <!-- FULL DETAIL VIEW -->
   <div id="fullMessageView">
     <div style="font-size: 13px; color: #3b82f6; font-weight: bold; text-transform: uppercase;">Message Details</div>
     <div id="fullMessageText"></div>
+    <img id="fullMessageProof" alt="Cash out proof">
     <div id="fullMessageTime"></div>
   </div>
 
@@ -204,14 +208,13 @@ function loadUserNotifications(uid) {
       });
     });
 
-    // Newest on top
-    messages.sort((a, b) => b.timestamp - a.timestamp);
+    messages.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
     messages.forEach((msg) => {
       const card = document.createElement("div");
       card.className = "notif-card";
 
-      const dateStr = new Date(msg.timestamp).toLocaleString();
+      const dateStr = msg.timestamp ? new Date(msg.timestamp).toLocaleString() : "";
       const readClass = msg.read ? "read" : "unread";
 
       card.innerHTML = `
@@ -229,7 +232,6 @@ function loadUserNotifications(uid) {
 }
 
 window.openFullMessage = async function(uid, msg) {
-  // Mark as read in database
   if (!msg.read) {
     try {
       await update(ref(db, `notifications/${uid}/${msg.id}`), { read: true });
@@ -243,7 +245,17 @@ window.openFullMessage = async function(uid, msg) {
   headerBackBtn.style.display = "inline-block";
 
   document.getElementById("fullMessageText").innerText = msg.message;
-  document.getElementById("fullMessageTime").innerText = "Received on: " + new Date(msg.timestamp).toLocaleString();
+
+  const proofImg = document.getElementById("fullMessageProof");
+  if (msg.proofUrl) {
+    proofImg.src = msg.proofUrl;
+    proofImg.style.display = "block";
+  } else {
+    proofImg.style.display = "none";
+    proofImg.removeAttribute("src");
+  }
+
+  document.getElementById("fullMessageTime").innerText = "Received on: " + (msg.timestamp ? new Date(msg.timestamp).toLocaleString() : "");
 };
 
 window.showListView = function(e) {
