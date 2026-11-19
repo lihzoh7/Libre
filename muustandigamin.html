@@ -218,35 +218,6 @@
             100% { transform: translateY(-140px) translateX(-30px) scale(1.2); opacity: 0; }
         }
 
-        .atm-machine {
-            position: absolute;
-            right: 15%;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 65px;
-            border-bottom: 4px solid #3b82f6;
-        }
-
-        .flying-money {
-            position: absolute;
-            font-size: 45px;
-            left: -150px;
-            top: 25px;
-            opacity: 0;
-            animation: depositMoney 2s linear infinite;
-        }
-
-        .m1 { animation-delay: 0s; }
-        .m2 { animation-delay: 0.6s; }
-        .m3 { animation-delay: 1.2s; }
-
-        @keyframes depositMoney {
-            0% { transform: translateX(0) translateY(-10px) rotate(0deg) scale(1); opacity: 0; }
-            10% { opacity: 1; }
-            85% { opacity: 1; }
-            100% { transform: translateX(160px) translateY(-5px) rotate(15deg) scale(0.4); opacity: 0; }
-        }
-
         @media (max-width: 600px) {
             .top-header-bar {
                 flex-direction: column;
@@ -298,21 +269,6 @@
                     <div class="smiley-heart h5">🥰</div>
                 </div>
                 <div class="tile-title">TOP-UP</div>
-            </div>
-        </a>
-
-        <!-- 🏧 BANK ATM TILE -->
-        <a href="bank.html" class="tile-link">
-            <div class="tile">
-                <div class="animated-bg">
-                    <div class="atm-machine">
-                        🏧
-                        <div class="flying-money m1">💵</div>
-                        <div class="flying-money m2">💵</div>
-                        <div class="flying-money m3">💵</div>
-                    </div>
-                </div>
-                <div class="tile-title">Bank</div>
             </div>
         </a>
 
